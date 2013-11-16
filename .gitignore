@@ -34,3 +34,13 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Windows text file
+*.txt
+
+# iml files
+*.iml
+
+# idea directories
+.idea\
+__pycache__\
