@@ -3,7 +3,7 @@
 #
 # Programmer: Kobi Aton, 2013
 
-from hw1 import chem
+from hw2 import chemx
 import unittest
 
 #weight for molecules 1-40, weight 0 for: don't test weight
