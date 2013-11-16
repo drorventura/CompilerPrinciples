@@ -41,3 +41,6 @@ nosetests.xml
 
 # iml files
 *.iml
+
+# Vi temp files
+*.swp
