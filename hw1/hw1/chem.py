@@ -441,4 +441,3 @@ class AsStringVisitor(AbstractChemVisitor):
 
     def visitMolecule(self):
         return '%s' % self.mol
-
