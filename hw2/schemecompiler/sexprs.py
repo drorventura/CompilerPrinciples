@@ -8,11 +8,6 @@ class AbstractSexpr:
     def __str__(self):
         return self.accept(AsStringVisitor)
 
-    @staticmethod
-    def readFromString(string):
-
-        return string
-
 # Void Class
 class Void(AbstractSexpr):
     def __init__(self):
