@@ -1,4 +1,4 @@
-from schemecompiler import pc
+from schemecompiler import *
 __author__ = 'Dror Ventura & Eldar Damari'
 
 # Abstract Class
@@ -11,6 +11,38 @@ class AbstractSexpr:
     @staticmethod
     def readFromString(string):
         return string
+
+# Void Class
+class Void(AbstractSexpr):
+    def __init__(self):
+        print('init is needed')
+
+    def accept(self, visitor):
+        return visitor.visitVoid(self)
+
+# Nil Class
+class Nil(AbstractSexpr):
+    def __init__(self):
+        print('init is needed')
+
+    def accept(self, visitor):
+        return visitor.visitNil(self)
+
+# Vector Class
+class Vector(AbstractSexpr):
+    def __init__(self):
+        print('init is needed')
+
+    def accept(self, visitor):
+        return visitor.visitVector(self)
+
+# Boolean Class
+class Boolean(AbstractSexpr):
+    def __init__(self):
+        print('init is needed')
+
+    def accept(self, visitor):
+        return visitor.visitBoolean(self)
 
 # Symbol Class
 class Symbol(AbstractSexpr):
@@ -45,7 +77,7 @@ class AbstractNumber(AbstractSexpr):
         return self.accept(self,visitor)
 
 # Int Class
-class Int(AbstractNumber):  
+class Int(AbstractNumber):
     def __init__(self,number):
         print("Int class")
 
@@ -56,42 +88,9 @@ class Int(AbstractNumber):
 class Fraction(AbstractNumber):
     def __init__(self,fraction):
         print("Fraction class")
-    
+
     def accept(self,visitor):
         return visitor.visitInt(self)
-
-
-# Void Class
-class Void(AbstractSexpr):
-    def __init__(self):
-        print('init is needed')
-
-    def accept(self, visitor):
-        return visitor.visitVoid(self)
-
-# Nil Class
-class Nil(AbstractSexpr):
-    def __init__(self):
-        print('init is needed')
-
-    def accept(self, visitor):
-        return visitor.visitNil(self)
-
-# Vector Class
-class Vector(AbstractSexpr):
-    def __init__(self):
-        print('init is needed')
-
-    def accept(self, visitor):
-        return visitor.visitVector(self)
-
-# Boolean Class
-class Boolean(AbstractSexpr):
-    def __init__(self):
-        print('init is needed')
-
-    def accept(self, visitor):
-        return visitor.visitBoolean(self)
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSexpr):
