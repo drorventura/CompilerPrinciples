@@ -1,4 +1,5 @@
-from schemecompiler import *
+import reader
+
 __author__ = 'Dror Ventura & Eldar Damari'
 
 # Abstract Class
@@ -10,7 +11,8 @@ class AbstractSexpr:
 
     @staticmethod
     def readFromString(string):
-        return string
+        sexpr , remaining = reader.Reader.parseSexpr().match(string)
+        return sexpr , remaining
 
 # Void Class
 class Void(AbstractSexpr):
@@ -38,8 +40,13 @@ class Vector(AbstractSexpr):
 
 # Boolean Class
 class Boolean(AbstractSexpr):
-    def __init__(self):
-        print('init is needed')
+    def __init__(self, value):
+        if value == 'T':
+            self.value = 't'
+        elif value == 'F':
+            self.value = 'f'
+        else:
+            self.value = value
 
     def accept(self, visitor):
         return visitor.visitBoolean(self)
@@ -78,8 +85,14 @@ class AbstractNumber(AbstractSexpr):
 
 # Int Class
 class Int(AbstractNumber):
-    def __init__(self,number):
-        print("Int class")
+    def __init__(self,sign,number):
+        if sign == "-":
+            self.sign = int(-1)
+        else:
+            self.sign = int(1)
+
+        self.number = int(number)
+        self.number *= self.sign
 
     def accept(self,visitor):
         return visitor.visitInt(self)
@@ -104,10 +117,10 @@ class AsStringVisitor(AbstractSexpr):
         print('Vector toString')
 
     def visitBoolean(self):
-        print('Boolean toString')
+        return '#' + '%s' %self.value
 
     def visitInt(self):
-        print('Int toString')
+        return '%d' %self.number
 
     def visitFraction(self):
         print('Fraction toString')
