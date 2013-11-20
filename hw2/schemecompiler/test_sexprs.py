@@ -18,20 +18,46 @@ class TestSexprs(unittest.TestCase):
 #        self.assertEqual(str(sexpr) , '#f')
 #        self.assertEqual(str(remaining) , '')
     
-    def test_negative_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('-5')
-        self.assertEqual(str(sexpr) , '-5')
-        self.assertEqual(str(remaining) , '')
+    # def test_negative_number(self):
+    #     sexpr , remaining = sexprs.AbstractSexpr.readFromString('-5')
+    #     self.assertEqual(str(sexpr) , '-5')
+    #     self.assertEqual(str(remaining) , '')
+    #
+    # def test_positive_with_leadingZeros(self):
+    #     sexpr , remaining = sexprs.AbstractSexpr.readFromString('+0088')
+    #     self.assertEqual(str(sexpr) , '88')
+    #     self.assertEqual(str(remaining) , '')
+    #
+    # def test_leadingZeros(self):
+    #     sexpr , remaining = sexprs.AbstractSexpr.readFromString('0088')
+    #     self.assertEqual(str(sexpr) , '88')
+    #     self.assertEqual(str(remaining) , '')
     
-    def test_positive_with_leadingZeros(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('+0088')
-        self.assertEqual(str(sexpr) , '88')
+    # def test_positive_number(self):
+    #     sexpr , remaining = sexprs.AbstractSexpr.readFromString('123')
+    #     self.assertEqual(str(sexpr) , '123')
+    #     self.assertEqual(str(remaining) , '')
+
+    def test_hexadecimal_number(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0x12f4')
+        self.assertEqual(str(sexpr) , '0x12f4')
         self.assertEqual(str(remaining) , '')
-    
-    def test_positive_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('123')
-        self.assertEqual(str(sexpr) , '123')
+
+    def test_neg_hexadecimal_number(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('-0x1234')
+        self.assertEqual(str(sexpr) , '-0x1234')
         self.assertEqual(str(remaining) , '')
+
+    def test_pos_hexadecimal_number(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('+0x1234')
+        self.assertEqual(str(sexpr) , '0x1234')
+        self.assertEqual(str(remaining) , '')
+
+    def test_letters_hexadecimal_number(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0h43F2')
+        self.assertEqual(str(sexpr) , '0h43F2')
+        self.assertEqual(str(remaining) , '')
+
 
 if __name__ == '__main__':
      unittest.main()

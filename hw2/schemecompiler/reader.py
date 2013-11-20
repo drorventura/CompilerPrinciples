@@ -32,19 +32,15 @@ class Reader:
                         .done()
         # int parser
         intParser = ps  .parser(signParser) \
+                        .maybe() \
                         .parser(zeroParser) \
                         .star() \
                         .pack(lambda x: ''.join(x)) \
                         .pack(lambda x: x.replace('0',''))\
                         .caten()\
                         .pack(lambda x: x[0])\
-                        .parser(signParser)\
-                        .pack(lambda x: x)\
-                        .parser(zeroParser)\
-                        .star()\
                         .pack(lambda x: ''.join(x)) \
                         .pack(lambda x: x.replace('0',''))\
-                        .disjs(3)\
                         .parser(firstdigitParser)\
                         .parser(otherdigitsParser)\
                         .star()\
@@ -58,4 +54,29 @@ class Reader:
                         .pack(lambda x: sexprs.Int(x[0],x[1]))\
                         .done()
 
-        return intParser 
+        # A hex number always start with 0
+        hexFirstSign = ps   .const(lambda x: x == '0') \
+                            .done()
+
+        # The second sign of hex number can be x|X|h|H
+        hexSecondSign = ps  .const(lambda x: x == 'x' or x == 'X' or x == 'h' or x == 'H') \
+                            .done()
+        hexLetters = ps .const (lambda x: (x >= 'a' and x <= 'f') or (x >= 'A' and x <= 'F')) \
+                        .done()
+
+        # Hex parser
+        hexNumberParser = ps    .parser(signParser) \
+                                .maybe() \
+                                .parser(hexFirstSign) \
+                                .parser(hexSecondSign) \
+                                .parser(otherdigitsParser) \
+                                .parser(hexLetters) \
+                                .disj() \
+                                .star() \
+                                .pack(lambda x: ''.join(x)) \
+                                .catens(4) \
+                                .pack(lambda x: (x[0][1],''.join(x[1:4]))) \
+                                .pack(lambda x: sexprs.Int(x[0],x[1])) \
+                                .done()
+
+        return hexNumberParser

@@ -86,13 +86,8 @@ class AbstractNumber(AbstractSexpr):
 # Int Class
 class Int(AbstractNumber):
     def __init__(self,sign,number):
-        if sign == "-":
-            self.sign = int(-1)
-        else:
-            self.sign = int(1)
-
-        self.number = int(number)
-        self.number *= self.sign
+        self.sign = sign
+        self.number = number
 
     def accept(self,visitor):
         return visitor.visitInt(self)
@@ -120,7 +115,10 @@ class AsStringVisitor(AbstractSexpr):
         return '#' + '%s' %self.value
 
     def visitInt(self):
-        return '%d' %self.number
+        if (self.sign == '-'):
+            return '-' + '%s' %self.number
+        else:
+            return '%s' %self.number
 
     def visitFraction(self):
         print('Fraction toString')
