@@ -39,7 +39,6 @@ class Reader:
                         .caten()\
                         .pack(lambda x: x[0])\
                         .parser(signParser)\
-                        .pack(lambda x: x)\
                         .parser(zeroParser)\
                         .star()\
                         .pack(lambda x: ''.join(x)) \
@@ -58,4 +57,11 @@ class Reader:
                         .pack(lambda x: sexprs.Int(x[0],x[1]))\
                         .done()
 
-        return intParser 
+        # fraction parser
+        fractionParser = ps  .parser(intParser)\
+                             .const(lambda x: x == '/')\
+                             .parser(intParser)\
+                             .catens(3)\
+                             .pack(lambda x: sexprs.Fraction(x[0],x[2]))\
+                             .done()
+        return fractionParser 

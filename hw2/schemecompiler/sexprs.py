@@ -99,11 +99,21 @@ class Int(AbstractNumber):
 
 # Fraction Class
 class Fraction(AbstractNumber):
-    def __init__(self,fraction):
-        print("Fraction class")
+    def __init__(self,num,dem):
+        # Fixing the number sign
+        if num.number < 0 and dem.number > 0 :
+            self.num = num.number
+            self.dem = dem.number
+        else:
+            if num.number < 0 or dem.number < 0:
+                self.num = int(num.number) * -1
+                self.dem = int(dem.number) * -1
+            else:
+                self.num = num.number
+                self.dem = dem.number
 
     def accept(self,visitor):
-        return visitor.visitInt(self)
+        return visitor.visitFraction(self)
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSexpr):
@@ -120,10 +130,13 @@ class AsStringVisitor(AbstractSexpr):
         return '#' + '%s' %self.value
 
     def visitInt(self):
-        return '%d' %self.number
+        return '%s' %self.number
 
     def visitFraction(self):
-        print('Fraction toString')
+        if self.num == 0:
+            return '0'
+        else:
+            return '%s' %self.num + '/' + '%s' %self.dem
 
     def visitString(self):
         print('String toString')
