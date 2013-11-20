@@ -70,7 +70,9 @@ class Pair(AbstractSexpr):
 # String Class
 class String(AbstractSexpr):
     def __init__(self,string):
-        print("String class")
+        print("In String :")
+        print(string)
+        self.string = string
 
     def accept(self,visitor):
         return visitor.visitString(self)
@@ -139,7 +141,7 @@ class AsStringVisitor(AbstractSexpr):
             return '%s' %self.num + '/' + '%s' %self.dem
 
     def visitString(self):
-        print('String toString')
+        return '%s' %self.string
 
     def visitSymbol(self):
         print('Symbol toString')

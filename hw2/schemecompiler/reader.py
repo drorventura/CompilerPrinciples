@@ -64,4 +64,22 @@ class Reader:
                              .catens(3)\
                              .pack(lambda x: sexprs.Fraction(x[0],x[2]))\
                              .done()
-        return fractionParser 
+        # String parser
+        stringParser = ps  .const(lambda x: x == '\"')\
+                           .const(lambda x: x >= 'a' and x <= 'z')\
+                           .const(lambda x: x >= 'A' and x <= 'Z')\
+                           .const(lambda x: x >= '0' and x <= '9')\
+                           .const(lambda x: x == '\n' or x == '\r' or x == '\t' or 
+                                            x == '\\' or x == '\l')\
+                           .const(lambda x: x == '!' or x == '$' or x == '^' or 
+                                            x == '*' or x == '-' or x == '_' or
+                                            x == '=' or x == '+' or x == '<' or
+                                            x == '>' or x == '/' or x == '?')\
+                           .disjs(5)\
+                           .star()\
+                           .pack(lambda x: ''.join(x))\
+                           .const(lambda x: x == '\"')\
+                           .catens(3)\
+                           .pack(lambda x: sexprs.String(x[1]))\
+                           .done()
+        return stringParser 
