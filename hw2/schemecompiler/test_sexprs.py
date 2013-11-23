@@ -59,7 +59,7 @@ class TestSexprs(unittest.TestCase):
 #        self.assertEqual(str(remaining) , '')
 
     def test_String(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('"Eldar\"Damari"')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('Eldar\"Damari')
         self.assertEqual(str(sexpr) , "Eldar\"Damari")
         self.assertEqual(str(remaining) , '')
 
