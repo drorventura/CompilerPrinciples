@@ -30,6 +30,7 @@ class Reader:
         # +/-
         signParser = ps .const(lambda x: x == '+' or x == '-') \
                         .done()
+
         # int parser
         intParser = ps  .parser(signParser) \
                         .maybe() \
@@ -38,32 +39,28 @@ class Reader:
                         .pack(lambda x: ''.join(x)) \
                         .pack(lambda x: x.replace('0',''))\
                         .caten()\
-                        .pack(lambda x: x[0])\
+                        .pack(lambda x: x[0][1]) \
+                        .parser(firstdigitParser) \
+                        .parser(otherdigitsParser) \
+                        .star() \
                         .pack(lambda x: ''.join(x)) \
-                        .pack(lambda x: x.replace('0',''))\
-                        .parser(firstdigitParser)\
-                        .parser(otherdigitsParser)\
-                        .star()\
-                        .pack(lambda x: ''.join(x)) \
-                        .caten()\
+                        .caten() \
                         .pack(lambda x: ''.join(x)) \
                         .caten()\
-                        .parser(zeroParser)\
-                        .pack(lambda x: [0,x])\
-                        .disj()\
-                        .pack(lambda x: sexprs.Int(x[0],x[1]))\
+                        .parser(zeroParser) \
+                        .pack(lambda x: [0,x]) \
+                        .disj() \
+                        .pack(lambda x: sexprs.Int(x[0],x[1])) \
                         .done()
 
         # A hex number always start with 0
         hexFirstSign = ps   .const(lambda x: x == '0') \
                             .done()
-
         # The second sign of hex number can be x|X|h|H
         hexSecondSign = ps  .const(lambda x: x == 'x' or x == 'X' or x == 'h' or x == 'H') \
                             .done()
         hexLetters = ps .const (lambda x: (x >= 'a' and x <= 'f') or (x >= 'A' and x <= 'F')) \
                         .done()
-
         # Hex parser
         hexNumberParser = ps    .parser(signParser) \
                                 .maybe() \
@@ -79,4 +76,39 @@ class Reader:
                                 .pack(lambda x: sexprs.Int(x[0],x[1])) \
                                 .done()
 
-        return hexNumberParser
+        # fraction parser
+        fractionParser = ps .parser(intParser) \
+                            .const(lambda x: x == '/') \
+                            .parser(intParser) \
+                            .catens(3) \
+                            .pack(lambda x: sexprs.Fraction(x[0],x[2])) \
+                            .done()
+
+        # String parser
+        stringParser = ps  .const(lambda x: x == '\"') \
+                           .const(lambda x: x >= 'a' and x <= 'z') \
+                           .const(lambda x: x >= 'A' and x <= 'Z') \
+                           .const(lambda x: x >= '0' and x <= '9') \
+                           .const(lambda x: x == '\n' or x == '\r' or x == '\t' or 
+                                            x == '\\' or x == '\l')\
+                           .const(lambda x: x == '!' or x == '$' or x == '^' or 
+                                            x == '*' or x == '-' or x == '_' or
+                                            x == '=' or x == '+' or x == '<' or
+                                            x == '>' or x == '/' or x == '?') \
+                           .disjs(5) \
+                           .star() \
+                           .pack(lambda x: ''.join(x)) \
+                           .const(lambda x: x == '\"') \
+                           .catens(3) \
+                           .pack(lambda x: sexprs.String(x[1])) \
+                           .done()
+
+        test = ps   .parser(boolParser) \
+                    .parser(fractionParser) \
+                    .parser(hexNumberParser)\
+                    .parser(intParser)\
+                    .disjs(4) \
+                    .done()
+
+
+        return test

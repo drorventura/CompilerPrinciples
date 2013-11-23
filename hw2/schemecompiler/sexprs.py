@@ -70,7 +70,9 @@ class Pair(AbstractSexpr):
 # String Class
 class String(AbstractSexpr):
     def __init__(self,string):
-        print("String class")
+        print("In String :")
+        print(string)
+        self.string = string
 
     def accept(self,visitor):
         return visitor.visitString(self)
@@ -94,11 +96,22 @@ class Int(AbstractNumber):
 
 # Fraction Class
 class Fraction(AbstractNumber):
-    def __init__(self,fraction):
-        print("Fraction class")
+    def __init__(self,num,denom):
+        # Fixing the number sign
+        if num.sign == '-' and denom.sign == '-':
+            print("in if")
+            self.num = Int('+', num.number)
+            self.denom = Int('+', denom.number)
+        else:
+            if num.sign == '-' or denom.sign == '-':
+                self.num = Int('-', num.number)
+                self.denom = Int('+', denom.number)
+            else:
+                self.num = Int('+',num.number)
+                self.denom = Int('+',denom.number)
 
     def accept(self,visitor):
-        return visitor.visitInt(self)
+        return visitor.visitFraction(self)
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSexpr):
@@ -121,10 +134,13 @@ class AsStringVisitor(AbstractSexpr):
             return '%s' %self.number
 
     def visitFraction(self):
-        print('Fraction toString')
+        if self.num.number == '0':
+            return '0'
+        else:
+            return str(self.num) + '/' + str(self.denom)
 
     def visitString(self):
-        print('String toString')
+        return '%s' %self.string
 
     def visitSymbol(self):
         print('Symbol toString')
