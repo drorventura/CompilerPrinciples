@@ -1,5 +1,6 @@
 import pc
 import sexprs
+import parser
 
 __author__ = 'Dror Ventura & Eldar Damari'
 
@@ -103,12 +104,54 @@ class Reader:
                            .pack(lambda x: sexprs.String(x[1])) \
                            .done()
 
-        test = ps   .parser(boolParser) \
+        # '('
+        leftParenthesesParser = ps  .parser(pc.pcWord('('))\
+                                    .done()
+        # ')'
+        rightParenthesesParser = ps .parser(pc.pcWord(')'))\
+                                    .done()
+        # Nil parser = '()
+        nilParser = ps  .parser(leftParenthesesParser) \
+                        .parser(rightParenthesesParser) \
+                        .done()
+
+        # Pair parser
+        pairParser = ps .parser(leftParenthesesParser) \
+                        .parser(pc.pcWhite1) \
+                        .star()\
+                        .parser(rightParenthesesParser) \
+                        .done()
+
+        properList = ps .parser(leftParenthesesParser) \
+                        .parser(pc.pcWhite1) \
+                        .delayed_parser(lambda: test) \
+                        .disj() \
+                        .star() \
+                        .pack(lambda x: list(filter(lambda ch: ch != ' ',x))) \
+                        .parser(rightParenthesesParser) \
+                        .catens(3) \
+                        .pack(lambda x: sexprs.Pair(x[1])) \
+                        .done()
+
+        improperList = ps   .parser(pc.pcWhite1) \
+                            .delayed_parser(lambda: test) \
+                            .disj() \
+                            .plus() \
+                            .parser(pc.pcWord('.')) \
+                            .parser(pc.pcWhite1) \
+                            .star() \
+                            .delayed_parser(lambda: test) \
+                            .done()
+
+        test = ps   .parser(pairParser)\
                     .parser(fractionParser) \
-                    .parser(hexNumberParser)\
-                    .parser(intParser)\
-                    .disjs(4) \
+                    .parser(boolParser) \
+                    .parser(hexNumberParser) \
+                    .parser(intParser) \
+                    .disjs(5) \
                     .done()
 
-
         return test
+
+
+

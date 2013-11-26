@@ -36,8 +36,8 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_hexadecimal_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0x12f4')
-        self.assertEqual(str(sexpr) , '0x12f4')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0x1294')
+        self.assertEqual(str(sexpr) , '0x1294')
         self.assertEqual(str(remaining) , '')
 
     def test_neg_hexadecimal_number(self):
@@ -74,10 +74,10 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '5/7')
         self.assertEqual(str(remaining) , '')
 
-    # def test_String(self):
-    #     sexpr , remaining = sexprs.AbstractSexpr.readFromString('"Eldar\"Damari"')
-    #     self.assertEqual(str(sexpr) , "Eldar\"Damari")
-    #     self.assertEqual(str(remaining) , '')
+    def test_pair(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 7)')
+        print(sexpr)
+        print(remaining)
 
 if __name__ == '__main__':
      unittest.main()

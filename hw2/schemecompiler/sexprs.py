@@ -1,3 +1,4 @@
+from _ast import List
 import reader
 
 __author__ = 'Dror Ventura & Eldar Damari'
@@ -25,7 +26,7 @@ class Void(AbstractSexpr):
 # Nil Class
 class Nil(AbstractSexpr):
     def __init__(self):
-        print('init is needed')
+        self.value = '()'
 
     def accept(self, visitor):
         return visitor.visitNil(self)
@@ -61,8 +62,13 @@ class Symbol(AbstractSexpr):
 
 # Pair Class
 class Pair(AbstractSexpr):
-    def __init__(self,pair):
-        print("Pair class")
+    def __init__(self, sexprList):
+        if len(sexprList) == 1:
+            self.sexpr1 = sexprList[0]
+            self.sexpr2 = Nil()
+        else:
+            self.sexpr1 = sexprList[0]
+            self.sexpr2 = Pair(sexprList[1:])
 
     def accept(self,visitor):
         return visitor.visitPair(self)
@@ -99,7 +105,6 @@ class Fraction(AbstractNumber):
     def __init__(self,num,denom):
         # Fixing the number sign
         if num.sign == '-' and denom.sign == '-':
-            print("in if")
             self.num = Int('+', num.number)
             self.denom = Int('+', denom.number)
         else:
@@ -119,7 +124,7 @@ class AsStringVisitor(AbstractSexpr):
         print('Void toString')
 
     def visitNil(self):
-        print('Nil toString')
+        return self.value
 
     def visitVector(self):
         print('Vector toString')
@@ -145,5 +150,17 @@ class AsStringVisitor(AbstractSexpr):
     def visitSymbol(self):
         print('Symbol toString')
 
+    # this is the wrapper for the recursion
     def visitPair(self):
-        print('Pair toString')
+        string = '(' + AsStringVisitor.pairToString(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
+        return  string[:-1] + ')'
+
+    # this is the recursive call, from visitPair
+    def pairToString(self):
+        if not isinstance(self,Pair):
+            if not isinstance(self,Nil):
+                return str(self)
+            else:
+                return ''
+        else:
+            return str(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
