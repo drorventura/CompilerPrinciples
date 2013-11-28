@@ -76,6 +76,11 @@ class TestSexprs(unittest.TestCase):
 
     def test_pair(self):
         sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 7)')
+        self.assertEqual(str(sexpr) , '(5 6 7)')
+        print(remaining)
+
+    def test_improperList(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 . 7)')
         print(sexpr)
         print(remaining)
 

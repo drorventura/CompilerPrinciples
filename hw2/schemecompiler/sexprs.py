@@ -67,8 +67,13 @@ class Pair(AbstractSexpr):
             self.sexpr1 = sexprList[0]
             self.sexpr2 = Nil()
         else:
-            self.sexpr1 = sexprList[0]
-            self.sexpr2 = Pair(sexprList[1:])
+            if sexprList[1] == '.':
+                print(sexprList)
+                self.sexpr1 = sexprList[0]
+                self.sexpr2 = sexprList[2]
+            else:
+                self.sexpr1 = sexprList[0]
+                self.sexpr2 = Pair(sexprList[1:])
 
     def accept(self,visitor):
         return visitor.visitPair(self)

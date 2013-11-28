@@ -115,33 +115,43 @@ class Reader:
                         .parser(rightParenthesesParser) \
                         .done()
 
-        # Pair parser
-        pairParser = ps .parser(leftParenthesesParser) \
-                        .parser(pc.pcWhite1) \
-                        .star()\
-                        .parser(rightParenthesesParser) \
-                        .done()
+        improperList = ps   .delayed_parser(lambda: test) \
+                            .parser(pc.pcWhite1) \
+                            .delayed_parser(lambda: test) \
+                            .disj() \
+                            .star() \
+                            .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
+                            .const(lambda x: x == '.') \
+                            .parser(pc.pcWhite1) \
+                            .star() \
+                            .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
+                            .delayed_parser(lambda: test) \
+                            .catens(5) \
+                            .pack(lambda x: sum([[x[0]], x[1], [x[2]], [x[4]]], [])) \
+                            .pack(lambda x: sexprs.Pair(x)) \
+                            .done()
 
-        properList = ps .parser(leftParenthesesParser) \
-                        .parser(pc.pcWhite1) \
+        properList = ps .parser(pc.pcWhite1) \
                         .delayed_parser(lambda: test) \
                         .disj() \
                         .star() \
-                        .pack(lambda x: list(filter(lambda ch: ch != ' ',x))) \
-                        .parser(rightParenthesesParser) \
-                        .catens(3) \
-                        .pack(lambda x: sexprs.Pair(x[1])) \
+                        .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
+                        .pack(lambda x: sexprs.Pair(x)) \
                         .done()
 
-        improperList = ps   .parser(pc.pcWhite1) \
-                            .delayed_parser(lambda: test) \
-                            .disj() \
-                            .plus() \
-                            .parser(pc.pcWord('.')) \
-                            .parser(pc.pcWhite1) \
-                            .star() \
-                            .delayed_parser(lambda: test) \
-                            .done()
+        # Pair parser
+        pairParser = ps .parser(leftParenthesesParser) \
+                        .parser(pc.pcWhite1) \
+                        .star() \
+                        .parser(improperList) \
+                        .parser(properList) \
+                        .disj() \
+                        .parser(pc.pcWhite1) \
+                        .star() \
+                        .parser(rightParenthesesParser) \
+                        .catens(5) \
+                        .pack(lambda x: x[2]) \
+                        .done()
 
         test = ps   .parser(pairParser)\
                     .parser(fractionParser) \
@@ -152,6 +162,3 @@ class Reader:
                     .done()
 
         return test
-
-
-
