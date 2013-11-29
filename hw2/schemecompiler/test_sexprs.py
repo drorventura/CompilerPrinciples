@@ -74,15 +74,30 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '5/7')
         self.assertEqual(str(remaining) , '')
 
+    def test_nil(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('()')
+        self.assertEqual(str(sexpr) , '()')
+        self.assertEqual(str(remaining) , '')
+
     def test_pair(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5)')
+        self.assertEqual(str(sexpr) , '(5)')
+        self.assertEqual(str(remaining) , '')
+
+    def test_improper_pair(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 . 7)')
+        self.assertEqual(str(sexpr) , '(5 . 7)')
+        self.assertEqual(str(remaining) , '')
+
+    def test_proper_list(self):
         sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 7)')
         self.assertEqual(str(sexpr) , '(5 6 7)')
-        print(remaining)
+        self.assertEqual(str(remaining) , '')
 
-    def test_improperList(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 . 7)')
-        print(sexpr)
-        print(remaining)
+    def test_improper_list(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 . 7)')
+        self.assertEqual(str(sexpr) , '(5 6 . 7)')
+        self.assertEqual(str(remaining) , '')
 
 if __name__ == '__main__':
      unittest.main()

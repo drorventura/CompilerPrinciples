@@ -113,6 +113,8 @@ class Reader:
         # Nil parser = '()
         nilParser = ps  .parser(leftParenthesesParser) \
                         .parser(rightParenthesesParser) \
+                        .caten() \
+                        .pack(lambda x: sexprs.Nil()) \
                         .done()
 
         improperList = ps   .delayed_parser(lambda: test) \
@@ -153,12 +155,13 @@ class Reader:
                         .pack(lambda x: x[2]) \
                         .done()
 
-        test = ps   .parser(pairParser)\
+        test = ps   .parser(nilParser) \
+                    .parser(pairParser) \
                     .parser(fractionParser) \
                     .parser(boolParser) \
                     .parser(hexNumberParser) \
                     .parser(intParser) \
-                    .disjs(5) \
+                    .disjs(6) \
                     .done()
 
         return test
