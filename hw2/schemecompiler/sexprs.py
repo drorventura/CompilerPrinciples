@@ -12,7 +12,7 @@ class AbstractSexpr:
 
     @staticmethod
     def readFromString(string):
-        sexpr , remaining = reader.Reader.parseSexpr().match(string)
+        sexpr , remaining = reader.sexpression.match(string)
         return sexpr , remaining
 
 # Void Class
