@@ -18,8 +18,8 @@ class Reader:
                         .pack(lambda x: sexprs.Boolean(x[1])) \
                         .done()
         # 1-9
-        firstdigitParser = ps .const(lambda x: x >= '1' and x <= '9') \
-                              .done()
+        firstdigitParser = ps   .const(lambda x: x >= '1' and x <= '9') \
+                                .done()
         # 0
         zeroParser = ps .const(lambda x: x == '0') \
                         .done()
@@ -37,8 +37,6 @@ class Reader:
                         .maybe() \
                         .parser(zeroParser) \
                         .star() \
-                        .pack(lambda x: ''.join(x)) \
-                        .pack(lambda x: x.replace('0',''))\
                         .caten()\
                         .pack(lambda x: x[0][1]) \
                         .parser(firstdigitParser) \
@@ -46,7 +44,7 @@ class Reader:
                         .star() \
                         .pack(lambda x: ''.join(x)) \
                         .caten() \
-                        .pack(lambda x: ''.join(x)) \
+                        .pack(lambda x: ''.join(x)).pack(lambda x: int(x)) \
                         .caten()\
                         .parser(zeroParser) \
                         .pack(lambda x: [0,x]) \
@@ -71,16 +69,19 @@ class Reader:
                                 .parser(hexLetters) \
                                 .disj() \
                                 .star() \
-                                .pack(lambda x: ''.join(x)) \
+                                .pack(lambda x: ''.join(x)).pack(lambda x: int(x,16)) \
                                 .catens(4) \
-                                .pack(lambda x: (x[0][1],''.join(x[1:4]))) \
-                                .pack(lambda x: sexprs.Int(x[0],x[1])) \
+                                .pack(lambda x: sexprs.Int(x[0][1],x[3])) \
                                 .done()
 
         # fraction parser
-        fractionParser = ps .parser(intParser) \
-                            .const(lambda x: x == '/') \
+        fractionParser = ps .parser(hexNumberParser) \
                             .parser(intParser) \
+                            .disj() \
+                            .const(lambda x: x == '/') \
+                            .parser(hexNumberParser) \
+                            .parser(intParser) \
+                            .disj() \
                             .catens(3) \
                             .pack(lambda x: sexprs.Fraction(x[0],x[2])) \
                             .done()
@@ -117,9 +118,9 @@ class Reader:
                         .pack(lambda x: sexprs.Nil()) \
                         .done()
 
-        improperList = ps   .delayed_parser(lambda: test) \
+        improperList = ps   .delayed_parser(lambda: sexpression) \
                             .parser(pc.pcWhite1) \
-                            .delayed_parser(lambda: test) \
+                            .delayed_parser(lambda: sexpression) \
                             .disj() \
                             .star() \
                             .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
@@ -127,14 +128,14 @@ class Reader:
                             .parser(pc.pcWhite1) \
                             .star() \
                             .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
-                            .delayed_parser(lambda: test) \
+                            .delayed_parser(lambda: sexpression) \
                             .catens(5) \
                             .pack(lambda x: sum([[x[0]], x[1], [x[2]], [x[4]]], [])) \
                             .pack(lambda x: sexprs.Pair(x)) \
                             .done()
 
         properList = ps .parser(pc.pcWhite1) \
-                        .delayed_parser(lambda: test) \
+                        .delayed_parser(lambda: sexpression) \
                         .disj() \
                         .star() \
                         .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
@@ -155,13 +156,13 @@ class Reader:
                         .pack(lambda x: x[2]) \
                         .done()
 
-        test = ps   .parser(nilParser) \
-                    .parser(pairParser) \
-                    .parser(fractionParser) \
-                    .parser(boolParser) \
-                    .parser(hexNumberParser) \
-                    .parser(intParser) \
-                    .disjs(6) \
-                    .done()
+        sexpression = ps    .parser(nilParser) \
+                            .parser(pairParser) \
+                            .parser(fractionParser) \
+                            .parser(boolParser) \
+                            .parser(hexNumberParser) \
+                            .parser(intParser) \
+                            .disjs(6) \
+                            .done()
 
-        return test
+        return sexpression

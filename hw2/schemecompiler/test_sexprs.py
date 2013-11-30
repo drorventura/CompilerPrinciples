@@ -36,22 +36,22 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_hexadecimal_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0x1294')
-        self.assertEqual(str(sexpr) , '0x1294')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0x10')
+        self.assertEqual(str(sexpr) , '16')
         self.assertEqual(str(remaining) , '')
 
     def test_neg_hexadecimal_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('-0x1234')
-        self.assertEqual(str(sexpr) , '-0x1234')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('-0xff')
+        self.assertEqual(str(sexpr) , '-255')
 
     def test_pos_hexadecimal_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('+0x1234')
-        self.assertEqual(str(sexpr) , '0x1234')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('+0H20')
+        self.assertEqual(str(sexpr) , '32')
         self.assertEqual(str(remaining) , '')
 
     def test_letters_hexadecimal_number(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0h43F2')
-        self.assertEqual(str(sexpr) , '0h43F2')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0haa')
+        self.assertEqual(str(sexpr) , '170')
         self.assertEqual(str(remaining) , '')
 
     def test_negative_fraction(self):
@@ -60,8 +60,8 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_positive_fraction(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('24/43')
-        self.assertEqual(str(sexpr) , '24/43')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('0X11/43')
+        self.assertEqual(str(sexpr) , '17/43')
         self.assertEqual(str(remaining) , '')
 
     def test_zero_fraction(self):
@@ -98,6 +98,7 @@ class TestSexprs(unittest.TestCase):
         sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 . 7)')
         self.assertEqual(str(sexpr) , '(5 6 . 7)')
         self.assertEqual(str(remaining) , '')
+
 
 if __name__ == '__main__':
      unittest.main()
