@@ -1,3 +1,4 @@
+from _ast import List
 import reader
 
 __author__ = 'Dror Ventura & Eldar Damari'
@@ -11,7 +12,7 @@ class AbstractSexpr:
 
     @staticmethod
     def readFromString(string):
-        sexpr , remaining = reader.Reader.parseSexpr().match(string)
+        sexpr , remaining = reader.sexpression.match(string)
         return sexpr , remaining
 
 # Void Class
@@ -25,7 +26,7 @@ class Void(AbstractSexpr):
 # Nil Class
 class Nil(AbstractSexpr):
     def __init__(self):
-        print('init is needed')
+        self.value = '()'
 
     def accept(self, visitor):
         return visitor.visitNil(self)
@@ -70,8 +71,17 @@ class Symbol(AbstractSexpr):
 
 # Pair Class
 class Pair(AbstractSexpr):
-    def __init__(self,pair):
-        print("Pair class")
+    def __init__(self, sexprList):
+        if len(sexprList) == 1:
+            self.sexpr1 = sexprList[0]
+            self.sexpr2 = Nil()
+        else:
+            if sexprList[1] == '.':
+                self.sexpr1 = sexprList[0]
+                self.sexpr2 = sexprList[2]
+            else:
+                self.sexpr1 = sexprList[0]
+                self.sexpr2 = Pair(sexprList[1:])
 
     def accept(self,visitor):
         return visitor.visitPair(self)
@@ -97,31 +107,26 @@ class AbstractNumber(AbstractSexpr):
 # Int Class
 class Int(AbstractNumber):
     def __init__(self,sign,number):
-        if sign == "-":
-            self.sign = int(-1)
-        else:
-            self.sign = int(1)
-
-        self.number = int(number)
-        self.number *= self.sign
+        self.sign = sign
+        self.number = number
 
     def accept(self,visitor):
         return visitor.visitInt(self)
 
 # Fraction Class
 class Fraction(AbstractNumber):
-    def __init__(self,num,dem):
+    def __init__(self,num,denom):
         # Fixing the number sign
-        if num.number < 0 and dem.number > 0 :
-            self.num = num.number
-            self.dem = dem.number
+        if num.sign == '-' and denom.sign == '-':
+            self.num = Int('+', num.number)
+            self.denom = Int('+', denom.number)
         else:
-            if num.number < 0 or dem.number < 0:
-                self.num = int(num.number) * -1
-                self.dem = int(dem.number) * -1
+            if num.sign == '-' or denom.sign == '-':
+                self.num = Int('-', num.number)
+                self.denom = Int('+', denom.number)
             else:
-                self.num = num.number
-                self.dem = dem.number
+                self.num = Int('+',num.number)
+                self.denom = Int('+',denom.number)
 
     def accept(self,visitor):
         return visitor.visitFraction(self)
@@ -132,7 +137,7 @@ class AsStringVisitor(AbstractSexpr):
         print('Void toString')
 
     def visitNil(self):
-        print('Nil toString')
+        return self.value
 
     def visitVector(self):
         print('Vector toString')
@@ -141,13 +146,16 @@ class AsStringVisitor(AbstractSexpr):
         return '#' + '%s' %self.value
 
     def visitInt(self):
-        return '%s' %self.number
+        if (self.sign == '-'):
+            return '-' + '%s' %self.number
+        else:
+            return '%s' %self.number
 
     def visitFraction(self):
-        if self.num == 0:
+        if self.num.number == '0':
             return '0'
         else:
-            return '%s' %self.num + '/' + '%s' %self.dem
+            return str(self.num) + '/' + str(self.denom)
 
     def visitString(self):
         return '%s' %self.string
@@ -158,5 +166,20 @@ class AsStringVisitor(AbstractSexpr):
     def visitSymbol(self):
             return '%s' %self.string
 
+    # this is the wrapper for the recursion
     def visitPair(self):
-        print('Pair toString')
+        string = '(' + AsStringVisitor.pairToString(self)
+        return  string + ')'
+
+    # this is the recursive call, from visitPair
+    def pairToString(self):
+        if not isinstance(self, Pair):
+            return str(self)
+        else:
+            if not isinstance(self.sexpr2, Pair):
+                if not isinstance(self.sexpr2, Nil):
+                    return str(self.sexpr1) + ' . ' + str(self.sexpr2)
+                else:
+                    return str(self.sexpr1)
+            else:
+                return str(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
