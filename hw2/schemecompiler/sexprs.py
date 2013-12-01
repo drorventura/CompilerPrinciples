@@ -51,10 +51,19 @@ class Boolean(AbstractSexpr):
     def accept(self, visitor):
         return visitor.visitBoolean(self)
 
+# char Class
+class Char(AbstractSexpr):
+    def __init__(self, value):
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visitChar(self)
+
 # Symbol Class
 class Symbol(AbstractSexpr):
-    def __init__(self,symbol):
-        print("Symbol class")
+    def __init__(self,string,length):
+        self.string = String
+        self.length = length
 
     def accept(self,visitor):
         return visitor.visitSymbol(self)
@@ -143,8 +152,11 @@ class AsStringVisitor(AbstractSexpr):
     def visitString(self):
         return '%s' %self.string
 
+    def visitChar(self):
+        return '%s' %self.value 
+
     def visitSymbol(self):
-        print('Symbol toString')
+            return '%s' %self.string
 
     def visitPair(self):
         print('Pair toString')
