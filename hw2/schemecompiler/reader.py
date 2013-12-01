@@ -191,7 +191,6 @@ byte =  ps  .parser(hexDigit)\
 word =  ps  .parser(byte)\
             .parser(byte)\
             .caten()\
-            .pack(show)\
             .pack(lambda x: x[0]*256+x[1])\
             .done()
 
@@ -231,7 +230,7 @@ visibleChars =   ps   .const(lambda x: x == '#')\
 
 # Char Parser -    (namedChar U hexChars U visibleChars)*
 charParser = ps    .parser(namedChar)\
-                   .parser(hexChars)\
+                   .parser(hexChar)\
                    .parser(visibleChars)\
                    .disjs(3)\
                    .star()\
