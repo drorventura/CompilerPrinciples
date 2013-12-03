@@ -191,7 +191,6 @@ byte =  ps  .parser(hexDigit)\
 word =  ps  .parser(byte)\
             .parser(byte)\
             .caten()\
-            .pack(show)\
             .pack(lambda x: x[0]*256+x[1])\
             .done()
 
@@ -216,6 +215,7 @@ namedChar =   ps   .const(lambda x: x == '#')\
                    .parser(pc.pcWordCI("lambda" )).pack(lambda x: '\u03bb')\
                    .disjs(5)\
                    .catens(3)\
+                   .pack(lambda x: x[2])\
                    .done()
 
 
@@ -225,22 +225,23 @@ visibleChars =   ps   .const(lambda x: x == '#')\
                       .const(lambda x: x == '\\')\
                       .const(lambda x: ord(x) >= 32 )\
                       .catens(3)\
-                      .pack(lambda x: x)\
+                      .pack(lambda x: x[2])\
                       .done()
 
 
 # Char Parser -    (namedChar U hexChars U visibleChars)*
 charParser = ps    .parser(namedChar)\
-                   .parser(hexChars)\
+                   .parser(hexChar)\
                    .parser(visibleChars)\
                    .disjs(3)\
                    .star()\
-                   .pack(lambda x: x)\
+                   .pack(lambda x: sexprs.Char(x[0]))\
                    .done()
 
 def show(x):
     print('recived '+ str(x))
     return x
+
 # Sexpression parser - Main parsing function
 sexpression = ps    .parser(nilParser) \
                     .parser(pairParser) \
