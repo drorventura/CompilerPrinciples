@@ -63,7 +63,7 @@ class Char(AbstractSexpr):
 # Symbol Class
 class Symbol(AbstractSexpr):
     def __init__(self,string,length):
-        self.string = String
+        self.string = string
         self.length = length
 
     def accept(self,visitor):
@@ -89,8 +89,6 @@ class Pair(AbstractSexpr):
 # String Class
 class String(AbstractSexpr):
     def __init__(self,string):
-        print("In String :")
-        print(string)
         self.string = string
 
     def accept(self,visitor):

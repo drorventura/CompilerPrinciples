@@ -168,7 +168,16 @@ stringParser = ps   .const(lambda x: x == '"')\
                     .pack(lambda x: sexprs.String(x[1]))\
                     .done()
 
-symbolParser = ps   .parser(stringParser)\
+symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
+                    .const(lambda x: x >= 'A' and x <= 'Z')\
+                    .const(lambda x: x >= '0' and x <= '9')\
+                    .const(lambda x: x == '!' or x == '$' or x == '^'
+                                  or x == '*' or x == '-' or x == '_'
+                                  or x == '=' or x == '+' or x == '<'
+                                  or x == '>' or x == '/' or x == '?')\
+                    .disjs(4)\
+                    .star()\
+                    .pack(lambda x: ''.join(x))\
                     .pack(lambda x: sexprs.Symbol(str(x).upper(),len(str(x))))\
                     .done()
         
