@@ -51,7 +51,7 @@ intParser = ps  .parser(signParser) \
 
 # A hex number always start with 0
 hexFirstSign = ps   .const(lambda x: x == '0') \
-                     .done()
+                    .done()
 # The second sign of hex number can be x|X|h|H
 hexSecondSign = ps  .const(lambda x: x == 'x' or x == 'X' or x == 'h' or x == 'H') \
                     .done()
@@ -96,9 +96,9 @@ nilParser = ps  .parser(leftParenthesesParser) \
                 .pack(lambda x: sexprs.Nil()) \
                 .done()
 
-improperList = ps   .delayed_parser(lambda: sexpression) \
+improperList = ps   .delayed_parser(lambda : sexpression) \
                     .parser(pc.pcWhite1) \
-                    .delayed_parser(lambda: sexpression) \
+                    .delayed_parser(lambda : sexpression) \
                     .disj() \
                     .star() \
                     .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
@@ -106,14 +106,14 @@ improperList = ps   .delayed_parser(lambda: sexpression) \
                     .parser(pc.pcWhite1) \
                     .star() \
                     .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
-                    .delayed_parser(lambda: sexpression) \
+                    .delayed_parser(lambda : sexpression) \
                     .catens(5) \
                     .pack(lambda x: sum([[x[0]], x[1], [x[2]], [x[4]]], [])) \
                     .pack(lambda x: sexprs.Pair(x)) \
                     .done()
 
 properList = ps .parser(pc.pcWhite1) \
-                .delayed_parser(lambda: sexpression) \
+                .delayed_parser(lambda : sexpression) \
                 .disj() \
                 .star() \
                 .pack(lambda x: list(filter(lambda ch: ch != ' ', x))) \
@@ -134,6 +134,18 @@ pairParser = ps .parser(leftParenthesesParser) \
                 .pack(lambda x: x[2]) \
                 .done()
 
+# Vector parser
+vectorParser = ps   .const(lambda x: x == '#') \
+                    .parser(leftParenthesesParser) \
+                    .parser(pc.pcWhite1) \
+                    .delayed_parser(lambda : sexpression) \
+                    .disj() \
+                    .star() \
+                    .parser(rightParenthesesParser) \
+                    .catens(4) \
+                    .pack(lambda x: list(filter(lambda ch: ch != ' ', x[2]))) \
+                    .pack(lambda x: sexprs.Vector(x)) \
+                    .done()
 
 # String parser
 stringMetaChars = ps  .const(lambda x: x == '\\')\
@@ -247,19 +259,18 @@ charParser = ps    .parser(namedChar)\
                    .pack(lambda x: sexprs.Char(x[0]))\
                    .done()
 
+# Sexpression parser - Main parsing function
+sexpression = ps    .parser(fractionParser) \
+                    .parser(hexNumberParser) \
+                    .parser(intParser) \
+                    .parser(boolParser) \
+                    .parser(nilParser) \
+                    .parser(pairParser) \
+                    .parser(vectorParser) \
+                    .disjs(7) \
+                    .done()
+
+
 def show(x):
     print('recived '+ str(x))
     return x
-
-# Sexpression parser - Main parsing function
-sexpression = ps    .parser(nilParser) \
-                    .parser(pairParser) \
-                    .parser(fractionParser) \
-                    .parser(boolParser) \
-                    .parser(hexNumberParser) \
-                    .parser(intParser) \
-                    .parser(symbolParser)\
-                    .parser(stringParser)\
-                    .parser(charParser)\
-                    .disjs(9) \
-                    .done()

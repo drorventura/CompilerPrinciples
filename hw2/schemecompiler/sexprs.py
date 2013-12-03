@@ -1,4 +1,3 @@
-from _ast import List
 import reader
 
 __author__ = 'Dror Ventura & Eldar Damari'
@@ -33,8 +32,11 @@ class Nil(AbstractSexpr):
 
 # Vector Class
 class Vector(AbstractSexpr):
-    def __init__(self):
-        print('init is needed')
+    def __init__(self, sexprList):
+        if len(sexprList) == 0:
+            self.sexpr = Nil();
+        else:
+            self.sexpr = Pair(sexprList)
 
     def accept(self, visitor):
         return visitor.visitVector(self)
@@ -138,7 +140,7 @@ class AsStringVisitor(AbstractSexpr):
         return self.value
 
     def visitVector(self):
-        print('Vector toString')
+        return '#' + str(self.sexpr)
 
     def visitBoolean(self):
         return '#' + '%s' %self.value
