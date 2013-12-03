@@ -94,6 +94,10 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '(5 6 . 7)')
         self.assertEqual(str(remaining) , '')
 
+    def test_vector(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('#(1 2)')
+        self.assertEqual(str(sexpr) , '#(1 2)')
+        self.assertEqual(str(remaining) , '')
 
 if __name__ == '__main__':
      unittest.main()
