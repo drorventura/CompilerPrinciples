@@ -254,7 +254,7 @@ symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
                                   or x == '=' or x == '+' or x == '<'
                                   or x == '>' or x == '/' or x == '?')\
                     .disjs(4)\
-                    .star()\
+                    .plus()\
                     .pack(lambda x: ''.join(x))\
                     .pack(lambda x: sexprs.Symbol(str(x).upper(),len(str(x))))\
                     .done()
