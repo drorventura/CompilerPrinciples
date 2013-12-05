@@ -180,18 +180,6 @@ stringParser = ps   .const(lambda x: x == '"')\
                     .pack(lambda x: sexprs.String(x[1]))\
                     .done()
 
-symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
-                    .const(lambda x: x >= 'A' and x <= 'Z')\
-                    .const(lambda x: x >= '0' and x <= '9')\
-                    .const(lambda x: x == '!' or x == '$' or x == '^'
-                                  or x == '*' or x == '-' or x == '_'
-                                  or x == '=' or x == '+' or x == '<'
-                                  or x == '>' or x == '/' or x == '?')\
-                    .disjs(4)\
-                    .star()\
-                    .pack(lambda x: ''.join(x))\
-                    .pack(lambda x: sexprs.Symbol(str(x).upper(),len(str(x))))\
-                    .done()
         
 # hex digits
 hexDigit =  ps  .const(lambda x: x >= '0' and x <= '9').pack(lambda x: ord(x)-48)\
@@ -218,11 +206,12 @@ word =  ps  .parser(byte)\
 # Hexadecimal Chars
 hexChar =   ps  .const(lambda x: x == '#')\
                 .const(lambda x: x == '\\')\
+                .const(lambda x: x == 'x')\
                 .parser(word)\
                 .parser(byte)\
                 .disj()\
-                .catens(3)\
-                .pack(lambda x: chr(x[2]))\
+                .catens(4)\
+                .pack(lambda x: chr(x[3]))\
                 .done()
 
 # Named Chars
@@ -251,21 +240,35 @@ charParser = ps    .parser(namedChar)\
                    .parser(hexChar)\
                    .parser(visibleChars)\
                    .disjs(3)\
-                   .star()\
-                   .pack(lambda x: sexprs.Char(x[0]))\
+                   .pack(lambda x: sexprs.Char(x))\
                    .done()
 
-# Sexpression parser - Main parsing function
-sexpression = ps    .parser(fractionParser) \
-                    .parser(hexNumberParser) \
-                    .parser(intParser) \
-                    .parser(boolParser) \
-                    .parser(stringParser) \
-                    .parser(nilParser) \
-                    .parser(pairParser) \
-                    .parser(vectorParser) \
-                    .disjs(8) \
+symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
+                    .const(lambda x: x >= 'A' and x <= 'Z')\
+                    .const(lambda x: x >= '0' and x <= '9')\
+                    .const(lambda x: x == '!' or x == '$' or x == '^'
+                                  or x == '*' or x == '-' or x == '_'
+                                  or x == '=' or x == '+' or x == '<'
+                                  or x == '>' or x == '/' or x == '?')\
+                    .disjs(4)\
+                    .plus()\
+                    .pack(lambda x: ''.join(x))\
+                    .pack(lambda x: sexprs.Symbol(str(x).upper(),len(str(x))))\
                     .done()
+
+# Sexpression parser - Main parsing function
+sexpression = ps   .parser(fractionParser) \
+                   .parser(hexNumberParser) \
+                   .parser(intParser) \
+                   .parser(boolParser) \
+                   .parser(charParser)\
+                   .parser(stringParser)\
+                   .parser(nilParser) \
+                   .parser(pairParser) \
+                   .parser(vectorParser) \
+                   .parser(symbolParser) \
+                   .disjs(10) \
+                   .done()
 
 def show(x):
     print('recived '+ str(x))

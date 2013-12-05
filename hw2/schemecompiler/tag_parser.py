@@ -1,7 +1,62 @@
 import reader
+import itertools
+
 __author__ = 'Dror & Eldar'
 
-# Abstract Scheme Expr Class
+# matched strings for Constants
+Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String"}
+
+# Global - ParseSwitch Case
+def parserRecursive(expr):
+        className = expr.__class__.__name__
+        if className in Constants_Strings:
+            return tagConstant(expr)
+
+        elif className == "Pair":
+            return tagPair(expr)
+
+        elif className == "Nil":
+            return tagNil(expr)
+
+        elif className == "Vector":
+            return tagVector(expr)
+
+        elif className == "Symbol":
+            return tagSymbol(expr)
+
+def tagConstant(expr):
+        print('in tagConstant')
+        return str(Constant(expr))
+
+def tagPair(expr):
+        print('in tagPair')
+        return str(Pair(expr))
+
+def tagNil(expr):
+        print('in tagNil')
+        return str(Nil(expr))
+
+def tagSymbol(expr):
+        print('in tagSymbol')
+        return str(Symbol(expr))
+
+def tagVector(expr):
+        print('in tagVector')
+        return str(Vector(expr))
+
+switch_case = { 
+        'Boolean'   :   tagConstant,
+        'Int'       :   tagConstant,
+        'Char'      :   tagConstant,
+        'Fraction'  :   tagConstant,
+        'String'    :   tagConstant,
+        'Pair'      :   tagPair,
+        'Nil'       :   tagNil,
+        'Symbol'    :   tagSymbol,
+        'Vector'    :   tagVector}
+
+############################ #
+# Abstract Scheme Expr Class #
 class AbstractSchemeExpr:
 
     #Overide str(...)
@@ -10,13 +65,13 @@ class AbstractSchemeExpr:
 
     @staticmethod
     def parse(string):
-        macroExpanded , remaining = reader.sexpression.match(string)
-        return macroExpanded , remaining
+        expr , remaining = reader.sexpression.match(string)
+        return parserRecursive(expr) , remaining
 
 # Constant Class
 class Constant(AbstractSchemeExpr):
-    def __init__(self):
-        print('in Constant')
+    def __init__(self,constant):
+        self.constant = constant
 
     def accept(self, visitor):
         return visitor.visitConstant(self)
@@ -103,8 +158,9 @@ class Def(AbstractNumber):
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSchemeExpr):
+
     def visitConstant(self):
-        print('Constant toString')
+        return str(self.constant)
 
     def visitVariable(self):
         print('Variable toString')
