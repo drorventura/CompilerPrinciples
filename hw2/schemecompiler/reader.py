@@ -256,6 +256,16 @@ symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
                     .pack(lambda x: sexprs.Symbol(str(x).upper(),len(str(x))))\
                     .done()
 
+quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol('quote'.upper()            ,   5)) \
+                            .parser(pc.pcChar("`")).pack(lambda x: sexprs.Symbol('quasiquote'.upper()       ,   10)) \
+                            .parser(pc.pcChar(",")).pack(lambda x: sexprs.Symbol('unquote'.upper()          ,   7)) \
+                            .parser(pc.pcWord(",@")).pack(lambda x: sexprs.Symbol('unquote-splicing'.upper(),   16)) \
+                            .disjs(4) \
+                            .delayed_parser(lambda: sexpression) \
+                            .caten() \
+                            .pack(lambda x: sexprs.Pair(x)) \
+                            .done() \
+
 # Sexpression parser - Main parsing function
 sexpression = ps   .parser(fractionParser) \
                    .parser(hexNumberParser) \
