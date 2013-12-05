@@ -8,8 +8,9 @@ Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
 
 # for now not in use
 Variables_String =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
-                     "LAMBDA" ,"LET" ,"LET*" ,"LETREC" ,"OR" ,"QUOTE", "SET!" ,
-                     "UNQUOTE" ,"UNQUOTE-SPLICING", "QUASIQUOTE"}
+                     "LAMBDA" ,"LET" ,"LET*" ,"LETREC" ,"OR" ,"QUOTE", "SET!"}
+
+QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
 # Global - ParseSwitch Case
 def parserRecursive(expr):
@@ -29,27 +30,26 @@ def parserRecursive(expr):
             return tagConstant(expr)
 
 
-
 def tagConstant(expr):
         print('in tagConstant')
         return Constant(expr)
 
 def tagPair(expr):
         print('in tagPair')
-        return 
 
-def tagNil(expr):
-        print('in tagNil')
-        return str(Nil(expr))
+        if isinstance(expr.sexpr1, sexprs.Symbol):
+            if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+                print("creating Constant: " + str(expr.sexpr2.sexpr1))
+                return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
 
-# not in use
-def tagSymbol(expr):
-        print('in tagSymbol')
-        return str(Symbol(expr))
+            else:                                                       # The Symbol is not QuoteLike
+                return # this could be Variable, Conditionals, Lambda, Apllic, Disjunctions
+        else:
+            return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
 def tagVector(expr):
         print('in tagVector')
-        return str(Vector(expr))
+        return str(sexprs.Vector(expr))
 
 def tagVariable(expr):
         print('in tagVariable')

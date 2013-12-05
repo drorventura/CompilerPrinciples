@@ -276,8 +276,9 @@ sexpression = ps   .parser(fractionParser) \
                    .parser(nilParser) \
                    .parser(pairParser) \
                    .parser(vectorParser) \
+                   .parser(quoteLikeFormsParser) \
                    .parser(symbolParser) \
-                   .disjs(10) \
+                   .disjs(11) \
                    .done()
 
 def show(x):
