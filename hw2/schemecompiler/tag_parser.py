@@ -4,38 +4,45 @@ import itertools
 __author__ = 'Dror & Eldar'
 
 # matched strings for Constants
-Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String"}
+Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
+
+# for now not in use
+Variables_String =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
+                     "LAMBDA" ,"LET" ,"LET*" ,"LETREC" ,"OR" ,"QUOTE", "SET!" ,
+                     "UNQUOTE" ,"UNQUOTE-SPLICING", "QUASIQUOTE"}
 
 # Global - ParseSwitch Case
 def parserRecursive(expr):
         className = expr.__class__.__name__
-        if className in Constants_Strings:
-            return tagConstant(expr)
-
-        elif className == "Pair":
+        print(className)
+        
+        if className == "Pair":
             return tagPair(expr)
-
-        elif className == "Nil":
-            return tagNil(expr)
+    
+        elif className == "Symbol":
+            return tagVariable(expr)
 
         elif className == "Vector":
             return tagVector(expr)
 
-        elif className == "Symbol":
-            return tagSymbol(expr)
+        elif className in Constants_Strings:
+            return tagConstant(expr)
+
+
 
 def tagConstant(expr):
         print('in tagConstant')
-        return str(Constant(expr))
+        return Constant(expr)
 
 def tagPair(expr):
         print('in tagPair')
-        return str(Pair(expr))
+        return 
 
 def tagNil(expr):
         print('in tagNil')
         return str(Nil(expr))
 
+# not in use
 def tagSymbol(expr):
         print('in tagSymbol')
         return str(Symbol(expr))
@@ -43,6 +50,16 @@ def tagSymbol(expr):
 def tagVector(expr):
         print('in tagVector')
         return str(Vector(expr))
+
+def tagVariable(expr):
+        print('in tagVariable')
+        return Variable(Symbol(expr))
+            
+# Exception while trying to Over Writing Reserved Words
+# TODO not in use
+class OverWritingReservedWords(Exception):
+    def __init__(self,expr):
+        Exception.__init__(self,str(expr))
 
 ############################ #
 # Abstract Scheme Expr Class #
@@ -53,7 +70,7 @@ class AbstractSchemeExpr:
 
     @staticmethod
     def parse(string):
-        expr , remaining = sexprs.readFromString(string)
+        expr , remaining = sexprs.AbstractSexpr.readFromString(string)
         return parserRecursive(expr) , remaining
 
 # Constant Class
