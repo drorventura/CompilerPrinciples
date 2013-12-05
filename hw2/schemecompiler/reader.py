@@ -225,7 +225,6 @@ hexChar =   ps  .const(lambda x: x == '#')\
                 .pack(lambda x: chr(x[2]))\
                 .done()
 
-
 # Named Chars
 namedChar =   ps   .const(lambda x: x == '#')\
                    .const(lambda x: x == '\\')\
@@ -239,8 +238,6 @@ namedChar =   ps   .const(lambda x: x == '#')\
                    .pack(lambda x: x[2])\
                    .done()
 
-
-
 # visible Chars
 visibleChars =   ps   .const(lambda x: x == '#')\
                       .const(lambda x: x == '\\')\
@@ -248,7 +245,6 @@ visibleChars =   ps   .const(lambda x: x == '#')\
                       .catens(3)\
                       .pack(lambda x: x[2])\
                       .done()
-
 
 # Char Parser -    (namedChar U hexChars U visibleChars)*
 charParser = ps    .parser(namedChar)\
@@ -264,12 +260,12 @@ sexpression = ps    .parser(fractionParser) \
                     .parser(hexNumberParser) \
                     .parser(intParser) \
                     .parser(boolParser) \
+                    .parser(stringParser) \
                     .parser(nilParser) \
                     .parser(pairParser) \
                     .parser(vectorParser) \
-                    .disjs(7) \
+                    .disjs(8) \
                     .done()
-
 
 def show(x):
     print('recived '+ str(x))
