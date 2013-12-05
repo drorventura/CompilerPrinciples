@@ -99,5 +99,15 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '#(1 2)')
         self.assertEqual(str(remaining) , '')
 
+    def test_symbol(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('a')
+        self.assertEqual(str(sexpr) , 'A')
+        self.assertEqual(str(remaining) , '')
+
+    def test_symbol(self):
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString("'a")
+        self.assertEqual(str(sexpr) , '(QUOTE A)')
+        self.assertEqual(str(remaining) , '')
+
 if __name__ == '__main__':
      unittest.main()
