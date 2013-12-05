@@ -1,4 +1,4 @@
-import reader
+import sexprs
 import itertools
 
 __author__ = 'Dror & Eldar'
@@ -44,17 +44,6 @@ def tagVector(expr):
         print('in tagVector')
         return str(Vector(expr))
 
-switch_case = { 
-        'Boolean'   :   tagConstant,
-        'Int'       :   tagConstant,
-        'Char'      :   tagConstant,
-        'Fraction'  :   tagConstant,
-        'String'    :   tagConstant,
-        'Pair'      :   tagPair,
-        'Nil'       :   tagNil,
-        'Symbol'    :   tagSymbol,
-        'Vector'    :   tagVector}
-
 ############################ #
 # Abstract Scheme Expr Class #
 class AbstractSchemeExpr:
@@ -65,7 +54,7 @@ class AbstractSchemeExpr:
 
     @staticmethod
     def parse(string):
-        expr , remaining = reader.sexpression.match(string)
+        expr , remaining = sexprs.readFromString(string)
         return parserRecursive(expr) , remaining
 
 # Constant Class
