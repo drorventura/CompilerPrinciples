@@ -214,7 +214,6 @@ hexChar =   ps  .const(lambda x: x == '#')\
                 .pack(lambda x: chr(x[3]))\
                 .done()
 
-
 # Named Chars
 namedChar =   ps   .const(lambda x: x == '#')\
                    .const(lambda x: x == '\\')\
@@ -228,7 +227,6 @@ namedChar =   ps   .const(lambda x: x == '#')\
                    .pack(lambda x: x[2])\
                    .done()
 
-
 # visible Chars
 visibleChars =   ps   .const(lambda x: x == '#')\
                       .const(lambda x: x == '\\')\
@@ -236,7 +234,6 @@ visibleChars =   ps   .const(lambda x: x == '#')\
                       .catens(3)\
                       .pack(lambda x: x[2])\
                       .done()
-
 
 # Char Parser -    (namedChar U hexChars U visibleChars)*
 charParser = ps    .parser(namedChar)\
@@ -258,6 +255,16 @@ symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
                     .pack(lambda x: ''.join(x))\
                     .pack(lambda x: sexprs.Symbol(str(x).upper(),len(str(x))))\
                     .done()
+
+quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol('quote'.upper()            ,   5)) \
+                            .parser(pc.pcChar("`")).pack(lambda x: sexprs.Symbol('quasiquote'.upper()       ,   10)) \
+                            .parser(pc.pcChar(",")).pack(lambda x: sexprs.Symbol('unquote'.upper()          ,   7)) \
+                            .parser(pc.pcWord(",@")).pack(lambda x: sexprs.Symbol('unquote-splicing'.upper(),   16)) \
+                            .disjs(4) \
+                            .delayed_parser(lambda: sexpression) \
+                            .caten() \
+                            .pack(lambda x: sexprs.Pair(x)) \
+                            .done() \
 
 # Sexpression parser - Main parsing function
 sexpression = ps   .parser(fractionParser) \

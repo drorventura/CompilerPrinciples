@@ -47,7 +47,6 @@ def tagVector(expr):
 ############################ #
 # Abstract Scheme Expr Class #
 class AbstractSchemeExpr:
-
     #Overide str(...)
     def __str__(self):
         return self.accept(AsStringVisitor)
