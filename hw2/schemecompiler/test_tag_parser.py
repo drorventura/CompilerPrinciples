@@ -20,12 +20,12 @@ class TestSexprs(unittest.TestCase):
 
     def test_ifThenElse(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(if #t '1 2)")
-        self.assertEqual(str(sexpr) , '(if #t (1 (2 )))')
+        self.assertEqual(str(sexpr) , '(if #t 1 2)')
         self.assertEqual(str(remaining) , '')
 
     def test_ifThenElse_Void(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(if #t '1)")
-        self.assertEqual(str(sexpr) , '(if #t (1 Void))')
+        self.assertEqual(str(sexpr) , '(if #t 1 Void)')
         self.assertEqual(str(remaining) , '')
 
     def test_cond(self):
@@ -38,9 +38,6 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '(if #f 1 (if #t A Void))')
         self.assertEqual(str(remaining) , '')
     
-    def test_lambdaSimple(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b q w e r . v) (1))')
-        self.assertEqual(str(sexpr) , 'AND')
 
 if __name__ == '__main__':
      unittest.main()

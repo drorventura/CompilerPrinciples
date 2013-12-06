@@ -34,18 +34,17 @@ def parserRecursive(expr):
             return tagConstant(expr)
     
 def tagPair(expr):
-    print('in tagPair')
-
     if isinstance(expr.sexpr1, sexprs.Symbol):
         # Identify: Quoted Like Strings
         if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
             print("creating Constant: " + str(expr.sexpr2.sexpr1))
-            return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
+            return Constant(expr.sexpr2.sexpr1)    # This case handles only the Sexpression above
 
+        # Identify: IF
         elif expr.sexpr1.string == "IF":
-            print('if was detected')
             return tagIf(expr.sexpr2)
 
+        # Identify: COND
         elif expr.sexpr1.string == "COND":
             return tagCond(expr.sexpr2)
 
@@ -81,31 +80,31 @@ def tagVector(expr):
     return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
-    print('in tagConstant')
     return Constant(expr)
 
 def tagIf(expr):
     try:
         if isinstance(expr.sexpr2.sexpr2, sexprs.Nil):
+
             return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
                               parserRecursive(expr.sexpr2.sexpr1),  # Than
                               Constant(sexprs.Void()))              #Void
         else:
-            return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
-                              parserRecursive(expr.sexpr2.sexpr1),  # Than
-                              parserRecursive(expr.sexpr2.sexpr2))  # Else
+            return IfThenElse(parserRecursive(expr.sexpr1),                 # Condition
+                              parserRecursive(expr.sexpr2.sexpr1),          # Than
+                              parserRecursive(expr.sexpr2.sexpr2.sexpr1))   # Else
     except:
         raise NotEnoughParameters('expected: (if <condition> <than> <alternative>) or (if <condition> <than>')
 
 def tagCond(expr):
     try:
-        if isinstance(expr, sexprs.Nil):                                    # when there is no else-clause
+        if isinstance(expr, sexprs.Nil):                             # when there is no else-clause
             return sexprs.Void()
         elif isinstance(expr.sexpr1.sexpr1, sexprs.Symbol) and expr.sexpr1.sexpr1.string == 'ELSE':
-            return parserRecursive(expr.sexpr1.sexpr2)                      # when last clause is else# when last clause is else
+            return parserRecursive(expr.sexpr1.sexpr2.sexpr1)               # when last clause is else# when last clause is else
         else:
             return IfThenElse(parserRecursive(expr.sexpr1.sexpr1),          # Condition - Ti
-                              parserRecursive(expr.sexpr1.sexpr2),          # Than - Ei
+                              parserRecursive(expr.sexpr1.sexpr2.sexpr1),   # Than - Ei
                               tagCond(expr.sexpr2))                         # Recursive Alternative Ti+1
     except:
         raise SyntaxError(expr)
@@ -284,7 +283,8 @@ class AsStringVisitor(AbstractSchemeExpr):
         return str(self.variable)
 
     def visitIfThenElse(self):
-        return '(if ' + str(self.pair.sexpr1) + ' ' + str(self.pair.sexpr2) + ')'
+        return '(if ' + str(self.pair.sexpr1) + ' ' \
+                      + sexprs.AsStringVisitor.pairToString(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
         print('AbstractLambda toString')
