@@ -14,53 +14,78 @@ QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
 # Global - ParseSwitch Case
 def parserRecursive(expr):
-        className = expr.__class__.__name__
-        print(className)
-        
-        if className == "Pair":
-            return tagPair(expr)
-    
-        elif className == "Symbol":
-            return tagVariable(expr)
+    className = expr.__class__.__name__
+    print(className)
+    print(expr)
 
-        elif className == "Vector":
-            return tagVector(expr)
+    if className == "Pair":
+        return tagPair(expr)
 
-        elif className in Constants_Strings:
-            return tagConstant(expr)
+    elif className == "Symbol":
+        return expr
 
+    elif className == "Vector":
+        return tagVector(expr)
 
+    elif className in Constants_Strings:
+        return tagConstant(expr)
 
 def tagPair(expr):
-        print('in tagPair')
+    if isinstance(expr.sexpr1, sexprs.Symbol):
+        if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+            return Constant(expr.sexpr2.sexpr1)    # This case handles only the Sexpression above
 
-        if isinstance(expr.sexpr1, sexprs.Symbol):
-            if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
-                print("creating Constant: " + str(expr.sexpr2.sexpr1))
-                return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
+        elif expr.sexpr1.string == "DEFINE":
+            return "define core"
 
-            else:                                                       # The Symbol is not QuoteLike
-                return # this could be Variable, Conditionals, Lambda, Apllic, Disjunctions
+        elif expr.sexpr1.string == "IF":
+            print('if was detected')
+            return tagIf(expr.sexpr2)
+
+        elif expr.sexpr1.string == "COND":
+            return "fuck python"
+
         else:
+            print("not a symbol nor reserved word, nor variable")
             return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
+    else:
+        return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
 def tagVariable(expr):
-        print('in tagVariable')
-        return Variable(expr)
+    print('in tagVariable')
+    return Variable(expr)
 
 def tagVector(expr):
-        print('in tagVector')
-        return str(sexprs.Vector(expr))
+    print('in tagVector')
+    return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
-        print('in tagConstant')
-        return Constant(expr)
+    print('in tagConstant')
+    return Constant(expr)
+
+def tagIf(expr):
+    try:
+        if isinstance(expr.sexpr2.sexpr2, sexprs.Nil):
+            return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
+                              parserRecursive(expr.sexpr2.sexpr1),  # Than
+                              Constant(sexprs.Void()))              #Void
+        else:
+            return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
+                              parserRecursive(expr.sexpr2.sexpr1),  # Than
+                              parserRecursive(expr.sexpr2.sexpr2))  # Else
+    except:
+        raise NotEnoughParameters('expected: (if <condition> <than> <alternative>) or (if <condition> <than>')
+
 
 # Exception while trying to Over Writing Reserved Words
 # TODO not in use
 class OverWritingReservedWords(Exception):
     def __init__(self,expr):
         Exception.__init__(self,str(expr))
+
+class NotEnoughParameters(Exception):
+    def __init__(self,message):
+        Exception.__init__(self,str(message))
 
 ############################ #
 # Abstract Scheme Expr Class #
@@ -93,8 +118,8 @@ class Variable(AbstractSchemeExpr):
 
 # IfThenElse Class
 class IfThenElse(AbstractSchemeExpr):
-    def __init__(self):
-        print("in IfTheElse")
+    def __init__(self,condition,than,alternative):
+        self.pair = sexprs.Pair([condition,than,alternative])
 
     def accept(self, visitor):
         return visitor.visitIfThenElse(self)
@@ -167,14 +192,17 @@ class Def(AbstractNumber):
 class AsStringVisitor(AbstractSchemeExpr):
 
     def visitConstant(self):
-        return str(self.constant)
+        if not isinstance(self.constant , sexprs.Nil):
+            return str(self.constant)
+        else:
+            return ''
 
     def visitVariable(self):
         print('Variable toString')
         return str(self.variable)
 
     def visitIfThenElse(self):
-        print('IfThenElse toString')
+        return '(if ' + str(self.pair.sexpr1) + ' ' + str(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
         print('AbstractLambda toString')
