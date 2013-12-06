@@ -85,16 +85,23 @@ def tagPairLambda(expr):
 
     if isinstance(expr.sexpr1, sexprs.Symbol):
         # Handling Variables
-        if isinstance(expr.sexpr1 , sexprs.Symbol) and isinstance(expr.sexpr2, sexprs.Symbol):
+        if isinstance(expr.sexpr1 , sexprs.Symbol) and\
+           isinstance(expr.sexpr2, sexprs.Symbol):
             return  ['.' , sexprs.Pair([parserRecursive(expr.sexpr1),'.',parserRecursive(expr.sexpr2)])]
         else:
-            if isinstance(expr.sexpr2,sexprs.Pair) and isinstance(expr.sexpr2.sexpr1, sexprs.Symbol) and isinstance(expr.sexpr2.sexpr2, sexprs.Symbol):
+            if isinstance(expr.sexpr2,sexprs.Pair) and\
+               isinstance(expr.sexpr2.sexpr1, sexprs.Symbol) and\
+               isinstance(expr.sexpr2.sexpr2, sexprs.Symbol):
             # senfing to pair const. with list of lists, to work with sum  
-                list_to_be_flatten = [[parserRecursive(expr.sexpr1)],parserRecursive(expr.sexpr2)]
+                list_to_be_flatten = [[parserRecursiveForLambda(expr.sexpr1)],parserRecursiveForLambda(expr.sexpr2)]
                 if list_to_be_flatten[1][0] == '.':
                     return  sexprs.Pair(sum(list_to_be_flatten,[]))
             else:
-                return  sexprs.Pair([parserRecursive(expr.sexpr1),parserRecursive(expr.sexpr2)])
+                try: 
+                    return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1),\
+                                         parserRecursiveForLambda(expr.sexpr2)])
+                except lambdaParametersIsNotVariable:
+                    return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1)])
     else: 
         raise lambdaParametersIsNotVariable("Lambda Parameters Need To Be Variables") 
 #END#########################################
@@ -138,35 +145,42 @@ def tagCond(expr):
         raise SyntaxError(expr)
 
 def tagLambda(expr):
-    arguments = parserRecursiveForLambda(expr.sexpr1)
-    if isinstance(arguments,list):
-        arguments = arguments[1]
-    body      = parserRecursive(expr.sexpr2)
-    temp_args = arguments
+    params = parserRecursiveForLambda(expr.sexpr1)
+    print("**************")
+    print(params)
+    if isinstance(params,list):
+        print("in HERERERW")
+        params = params[1]
+    body      = parserRecursive(expr.sexpr2.sexpr1) #FIXME
+    temp_args = params
 
     # Lambda Variadic 
-    if isinstance(arguments, Variable):
-        return LambdaVar(arguments,body)
+    if isinstance(params, Variable):
+        return LambdaVar(params,body)
 
     while not isinstance(temp_args.sexpr1, type(temp_args.sexpr2)):
         if not isinstance(temp_args.sexpr2,Constant):
             temp_args = temp_args.sexpr2
-            
+            if isinstance(temp_args.sexpr2,sexprs.Nil): 
+                print("in LAMBDA OPTTTTT")
+                return LambdaOpt(params,body)
             if isinstance(temp_args,sexprs.Nil):
-                return LambdaSimple(arguments,body)
+                print("in lambda SIMPLE CONSTRUCTOR")
+                return LambdaSimple(params,body)
 
             if isinstance(temp_args.sexpr1 , Variable) and isinstance(temp_args.sexpr2, Variable):
-                return LambdaOpt(arguments,body)
+                return LambdaOpt(params,body)
         else:
             break
 
     # Lambda Optional
             # differ between (a . b) to (a (b Nil())
     if isinstance(temp_args.sexpr1, Variable) and isinstance(temp_args.sexpr2, Variable):
-        return LambdaOpt(arguments,body)
+        return LambdaOpt(params,body)
 
+    print("!@#!@#!@#@!#!@#!@#!@")
     # Lambda Simple
-    return LambdaSimple(arguments,body)
+    return LambdaSimple(params,body)
 
 def tagApplic(applic):
     app = applic.sexpr1
@@ -251,7 +265,7 @@ class LambdaSimple(AbstractLambda):
         self.body = body
 
     def accept(self, visitor):
-        return visitor.visitLambdaSimple(self)
+        return visitor.visitAbstractLambda(self)
 
 # LambdaOpt Class
 class LambdaOpt(AbstractLambda):
@@ -325,24 +339,25 @@ class AsStringVisitor(AbstractSchemeExpr):
                       + sexprs.AsStringVisitor.pairToString(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
-        print('AbstractLambda toString')
+        return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
+                          + str(self.body) + ')'
 
     def visitLambdaSimple(self):
-        return '(LAMBDA ' + str(self.arguments)  + ' ' + str(self.body)
+        return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
+                          + str(self.body) + ')'
     
     def visitLambdaOpt(self):
-        print('VISIT LambdaOPT')
-        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
+        return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
+                          + str(self.body) + ')'
     
     def visitLambdaVar(self):
-        print('VISIT LambdaVAR')
-        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
+        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ')'
     
     def visitApplic(self):
         if isinstance(self.arguments,sexprs.Nil):
             return '(' + str(self.applic) + ')'
-        return '(' + str(self.applic) + ' ' + str(self.arguments)
+        return '(' + str(self.applic) + ' '\
+                + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
-        return '(OR ' + AsStringVisitor.pairToString(self.arguments) + ')'
-
+        return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
