@@ -3,6 +3,9 @@ import itertools
 
 __author__ = 'Dror & Eldar'
 
+##############################
+#           Macros           #
+##############################
 # matched strings for Constants
 Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
 
@@ -12,16 +15,18 @@ Variables_String =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
 
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
-# Global - ParseSwitch Case
+##############################
+#           Parser           #
+##############################
 def parserRecursive(expr):
         className = expr.__class__.__name__
         print(className)
         
-        if className == "Pair":
+        if className ==   "Pair":
             return tagPair(expr)
     
         elif className == "Symbol":
-            return tagVariable(expr)
+            return Variable(expr)
 
         elif className == "Vector":
             return tagVector(expr)
@@ -29,20 +34,38 @@ def parserRecursive(expr):
         elif className in Constants_Strings:
             return tagConstant(expr)
 
-
-
+    
 def tagPair(expr):
-        print('in tagPair')
+    print('in tagPair')
 
-        if isinstance(expr.sexpr1, sexprs.Symbol):
-            if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
-                print("creating Constant: " + str(expr.sexpr2.sexpr1))
-                return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
+    if isinstance(expr.sexpr1, sexprs.Symbol):
+        # Identify: Quoted Like Strings
+        if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+            print("creating Constant: " + str(expr.sexpr2.sexpr1))
+            return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
 
-            else:                                                       # The Symbol is not QuoteLike
-                return # this could be Variable, Conditionals, Lambda, Apllic, Disjunctions
+        # Identify: DEFINE 
+        elif expr.sexpr1.string == "DEFINE":
+            return "DEFINE core"
+
+        # Identify: LAMBDA
+        elif expr.sexpr1.string == "LAMBDA":
+            return tagLambda(expr.sexpr2)
+
+        # differ between (a . b) to (a (b Nil())
         else:
-            return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
+            if isinstance(expr.sexpr1 , sexprs.Symbol) and isinstance(expr.sexpr2, sexprs.Symbol):
+                return  ['.' , sexprs.Pair([parserRecursive(expr.sexpr1),'.',parserRecursive(expr.sexpr2)])]
+            else:
+                if isinstance(expr.sexpr2,sexprs.Pair) and isinstance(expr.sexpr2.sexpr1, sexprs.Symbol) and isinstance(expr.sexpr2.sexpr2, sexprs.Symbol):
+                # senfing to pair const. with list of lists, to work with sum  
+                    list_to_be_flatten = [[parserRecursive(expr.sexpr1)],parserRecursive(expr.sexpr2)]
+                    if list_to_be_flatten[1][0] == '.':
+                        return  sexprs.Pair(sum(list_to_be_flatten,[]))
+                else:
+                    return  sexprs.Pair([parserRecursive(expr.sexpr1),parserRecursive(expr.sexpr2)])
+    else: 
+        return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
 def tagVariable(expr):
         print('in tagVariable')
@@ -56,14 +79,53 @@ def tagConstant(expr):
         print('in tagConstant')
         return Constant(expr)
 
+def tagLambda(expr):
+    arguments = parserRecursive(expr.sexpr1)
+    if isinstance(arguments,list):
+        arguments = arguments[1]
+    body      = parserRecursive(expr.sexpr2)
+    temp_args = arguments
+
+    # Lambda Variadic 
+    if isinstance(arguments, Variable):
+        return LambdaVar(arguments,body)
+
+    while not isinstance(temp_args.sexpr1, type(temp_args.sexpr2)):
+        if not isinstance(temp_args.sexpr2,Constant):
+            temp_args = temp_args.sexpr2
+            
+            if isinstance(temp_args,sexprs.Nil):
+                return LambdaSimple(arguments,body)
+
+            if isinstance(temp_args.sexpr1 , Variable) and isinstance(temp_args.sexpr2, Variable):
+                return LambdaOpt(arguments,body)
+        else:
+            break
+
+    # Lambda Optional
+            # differ between (a . b) to (a (b Nil())
+    if isinstance(temp_args.sexpr1, Variable) and isinstance(temp_args.sexpr2, Variable):
+        return LambdaOpt(arguments,body)
+
+    # Lambda Simple
+    return LambdaSimple(arguments,body)
+
+##############################
+#       Exceptions           #
+##############################
+
 # Exception while trying to Over Writing Reserved Words
-# TODO not in use
 class OverWritingReservedWords(Exception):
     def __init__(self,expr):
         Exception.__init__(self,str(expr))
 
-############################ #
-# Abstract Scheme Expr Class #
+class lambdaArgumentsIsNotVariable(Exception):
+    def __init__(self,expr):
+        Exception.__init__(self,str(expr))
+
+###################################
+# Main Abstract Scheme Expr Class #
+###################################
 class AbstractSchemeExpr:
     #Overide str(...)
     def __str__(self):
@@ -109,24 +171,30 @@ class AbstractLambda(AbstractSchemeExpr):
 
 # LambdaSimple Class
 class LambdaSimple(AbstractLambda):
-    def __init__(self):
+    def __init__(self,arguments,body):
         print("in LambdaSimple")
+        self.arguments = arguments
+        self.body = body
 
     def accept(self, visitor):
         return visitor.visitLambdaSimple(self)
 
 # LambdaOpt Class
 class LambdaOpt(AbstractLambda):
-    def __init__(self):
+    def __init__(self,arguments,body):
         print("in LambdaOpt")
+        self.arguments = arguments
+        self.body = body
 
     def accept(self,visitor):
         return visitor.visitLambdaOpt(self)
 
 # LambdaVar Class
 class LambdaVar(AbstractLambda):
-    def __init__(self):
+    def __init__(self,arguments,body):
         print("in LambdaVar")
+        self.arguments = arguments
+        self.body = body
 
     def accept(self,visitor):
         return visitor.visitLambdaVar(self)
@@ -180,13 +248,16 @@ class AsStringVisitor(AbstractSchemeExpr):
         print('AbstractLambda toString')
 
     def visitLambdaSimple(self):
-        print('LambdaSimple toString')
+        print('VISIT LambdaSimple')
+        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
     
     def visitLambdaOpt(self):
-        print('LambdaOpt toString')
+        print('VISIT LambdaOPT')
+        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
     
     def visitLambdaVar(self):
-        print('LambdaVar toString')
+        print('VISIT LambdaVAR')
+        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
     
     def visitApplic(self):
         print('Applic toString')
