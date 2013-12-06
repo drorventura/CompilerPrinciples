@@ -168,18 +168,26 @@ class AsStringVisitor(AbstractSexpr):
 
     # this is the wrapper for the recursion
     def visitPair(self):
-        string = '(' + AsStringVisitor.pairToString(self)
-        return  string + ')'
+        return '(' + AsStringVisitor.pairToString(self) + ')'
 
     # this is the recursive call, from visitPair
     def pairToString(self):
-        if not isinstance(self, Pair):
-            return str(self)
+        if isinstance(self.sexpr2, Nil):                #proper list end tree
+            return str(self.sexpr1)
         else:
-            if not isinstance(self.sexpr2, Pair):
-                if not isinstance(self.sexpr2, Nil):
-                    return str(self.sexpr1) + ' . ' + str(self.sexpr2)
-                else:
-                    return str(self.sexpr1)
-            else:
+            if isinstance(self.sexpr2, Pair):
+                #recursive call
                 return str(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
+            else:
+                #impreper list end tree
+                return str(self.sexpr1) + ' . ' + str(self.sexpr2)
+
+        # if not isinstance(self,Pair):
+        #     return str(self)
+        # elif isinstance(self.sexpr2,Pair):
+        #     return str(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
+        # else:
+        #     if not isinstance(self.sexpr2, Nil):
+        #         return str(self.sexpr1) + str(self.sexpr2)
+        #     else:
+        #         return str(self.sexpr1)

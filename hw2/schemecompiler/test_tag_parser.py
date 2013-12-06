@@ -18,7 +18,7 @@ class TestSexprs(unittest.TestCase):
 #        self.assertEqual(str(sexpr) , 'AND')
         #self.assertEqual(str(remaining) , '')
 
- #   def test_ifThenElse(self):
+#   def test_ifThenElse(self):
 #        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(if #t '1 2)")
 #        self.assertEqual(str(sexpr) , '(if #t (1 (2 )))')
 #        self.assertEqual(str(remaining) , '')
@@ -42,16 +42,33 @@ class TestSexprs(unittest.TestCase):
 #        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ 1 2 4 ABC)')
 #        self.assertEqual(str(sexpr) , '(+ 1 2 4 ABC)')
     
-#    def test_application_single(self):
-#        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(ABC)')
-#        self.assertEqual(str(sexpr) , '(ABC)')
+    def test_application_single(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(ABC)')
+        self.assertEqual(str(sexpr) , '(ABC)')
     
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(or #t A')
-        self.assertEqual(str(sexpr) , '(OR #t A)')
+        def test_lambdaSimple1(self):
+            sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c) (+ a b c))')
+            self.assertEqual(str(sexpr) , '(LAMBDA (A B C) (+ A B C))')
+        
+        def test_lambdaSimple2(self):
+            sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c . d) (+ a b c))')
+            self.assertEqual(str(sexpr) , '(LAMBDA (A B C . D) (+ A B C))')
+        
+        def test_lambdaSimple3(self):
+            sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c d e . f) (+ a b c))')
+            self.assertEqual(str(sexpr) , '(LAMBDA (A B C D E . F) (+ A B C))')
+        
+        def test_lambdaSimple4(self):
+            sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a) (+ a b c))')
+            self.assertEqual(str(sexpr) , '(LAMBDA (A) (+ A B C))')
+        
+        def test_lambdaSimple5(self):
+            sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda a (+ a b c))')
+            self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
 
-#    def test_lambdaSimple(self):
-#        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b) (+ 1 2))')
-#        self.assertEqual(str(sexpr) , '(LAMBDA (A B) (+ 1 2))')
+        def test_application(self):
+            sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(or #f A)')
+            self.assertEqual(str(sexpr) , '(OR #f A)')
 
 if __name__ == '__main__':
      unittest.main()
