@@ -38,14 +38,17 @@ class TestSexprs(unittest.TestCase):
 #        self.assertEqual(str(sexpr) , '(if #f 1 (if #t A Void))')
 #        self.assertEqual(str(remaining) , '')
     
-    def test_application(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ 1 2 4 ABC)')
-        self.assertEqual(str(sexpr) , '(+ 1 2 4 ABC)')
+#    def test_application(self):
+#        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ 1 2 4 ABC)')
+#        self.assertEqual(str(sexpr) , '(+ 1 2 4 ABC)')
     
-    def test_application_single(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(ABC)')
-        self.assertEqual(str(sexpr) , '(ABC)')
+#    def test_application_single(self):
+#        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(ABC)')
+#        self.assertEqual(str(sexpr) , '(ABC)')
     
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(or #t A')
+        self.assertEqual(str(sexpr) , '(OR #t A)')
+
 #    def test_lambdaSimple(self):
 #        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b) (+ 1 2))')
 #        self.assertEqual(str(sexpr) , '(LAMBDA (A B) (+ 1 2))')
