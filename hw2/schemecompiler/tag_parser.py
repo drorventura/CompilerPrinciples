@@ -53,7 +53,7 @@ def tagVector(expr):
 
 def tagVariable(expr):
         print('in tagVariable')
-        return Variable(Symbol(expr))
+        return Variable(expr)
             
 # Exception while trying to Over Writing Reserved Words
 # TODO not in use
@@ -83,8 +83,9 @@ class Constant(AbstractSchemeExpr):
 
 # Variable Class
 class Variable(AbstractSchemeExpr):
-    def __init__(self):
+    def __init__(self,variable):
         print("in Variable")
+        self.variable = variable
 
     def accept(self, visitor):
         return visitor.visitVariable(self)
@@ -169,6 +170,7 @@ class AsStringVisitor(AbstractSchemeExpr):
 
     def visitVariable(self):
         print('Variable toString')
+        return str(self.variable)
 
     def visitIfThenElse(self):
         print('IfThenElse toString')
