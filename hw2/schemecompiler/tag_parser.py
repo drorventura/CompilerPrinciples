@@ -30,9 +30,6 @@ def parserRecursive(expr):
             return tagConstant(expr)
 
 
-def tagConstant(expr):
-        print('in tagConstant')
-        return Constant(expr)
 
 def tagPair(expr):
         print('in tagPair')
@@ -47,14 +44,18 @@ def tagPair(expr):
         else:
             return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
+def tagVariable(expr):
+        print('in tagVariable')
+        return Variable(expr)
+
 def tagVector(expr):
         print('in tagVector')
         return str(sexprs.Vector(expr))
 
-def tagVariable(expr):
-        print('in tagVariable')
-        return Variable(expr)
-            
+def tagConstant(expr):
+        print('in tagConstant')
+        return Constant(expr)
+
 # Exception while trying to Over Writing Reserved Words
 # TODO not in use
 class OverWritingReservedWords(Exception):
