@@ -43,8 +43,7 @@ def tagPair(expr):
             return tagIf(expr.sexpr2)
 
         elif expr.sexpr1.string == "COND":
-            return "fuck python"
-
+            return tagCond(expr.sexpr2)
         else:
             print("not a symbol nor reserved word, nor variable")
             return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
@@ -76,6 +75,18 @@ def tagIf(expr):
     except:
         raise NotEnoughParameters('expected: (if <condition> <than> <alternative>) or (if <condition> <than>')
 
+def tagCond(expr):
+    try:
+        if isinstance(expr, sexprs.Nil):                                    # when there is no else-clause
+            return sexprs.Void()
+        elif isinstance(expr.sexpr1.sexpr1, sexprs.Symbol) and expr.sexpr1.sexpr1.string == 'ELSE':
+            return parserRecursive(expr.sexpr1.sexpr2)                      # when last clause is else# when last clause is else
+        else:
+            return IfThenElse(parserRecursive(expr.sexpr1.sexpr1),          # Condition - Ti
+                              parserRecursive(expr.sexpr1.sexpr2),          # Than - Ei
+                              tagCond(expr.sexpr2))                         # Recursive Alternative Ti+1
+    except:
+        raise SyntaxError(expr)
 
 # Exception while trying to Over Writing Reserved Words
 # TODO not in use
@@ -85,7 +96,11 @@ class OverWritingReservedWords(Exception):
 
 class NotEnoughParameters(Exception):
     def __init__(self,message):
-        Exception.__init__(self,str(message))
+        Exception.__init__(self,message)
+
+class SyntaxError(Exception):
+    def __init__(self,expr):
+        Exception.__init__(self,str(expr))
 
 ############################ #
 # Abstract Scheme Expr Class #
