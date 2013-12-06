@@ -55,7 +55,7 @@ class TestSexprs(unittest.TestCase):
 
     def test_define_MIT(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define (foo . ('a 'b)) 'c)")
-        self.assertEqual(str(sexpr) , "(define FOO (if A B C))")
+        self.assertEqual(str(sexpr) , "(define FOO (LAMBDA (A B) C))")
         self.assertEqual(str(remaining) , '')
 
     def test_application(self):
