@@ -10,7 +10,7 @@ __author__ = 'Dror & Eldar'
 Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
 
 # for now not in use
-Variables_String =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
+Reserveds_Words =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
                      "LAMBDA" ,"LET" ,"LET*" ,"LETREC" ,"OR" ,"QUOTE", "SET!"}
 
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
@@ -20,20 +20,18 @@ QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 ##############################
 def parserRecursive(expr):
         className = expr.__class__.__name__
-        print(className)
         
         if className ==   "Pair":
             return tagPair(expr)
     
         elif className == "Symbol":
             return Variable(expr)
-
+    
         elif className == "Vector":
             return tagVector(expr)
 
         elif className in Constants_Strings:
             return tagConstant(expr)
-
     
 def tagPair(expr):
     print('in tagPair')
@@ -44,6 +42,13 @@ def tagPair(expr):
             print("creating Constant: " + str(expr.sexpr2.sexpr1))
             return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
 
+        elif expr.sexpr1.string == "IF":
+            print('if was detected')
+            return tagIf(expr.sexpr2)
+
+        elif expr.sexpr1.string == "COND":
+            return tagCond(expr.sexpr2)
+
         # Identify: DEFINE 
         elif expr.sexpr1.string == "DEFINE":
             return "DEFINE core"
@@ -52,7 +57,7 @@ def tagPair(expr):
         elif expr.sexpr1.string == "LAMBDA":
             return tagLambda(expr.sexpr2)
 
-        # differ between (a . b) to (a (b Nil())
+        # Handling Variables
         else:
             if isinstance(expr.sexpr1 , sexprs.Symbol) and isinstance(expr.sexpr2, sexprs.Symbol):
                 return  ['.' , sexprs.Pair([parserRecursive(expr.sexpr1),'.',parserRecursive(expr.sexpr2)])]
@@ -68,16 +73,42 @@ def tagPair(expr):
         return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
 def tagVariable(expr):
-        print('in tagVariable')
-        return Variable(expr)
+    print('in tagVariable')
+    return Variable(expr)
 
 def tagVector(expr):
-        print('in tagVector')
-        return str(sexprs.Vector(expr))
+    print('in tagVector')
+    return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
-        print('in tagConstant')
-        return Constant(expr)
+    print('in tagConstant')
+    return Constant(expr)
+
+def tagIf(expr):
+    try:
+        if isinstance(expr.sexpr2.sexpr2, sexprs.Nil):
+            return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
+                              parserRecursive(expr.sexpr2.sexpr1),  # Than
+                              Constant(sexprs.Void()))              #Void
+        else:
+            return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
+                              parserRecursive(expr.sexpr2.sexpr1),  # Than
+                              parserRecursive(expr.sexpr2.sexpr2))  # Else
+    except:
+        raise NotEnoughParameters('expected: (if <condition> <than> <alternative>) or (if <condition> <than>')
+
+def tagCond(expr):
+    try:
+        if isinstance(expr, sexprs.Nil):                                    # when there is no else-clause
+            return sexprs.Void()
+        elif isinstance(expr.sexpr1.sexpr1, sexprs.Symbol) and expr.sexpr1.sexpr1.string == 'ELSE':
+            return parserRecursive(expr.sexpr1.sexpr2)                      # when last clause is else# when last clause is else
+        else:
+            return IfThenElse(parserRecursive(expr.sexpr1.sexpr1),          # Condition - Ti
+                              parserRecursive(expr.sexpr1.sexpr2),          # Than - Ei
+                              tagCond(expr.sexpr2))                         # Recursive Alternative Ti+1
+    except:
+        raise SyntaxError(expr)
 
 def tagLambda(expr):
     arguments = parserRecursive(expr.sexpr1)
@@ -114,7 +145,6 @@ def tagLambda(expr):
 #       Exceptions           #
 ##############################
 
-# Exception while trying to Over Writing Reserved Words
 class OverWritingReservedWords(Exception):
     def __init__(self,expr):
         Exception.__init__(self,str(expr))
@@ -123,9 +153,18 @@ class lambdaArgumentsIsNotVariable(Exception):
     def __init__(self,expr):
         Exception.__init__(self,str(expr))
 
+class NotEnoughParameters(Exception):
+    def __init__(self,message):
+        Exception.__init__(self,message)
+
+class SyntaxError(Exception):
+    def __init__(self,expr):
+        Exception.__init__(self,str(expr))
+
 ###################################
 # Main Abstract Scheme Expr Class #
 ###################################
+
 class AbstractSchemeExpr:
     #Overide str(...)
     def __str__(self):
@@ -155,8 +194,8 @@ class Variable(AbstractSchemeExpr):
 
 # IfThenElse Class
 class IfThenElse(AbstractSchemeExpr):
-    def __init__(self):
-        print("in IfTheElse")
+    def __init__(self,condition,than,alternative):
+        self.pair = sexprs.Pair([condition,than,alternative])
 
     def accept(self, visitor):
         return visitor.visitIfThenElse(self)
@@ -235,14 +274,17 @@ class Def(AbstractNumber):
 class AsStringVisitor(AbstractSchemeExpr):
 
     def visitConstant(self):
-        return str(self.constant)
+        if not isinstance(self.constant , sexprs.Nil):
+            return str(self.constant)
+        else:
+            return ''
 
     def visitVariable(self):
         print('Variable toString')
         return str(self.variable)
 
     def visitIfThenElse(self):
-        print('IfThenElse toString')
+        return '(if ' + str(self.pair.sexpr1) + ' ' + str(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
         print('AbstractLambda toString')

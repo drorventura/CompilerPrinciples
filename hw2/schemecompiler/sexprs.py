@@ -17,7 +17,7 @@ class AbstractSexpr:
 # Void Class
 class Void(AbstractSexpr):
     def __init__(self):
-        print('init is needed')
+        self
 
     def accept(self, visitor):
         return visitor.visitVoid(self)
@@ -134,7 +134,7 @@ class Fraction(AbstractNumber):
 # Visitor design pattern
 class AsStringVisitor(AbstractSexpr):
     def visitVoid(self):
-        print('Void toString')
+        return 'Void'
 
     def visitNil(self):
         return self.value
