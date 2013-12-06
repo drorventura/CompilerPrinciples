@@ -10,7 +10,7 @@ __author__ = 'Dror & Eldar'
 Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
 
 # for now not in use
-Reserveds_Words =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
+Reserved_Words =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
                      "LAMBDA" ,"LET" ,"LET*" ,"LETREC" ,"OR" ,"QUOTE", "SET!"}
 
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
@@ -36,9 +36,9 @@ def parserRecursive(expr):
 def tagPair(expr):
     if isinstance(expr.sexpr1, sexprs.Symbol):
         # Identify: Quoted Like Strings
-        if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+        if expr.sexpr1.string in QuotedLike_Strings:    # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
             print("creating Constant: " + str(expr.sexpr2.sexpr1))
-            return Constant(expr.sexpr2.sexpr1)    # This case handles only the Sexpression above
+            return Constant(expr.sexpr2.sexpr1)         # This case handles only the Sexpression above
 
         # Identify: IF
         elif expr.sexpr1.string == "IF":
@@ -50,7 +50,7 @@ def tagPair(expr):
 
         # Identify: DEFINE 
         elif expr.sexpr1.string == "DEFINE":
-            return "DEFINE core"
+            return tagDefine(expr.sexpr2)
 
         # Identify: LAMBDA
         elif expr.sexpr1.string == "LAMBDA":
@@ -98,16 +98,31 @@ def tagIf(expr):
 
 def tagCond(expr):
     try:
-        if isinstance(expr, sexprs.Nil):                             # when there is no else-clause
+        if isinstance(expr, sexprs.Nil):
+            # when there is no else-clause
             return sexprs.Void()
         elif isinstance(expr.sexpr1.sexpr1, sexprs.Symbol) and expr.sexpr1.sexpr1.string == 'ELSE':
-            return parserRecursive(expr.sexpr1.sexpr2.sexpr1)               # when last clause is else# when last clause is else
+            # when last clause is else# when last clause is else
+            return parserRecursive(expr.sexpr1.sexpr2.sexpr1)
         else:
             return IfThenElse(parserRecursive(expr.sexpr1.sexpr1),          # Condition - Ti
                               parserRecursive(expr.sexpr1.sexpr2.sexpr1),   # Than - Ei
                               tagCond(expr.sexpr2))                         # Recursive Alternative Ti+1
     except:
         raise SyntaxError(expr)
+
+def tagDefine(expr):
+    try:
+        if isinstance(expr.sexpr1, sexprs.Symbol):
+            return Def(Variable(expr.sexpr1),
+                       parserRecursive(expr.sexpr2.sexpr1))
+        else:
+            # NEED TO CHECK THE ARG1 TO DECIDE WHAT KIND OF LAMBDA IT IS
+            return Def(Variable(expr.sexpr1.sexpr1),
+                       LambdaSimple(parserRecursive(expr.sexpr1.sexpr2),    # <arg1>
+                                    parserRecursive(expr.sexpr2.sexpr1)))   # <expr>
+    except:
+        raise SyntaxError
 
 def tagLambda(expr):
     arguments = parserRecursive(expr.sexpr1)
@@ -263,8 +278,9 @@ class Or(AbstractNumber):
 
 # Def Class
 class Def(AbstractNumber):
-    def __init__(self):
-        print("in Def")
+    def __init__(self,name,expr):
+        self.name = name
+        self.expr = expr
 
     def accept(self,visitor):
         return visitor.visitDef(self)
@@ -306,4 +322,7 @@ class AsStringVisitor(AbstractSchemeExpr):
     
     def visitOr(self):
         print('Or toString')
+
+    def visitDef(self):
+        return '(define ' + str(self.name) + ' ' + str(self.expr) + ')'
 
