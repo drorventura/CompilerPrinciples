@@ -146,26 +146,28 @@ def tagCond(expr):
 
 def tagLambda(expr):
     params = parserRecursiveForLambda(expr.sexpr1)
-    print("**************")
-    print(params)
     if isinstance(params,list):
-        print("in HERERERW")
         params = params[1]
     body      = parserRecursive(expr.sexpr2.sexpr1) #FIXME
     temp_args = params
+    
 
     # Lambda Variadic 
     if isinstance(params, Variable):
+        print("**************")
         return LambdaVar(params,body)
 
     while not isinstance(temp_args.sexpr1, type(temp_args.sexpr2)):
+        if isinstance(temp_args.sexpr1,Variable) and\
+                isinstance(temp_args.sexpr2,sexprs.Nil):
+                    return LambdaSimple(params,body)
         if not isinstance(temp_args.sexpr2,Constant):
             temp_args = temp_args.sexpr2
+
             if isinstance(temp_args.sexpr2,sexprs.Nil): 
-                print("in LAMBDA OPTTTTT")
                 return LambdaOpt(params,body)
+
             if isinstance(temp_args,sexprs.Nil):
-                print("in lambda SIMPLE CONSTRUCTOR")
                 return LambdaSimple(params,body)
 
             if isinstance(temp_args.sexpr1 , Variable) and isinstance(temp_args.sexpr2, Variable):
@@ -351,6 +353,7 @@ class AsStringVisitor(AbstractSchemeExpr):
                           + str(self.body) + ')'
     
     def visitLambdaVar(self):
+        print("QQQQQQQQQQQQQQQQQ")
         return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ')'
     
     def visitApplic(self):
