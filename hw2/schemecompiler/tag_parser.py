@@ -56,7 +56,68 @@ def tagPair(expr):
         # Identify: LAMBDA
         elif expr.sexpr1.string == "LAMBDA":
             return tagLambda(expr.sexpr2)
+        
+        # Identify: APPLICATION
+        else:
+            return tagApplic(expr)
 
+        # Handling Variables FIXME
+        #else:
+        #    if isinstance(expr.sexpr1 , sexprs.Symbol) and isinstance(expr.sexpr2, sexprs.Symbol):
+        #        return  ['.' , sexprs.Pair([parserRecursive(expr.sexpr1),'.',parserRecursive(expr.sexpr2)])]
+        #    else:
+        #        if isinstance(expr.sexpr2,sexprs.Pair) and isinstance(expr.sexpr2.sexpr1, sexprs.Symbol) and isinstance(expr.sexpr2.sexpr2, sexprs.Symbol):
+        #        # senfing to pair const. with list of lists, to work with sum  
+        #            list_to_be_flatten = [[parserRecursive(expr.sexpr1)],parserRecursive(expr.sexpr2)]
+        #            if list_to_be_flatten[1][0] == '.':
+        #                return  sexprs.Pair(sum(list_to_be_flatten,[]))
+        #        else:
+        #            return  sexprs.Pair([parserRecursive(expr.sexpr1),parserRecursive(expr.sexpr2)])
+    else: 
+        return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
+
+##########################################
+#           Special For LAMBDA           #
+##########################################
+def parserRecursiveForLambda(expr):
+        className = expr.__class__.__name__
+        
+        if className ==   "Pair":
+            return tagPairLambda(expr)
+    
+        elif className == "Symbol":
+            return Variable(expr)
+    
+        elif className == "Vector":
+            return tagVector(expr)
+
+        elif className in Constants_Strings:
+            return tagConstant(expr)
+    
+def tagPairLambda(expr):
+    print('in tagPairLambda')
+
+    if isinstance(expr.sexpr1, sexprs.Symbol):
+        # Identify: Quoted Like Strings
+        if expr.sexpr1.string in QuotedLike_Strings:                # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+            print("creating Constant: " + str(expr.sexpr2.sexpr1))
+            return Constant(parserRecursive(expr.sexpr2.sexpr1))    # This case handles only the Sexpression above
+
+        elif expr.sexpr1.string == "IF":
+            print('if was detected')
+            return tagIf(expr.sexpr2)
+
+        elif expr.sexpr1.string == "COND":
+            return tagCond(expr.sexpr2)
+
+        # Identify: DEFINE 
+        elif expr.sexpr1.string == "DEFINE":
+            return "DEFINE core"
+
+        # Identify: LAMBDA
+        elif expr.sexpr1.string == "LAMBDA":
+            return tagLambda(expr.sexpr2)
+        
         # Handling Variables
         else:
             if isinstance(expr.sexpr1 , sexprs.Symbol) and isinstance(expr.sexpr2, sexprs.Symbol):
@@ -71,6 +132,7 @@ def tagPair(expr):
                     return  sexprs.Pair([parserRecursive(expr.sexpr1),parserRecursive(expr.sexpr2)])
     else: 
         return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
+#END#########################################
 
 def tagVariable(expr):
     print('in tagVariable')
@@ -111,7 +173,7 @@ def tagCond(expr):
         raise SyntaxError(expr)
 
 def tagLambda(expr):
-    arguments = parserRecursive(expr.sexpr1)
+    arguments = parserRecursiveForLambda(expr.sexpr1)
     if isinstance(arguments,list):
         arguments = arguments[1]
     body      = parserRecursive(expr.sexpr2)
@@ -140,6 +202,14 @@ def tagLambda(expr):
 
     # Lambda Simple
     return LambdaSimple(arguments,body)
+
+def tagApplic(applic):
+    app = applic.sexpr1
+    arguments = applic.sexpr2
+    return Applic(app,arguments)
+
+
+
 
 ##############################
 #       Exceptions           #
@@ -240,8 +310,10 @@ class LambdaVar(AbstractLambda):
 
 # Applic Class
 class Applic(AbstractSchemeExpr):
-    def __init__(self):
+    def __init__(self,applic,arguments):
         print("in Applic")
+        self.applic = applic
+        self.arguments = arguments
 
     def accept(self,visitor):
         return visitor.visitApplic(self)
@@ -291,7 +363,9 @@ class AsStringVisitor(AbstractSchemeExpr):
 
     def visitLambdaSimple(self):
         print('VISIT LambdaSimple')
-        return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
+        print(str(self.body))
+        print(str(self.arguments))
+        return '(LAMBDA ' + '(' + sexprs.AsStringVisitor.pairToString(self.arguments) +') ' + '(' + sexprs.AsStringVisitor.pairToString(self.body) +')' 
     
     def visitLambdaOpt(self):
         print('VISIT LambdaOPT')
@@ -302,7 +376,9 @@ class AsStringVisitor(AbstractSchemeExpr):
         return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ' '
     
     def visitApplic(self):
-        print('Applic toString')
+        if isinstance(self.arguments,sexprs.Nil):
+            return '(' + str(self.applic) + ')'
+        return '(' + str(self.applic) + ' ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
         print('Or toString')
