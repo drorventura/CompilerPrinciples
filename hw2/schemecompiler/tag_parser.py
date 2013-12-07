@@ -61,7 +61,11 @@ def tagPair(expr):
         # Identify: OR
         elif expr.sexpr1.string == "OR":
             return tagOr(expr.sexpr2)
-        
+
+        # Identify: AND
+        elif expr.sexpr1.string == "AND":
+            return tagAnd(expr.sexpr2)
+
         # Identify: APPLICATION
         else:
             return tagApplic(expr)
@@ -208,6 +212,26 @@ def tagApplic(applic):
 def tagOr(arguments):
     return Or(arguments)
 
+def tagAnd(expr):
+
+    # a single case when and procedure is called with no arguments (AND)
+    if isinstance(expr,sexprs.Nil):
+        e1 = Constant(sexprs.Boolean('t'))
+        e2 = Constant(sexprs.Boolean('f'))
+        return IfThenElse(e1,e1,e2)
+
+    # base case for the recursion
+    elif isinstance(expr.sexpr2, sexprs.Nil):
+        e1 = parserRecursive(expr.sexpr1)
+        e2 = Constant(sexprs.Boolean('f'))
+        return IfThenElse(e1,e1,e2)
+
+    # the recursive call to tagAnd
+    else:
+        return  IfThenElse(parserRecursive(expr.sexpr1),
+                           tagAnd(expr.sexpr2),
+                           Constant(sexprs.Boolean('f')))
+
 
 ##############################
 #       Exceptions           #
@@ -346,7 +370,7 @@ class AsStringVisitor(AbstractSchemeExpr):
         return str(self.variable)
 
     def visitIfThenElse(self):
-        return '(if ' + str(self.pair.sexpr1) + ' ' \
+        return '(IF ' + str(self.pair.sexpr1) + ' ' \
                       + sexprs.AsStringVisitor.pairToString(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
@@ -371,7 +395,10 @@ class AsStringVisitor(AbstractSchemeExpr):
                 + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
-        return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
+        if isinstance(self.arguments,sexprs.Nil):
+            return '(OR)'
+        else:
+            return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
 
     def visitDef(self):
-        return '(define ' + str(self.name) + ' ' + str(self.expr) + ')'
+        return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'

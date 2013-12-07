@@ -20,64 +20,72 @@ class TestSexprs(unittest.TestCase):
 
     def test_ifThenElse(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(if #t '1 2)")
-        self.assertEqual(str(sexpr) , '(if #t 1 2)')
+        self.assertEqual(str(sexpr) , '(IF #t 1 2)')
         self.assertEqual(str(remaining) , '')
 
     def test_ifThenElse_Void(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(if #t '1)")
-        self.assertEqual(str(sexpr) , '(if #t 1 Void)')
+        self.assertEqual(str(sexpr) , '(IF #t 1 Void)')
         self.assertEqual(str(remaining) , '')
 
     def test_ifThenElse_ifThenElse(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(if #t (if #f 2 goo) 3)")
-        self.assertEqual(str(sexpr) , '(if #t (if #f 2 GOO) 3)')
+        self.assertEqual(str(sexpr) , '(IF #t (IF #f 2 GOO) 3)')
         self.assertEqual(str(remaining) , '')
 
     def test_cond(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(cond (#f '1) (#t 'a) (else 2))")
-        self.assertEqual(str(sexpr) , '(if #f 1 (if #t (QUOTE A) 2))')
+        self.assertEqual(str(sexpr) , '(IF #f 1 (IF #t (QUOTE A) 2))')
         self.assertEqual(str(remaining) , '')
 
     def test_cond_void(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(cond (#f '1) (#t 'a))")
-        self.assertEqual(str(sexpr) , '(if #f 1 (if #t (QUOTE A) Void))')
+        self.assertEqual(str(sexpr) , '(IF #f 1 (IF #t (QUOTE A) Void))')
         self.assertEqual(str(remaining) , '')
 
     def test_define_singleExpression(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define foo '1)")
-        self.assertEqual(str(sexpr) , '(define FOO 1)')
+        self.assertEqual(str(sexpr) , '(DEFINE FOO 1)')
         self.assertEqual(str(remaining) , '')
 
     def test_define_pairExpression(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define foo (if 'a b c))")
-        self.assertEqual(str(sexpr) , "(define FOO (if (QUOTE A) B C))")
+        self.assertEqual(str(sexpr) , "(DEFINE FOO (IF (QUOTE A) B C))")
         self.assertEqual(str(remaining) , '')
 
     def test_define_MIT_lambdaSimple(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define (foo . (a b c)) c)")
-        self.assertEqual(str(sexpr) , "(define FOO (LAMBDA (A B C) C))")
+        self.assertEqual(str(sexpr) , "(DEFINE FOO (LAMBDA (A B C) C))")
         self.assertEqual(str(remaining) , '')
 
     def test_define_MIT_variadicLambda(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define (foo . b) c)")
-        self.assertEqual(str(sexpr) , "(define FOO (LAMBDA B C))")
+        self.assertEqual(str(sexpr) , "(DEFINE FOO (LAMBDA B C))")
         self.assertEqual(str(remaining) , '')
 
     def test_define_MIT_optLambda(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define (foo . (a . b)) c)")
-        self.assertEqual(str(sexpr) , "(define FOO (LAMBDA (A . B) C))")
+        self.assertEqual(str(sexpr) , "(DEFINE FOO (LAMBDA (A . B) C))")
         self.assertEqual(str(remaining) , '')
 
     def test_application_single(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(ABC)')
         self.assertEqual(str(sexpr) , '(ABC)')
 
-    def test_application(self):
+    def test_or(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(or #f 'A)")
         self.assertEqual(str(sexpr) , '(OR #f (QUOTE A))')
 
+    def test_or1(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(or)")
+        self.assertEqual(str(sexpr) , '(OR)')
+
+    def test_and(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(and 'a b c)")
+        self.assertEqual(str(sexpr) , '(IF (QUOTE A) (IF B (IF C C #f) #f) #f)')
+
     def test_application_1(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ 1 2 4 ABC)')
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ 1 2 4 abc)')
         self.assertEqual(str(sexpr) , '(+ 1 2 4 ABC)')
     
     def test_lambdaSimple1(self):
