@@ -27,8 +27,8 @@ def parserRecursive(expr):
         elif className == "Symbol":
             return Variable(expr)
     
-        elif className == "Vector":
-            return tagVector(expr)
+        # elif className == "Vector":
+        #     return tagVector(expr)
 
         elif className in Constants_Strings:
             return tagConstant(expr)
@@ -113,12 +113,11 @@ def tagPairLambda(expr):
 #END#########################################
 
 def tagVariable(expr):
-    print('in tagVariable')
     return Variable(expr)
 
-def tagVector(expr):
-    print('in tagVector')
-    return str(sexprs.Vector(expr))
+# def tagVector(expr):
+#     print('in tagVector')
+#     return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
     return Constant(expr)
@@ -165,10 +164,8 @@ def tagDefine(expr):
         raise SyntaxError
 
 def tagLambda(expr):
-    print("empty input")
-    body      = parserRecursive(expr.sexpr2.sexpr1)
+    body = parserRecursive(expr.sexpr2.sexpr1)
 
-    print(isinstance(expr.sexpr1, sexprs.Nil))
     if not isinstance(expr.sexpr1, sexprs.Nil):
         params = parserRecursiveForLambda(expr.sexpr1)
         if isinstance(params,list):
@@ -203,7 +200,6 @@ def tagLambda(expr):
                             temp_args = temp_args.sexpr1
                 else:
                     temp_args = temp_args.sexpr2
-                print(temp_args)
                 if not isinstance(temp_args,sexprs.Pair):
                     return LambdaSimple(params,body)
 
@@ -288,7 +284,6 @@ class Constant(AbstractSchemeExpr):
 # Variable Class
 class Variable(AbstractSchemeExpr):
     def __init__(self,variable):
-        print("in Variable")
         self.variable = variable
 
     def accept(self, visitor):
