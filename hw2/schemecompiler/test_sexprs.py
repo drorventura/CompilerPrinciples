@@ -11,7 +11,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_positive_with_leadingZeros(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('+0088')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString(';sdfsdfsd\\n+0088')
         self.assertEqual(str(sexpr) , '88')
         self.assertEqual(str(remaining) , '')
 

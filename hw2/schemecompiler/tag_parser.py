@@ -16,6 +16,17 @@ Reserved_Words =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
 ##############################
+#           Gensym           #
+##############################
+n = 0
+class Gensym:
+    @staticmethod
+    def generate():
+        global n
+        n = n + 1
+        return '&' + '%s' %n + '%s' %(n*n) + '@'
+
+##############################
 #           Parser           #
 ##############################
 def parserRecursive(expr):
@@ -27,8 +38,8 @@ def parserRecursive(expr):
         elif className == "Symbol":
             return Variable(expr)
     
-        elif className == "Vector":
-            return tagVector(expr)
+        # elif className == "Vector":
+        #     return tagVector(expr)
 
         elif className in Constants_Strings:
             return tagConstant(expr)
@@ -57,11 +68,10 @@ def tagPair(expr):
         # Identify: LAMBDA
         elif expr.sexpr1.string == "LAMBDA":
             return tagLambda(expr.sexpr2)
-        
-        # Identify: OR
-        elif expr.sexpr1.string == "OR":
-            return tagOr(expr.sexpr2)
-        
+
+        elif expr.sexpr1.string == "LETREC":
+            return tagLetrec(expr.sexpr2)
+
         # Identify: LET
         elif expr.sexpr1.string == "LET":
             return tagLet(expr.sexpr2)
@@ -70,6 +80,14 @@ def tagPair(expr):
         elif expr.sexpr1.string == "LET*":
             return tagLetStar(expr.sexpr2)
         
+        # Identify: OR
+        elif expr.sexpr1.string == "OR":
+            return tagOr(expr.sexpr2)
+
+        # Identify: AND
+        elif expr.sexpr1.string == "AND":
+            return tagAnd(expr.sexpr2)
+
         # Identify: APPLICATION
         else:
             return tagApplic(expr)
@@ -119,8 +137,8 @@ def tagPairLambda(expr):
 def tagVariable(expr):
     return Variable(expr)
 
-def tagVector(expr):
-    return str(sexprs.Vector(expr))
+# def tagVector(expr):
+#     return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
     return Constant(expr)
@@ -167,7 +185,7 @@ def tagDefine(expr):
         raise SyntaxError
 
 def tagLambda(expr):
-    body      = parserRecursive(expr.sexpr2.sexpr1)
+    body = parserRecursive(expr.sexpr2.sexpr1)
 
     if not isinstance(expr.sexpr1, sexprs.Nil):
         params = parserRecursiveForLambda(expr.sexpr1)
@@ -214,21 +232,36 @@ def tagLambda(expr):
     # Lambda Simple
     return LambdaSimple(params,body)
 
-def tagApplic(applic):
-    app = applic.sexpr1
-    arguments = applic.sexpr2
-    return Applic(app,arguments)
 
-def tagOr(arguments):
-    return Or(arguments)
+def tagLetrec(expressions):
+    params , args = seperateParamsAndArgs(expressions.sexpr1)
+    # paramsAsSchemePairs = buildPairForParamsInLet(params)
+    expr = expressions.sexpr2.sexpr1
 
-def tagLet(expr):
-    body = expr.sexpr2.sexpr1 #FIXME
+    lambdaSymbol = sexprs.Symbol('LAMBDA', 6)
 
-    if isinstance(expr.sexpr1,sexprs.Nil):
-        raise SyntaxError("In Let Parameters Bound Are Empty") 
+    genTmp = Gensym.generate()
+    g0 = sexprs.Symbol(genTmp,len(genTmp))
+    params.insert(0,g0)
+    firstLetrecExp = sexprs.Pair(sum([[lambdaSymbol],
+                                      [buildPairForParamsInLet(params)],
+                                      [expr]],[]))
 
-    bound = expr.sexpr1
+    listLetrecExpr = []
+    while len(args) > 0:
+        params = params[1:]
+        genTmp = Gensym.generate()
+        g0 = sexprs.Symbol(genTmp,len(genTmp))
+        params.insert(0,g0)
+        letrecExp = sexprs.Pair(sum([[lambdaSymbol],[buildPairForParamsInLet(params)],[args[0]]],[]))
+        listLetrecExpr.append(letrecExp)
+        args = args[1:]
+
+    yag = sexprs.Symbol('Yag', 3)
+    return parserRecursive(sexprs.Pair(sum([[yag], [firstLetrecExp], listLetrecExpr],[])))
+
+def seperateParamsAndArgs(expr):
+    bound = expr
     list_params = []
     list_args   = []
 
@@ -240,6 +273,45 @@ def tagLet(expr):
             break
         else:
             bound = bound.sexpr2
+    return list_params , list_args
+
+def buildPairForParamsInLet(list_params):
+    return sexprs.Pair(list_params)
+
+def tagApplic(applic):
+    app = applic.sexpr1
+    arguments = applic.sexpr2
+    return Applic(app,arguments)
+
+def tagOr(arguments):
+    return Or(arguments)
+
+def tagAnd(expr):
+
+    # a single case when and procedure is called with no arguments (AND)
+    if isinstance(expr,sexprs.Nil):
+        e1 = Constant(sexprs.Boolean('t'))
+        e2 = Constant(sexprs.Boolean('f'))
+        return IfThenElse(e1,e1,e2)
+
+    # base case for the recursion
+    elif isinstance(expr.sexpr2, sexprs.Nil):
+        e1 = parserRecursive(expr.sexpr1)
+        e2 = Constant(sexprs.Boolean('f'))
+        return IfThenElse(e1,e1,e2)
+
+    # the recursive call to tagAnd
+    else:
+        return  IfThenElse(parserRecursive(expr.sexpr1),
+                           tagAnd(expr.sexpr2),
+                           Constant(sexprs.Boolean('f')))
+
+def tagLet(expr):
+    body = expr.sexpr2.sexpr1
+    if isinstance(expr.sexpr1,sexprs.Nil):
+        raise SyntaxError("In Let Parameters Bound Are Empty")
+
+    list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
     paramsPair    = buildPairForParamsInLet(list_params)
     argsPair      = buildPairForParamsInLet(list_args)
@@ -266,18 +338,7 @@ def tagLetStartRec(expr):
     if isinstance(expr.sexpr1,sexprs.Nil):
         raise SyntaxError("In Let Parameters Bound Are Empty") 
 
-    bound = expr.sexpr1
-    list_params = []
-    list_args   = []
-
-    while isinstance(bound,sexprs.Pair):
-        list_params.append(bound.sexpr1.sexpr1)
-        list_args.append(bound.sexpr1.sexpr2.sexpr1)
-
-        if isinstance(bound.sexpr2,sexprs.Nil):
-            break
-        else:
-            bound = bound.sexpr2
+    list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
     paramsPair    = buildPairForParamsInLet(list_params)
     argsPair      = buildPairForParamsInLet(list_args)
@@ -286,8 +347,6 @@ def tagLetStartRec(expr):
     pairForApplic = sexprs.Pair(sum([[tagLambda(pairForLambda)],['.',argsPair]],[])) #warning!
     
     return  tagApplic(pairForApplic)
-
-
 
 def tagLetStar(expr):
 
@@ -314,13 +373,6 @@ def tagLetStar(expr):
         #return tagLet(pairForLet)
 
         return tagLetStartRec(finalPair)
-
-
-
-
-
-
-
 
 ##############################
 #       Exceptions           #
@@ -453,7 +505,7 @@ class AsStringVisitor(AbstractSchemeExpr):
         return str(self.variable)
 
     def visitIfThenElse(self):
-        return '(if ' + str(self.pair.sexpr1) + ' ' \
+        return '(IF ' + str(self.pair.sexpr1) + ' ' \
                       + sexprs.AsStringVisitor.pairToString(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
@@ -482,7 +534,10 @@ class AsStringVisitor(AbstractSchemeExpr):
                     + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
-        return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
+        if isinstance(self.arguments,sexprs.Nil):
+            return '(OR)'
+        else:
+            return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
 
     def visitDef(self):
-        return '(define ' + str(self.name) + ' ' + str(self.expr) + ')'
+        return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'
