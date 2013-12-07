@@ -108,6 +108,14 @@ class TestSexprs(unittest.TestCase):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda a (+ a b c))')
         self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
 
+    def test_letrec(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(letrec ((a 2)) 'hello)")
+        self.assertEqual(str(sexpr) , '(Yag (LAMBDA (&11@ A) (QUOTE HELLO)) (LAMBDA (&24@ A) 2))')
+
+    def test_letrec2(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(letrec ((a (a 3)) (b #t)) (if a b #f))")
+        self.assertEqual(str(sexpr) , '(Yag (LAMBDA (&39@ A B) (IF A B #f)) (LAMBDA (&416@ A B) (A 3)) (LAMBDA (&525@ A B) #t))')
+
 
 if __name__ == '__main__':
      unittest.main()

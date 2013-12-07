@@ -16,6 +16,17 @@ Reserved_Words =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
 ##############################
+#           Gensym           #
+##############################
+n = 0
+class Gensym:
+    @staticmethod
+    def generate():
+        global n
+        n = n + 1
+        return '&' + '%s' %n + '%s' %(n*n) + '@'
+
+##############################
 #           Parser           #
 ##############################
 def parserRecursive(expr):
@@ -57,6 +68,9 @@ def tagPair(expr):
         # Identify: LAMBDA
         elif expr.sexpr1.string == "LAMBDA":
             return tagLambda(expr.sexpr2)
+
+        elif expr.sexpr1.string == "LETREC":
+            return tagLetrec(expr.sexpr2)
         
         # Identify: OR
         elif expr.sexpr1.string == "OR":
@@ -210,6 +224,52 @@ def tagLambda(expr):
 
     # Lambda Simple
     return LambdaSimple(params,body)
+
+def tagLetrec(expressions):
+    params , args = seperateParamsAndArgs(expressions.sexpr1)
+    # paramsAsSchemePairs = buildPairForParamsInLet(params)
+    expr = expressions.sexpr2.sexpr1
+
+    lambdaSymbol = sexprs.Symbol('LAMBDA', 6)
+
+    genTmp = Gensym.generate()
+    g0 = sexprs.Symbol(genTmp,len(genTmp))
+    params.insert(0,g0)
+    firstLetrecExp = sexprs.Pair(sum([[lambdaSymbol],
+                                      [buildPairForParamsInLet(params)],
+                                      [expr]],[]))
+
+    listLetrecExpr = []
+    while len(args) > 0:
+        params = params[1:]
+        genTmp = Gensym.generate()
+        g0 = sexprs.Symbol(genTmp,len(genTmp))
+        params.insert(0,g0)
+        letrecExp = sexprs.Pair(sum([[lambdaSymbol],[buildPairForParamsInLet(params)],[args[0]]],[]))
+        listLetrecExpr.append(letrecExp)
+        args = args[1:]
+
+
+    yag = sexprs.Symbol('Yag', 3)
+    return parserRecursive(sexprs.Pair(sum([[yag], [firstLetrecExp], listLetrecExpr],[])))
+
+def seperateParamsAndArgs(expr):
+    bound = expr
+    list_params = []
+    list_args   = []
+
+    while isinstance(bound,sexprs.Pair):
+        list_params.append(bound.sexpr1.sexpr1)
+        list_args.append(bound.sexpr1.sexpr2.sexpr1)
+
+        if isinstance(bound.sexpr2,sexprs.Nil):
+            break
+        else:
+            bound = bound.sexpr2
+    return list_params , list_args
+
+def buildPairForParamsInLet(list_params):
+    return sexprs.Pair(list_params)
 
 def tagApplic(applic):
     app = applic.sexpr1
