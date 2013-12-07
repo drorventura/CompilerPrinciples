@@ -5,6 +5,23 @@ __author__ = 'Dror Ventura & Eldar Damari'
 
 ps = pc.ParserStack()
 
+# Whitespaces and Comments
+anyParser = ps  .const(lambda ch: ch) \
+                .done()
+
+commentParser = ps  .parser(pc.pcChar(';')) \
+                    .parser(anyParser) \
+                    .parser(pc.pcWord("\\n")) \
+                    .butNot() \
+                    .star() \
+                    .caten()\
+                    .parser(pc.pcWord("\\n")) \
+                    .caten().pack(lambda x: '') \
+                    .done()
+                    
+                    #.star() \
+                    #.caten().pack(lambda x: '') \
+
 # Parser for the Boolean sexpression
 boolParser = ps .const(lambda x: x == '#') \
                 .const(lambda x: x == 't' or x == 'T') \
@@ -267,7 +284,9 @@ quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol
                             .done() \
 
 # Sexpression parser - Main parsing function
-sexpression = ps   .parser(fractionParser) \
+sexpression = ps   .parser(commentParser) \
+                   .maybe() \
+                   .parser(fractionParser) \
                    .parser(hexNumberParser) \
                    .parser(intParser) \
                    .parser(boolParser) \
@@ -279,6 +298,7 @@ sexpression = ps   .parser(fractionParser) \
                    .parser(quoteLikeFormsParser) \
                    .parser(symbolParser) \
                    .disjs(11) \
+                   .caten().pack(lambda x: x[1]) \
                    .done()
 
 def show(x):
