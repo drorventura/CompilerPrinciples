@@ -161,42 +161,53 @@ def tagDefine(expr):
         raise SyntaxError
 
 def tagLambda(expr):
-    params = parserRecursiveForLambda(expr.sexpr1)
-    if isinstance(params,list):
-        params = params[1]
-    body      = parserRecursive(expr.sexpr2.sexpr1) #FIXME
+    print("empty input")
+    body      = parserRecursive(expr.sexpr2.sexpr1)
+
+    print(isinstance(expr.sexpr1, sexprs.Nil))
+    if not isinstance(expr.sexpr1, sexprs.Nil):
+        params = parserRecursiveForLambda(expr.sexpr1)
+        if isinstance(params,list):
+            params = params[1]
+    else:
+        return LambdaSimple(expr.sexpr1,body)    
+
     temp_args = params
-    
 
     # Lambda Variadic 
     if isinstance(params, Variable):
-        print("**************")
         return LambdaVar(params,body)
 
     while not isinstance(temp_args.sexpr1, type(temp_args.sexpr2)):
-        if isinstance(temp_args.sexpr1,Variable) and\
-                isinstance(temp_args.sexpr2,sexprs.Nil):
+
+        if isinstance(temp_args,sexprs.Pair):
+
+            if  isinstance(temp_args.sexpr1,Variable) and\
+                    isinstance(temp_args.sexpr2,sexprs.Pair) and\
+                    isinstance(temp_args.sexpr2.sexpr1,Variable) and\
+                    isinstance(temp_args.sexpr2.sexpr2,sexprs.Nil):
+                        return LambdaSimple(params,body)
+             
+            elif  isinstance(temp_args.sexpr1,Variable) and\
+                    isinstance(temp_args.sexpr2,sexprs.Pair) and\
+                    isinstance(temp_args.sexpr2.sexpr1,Variable) and\
+                    isinstance(temp_args.sexpr2.sexpr2,Variable):
+                        return LambdaOpt(params,body)
+            else:
+                if isinstance(temp_args.sexpr2,sexprs.Nil) and\
+                        isinstance(temp_args.sexpr1,sexprs.Pair):
+                            temp_args = temp_args.sexpr1
+                else:
+                    temp_args = temp_args.sexpr2
+                print(temp_args)
+                if not isinstance(temp_args,sexprs.Pair):
                     return LambdaSimple(params,body)
-        if not isinstance(temp_args.sexpr2,Constant):
-            temp_args = temp_args.sexpr2
-
-            if isinstance(temp_args.sexpr2,sexprs.Nil): 
-                return LambdaOpt(params,body)
-
-            if isinstance(temp_args,sexprs.Nil):
-                return LambdaSimple(params,body)
-
-            if isinstance(temp_args.sexpr1 , Variable) and isinstance(temp_args.sexpr2, Variable):
-                return LambdaOpt(params,body)
-        else:
-            break
 
     # Lambda Optional
             # differ between (a . b) to (a (b Nil())
     if isinstance(temp_args.sexpr1, Variable) and isinstance(temp_args.sexpr2, Variable):
         return LambdaOpt(params,body)
 
-    print("!@#!@#!@#@!#!@#!@#!@")
     # Lambda Simple
     return LambdaSimple(params,body)
 
@@ -342,7 +353,6 @@ class AsStringVisitor(AbstractSchemeExpr):
             return ''
 
     def visitVariable(self):
-        print('Variable toString')
         return str(self.variable)
 
     def visitIfThenElse(self):
@@ -350,8 +360,11 @@ class AsStringVisitor(AbstractSchemeExpr):
                       + sexprs.AsStringVisitor.pairToString(self.pair.sexpr2) + ')'
 
     def visitAbstractLambda(self):
-        return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
-                          + str(self.body) + ')'
+        if isinstance(self.arguments, sexprs.Nil):
+            return '(LAMBDA ' +'() ' + str(self.body) + ')'
+        else:
+            return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
+                    + str(self.body) + ')'
 
     def visitLambdaSimple(self):
         return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
