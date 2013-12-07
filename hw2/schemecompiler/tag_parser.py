@@ -76,6 +76,10 @@ def tagPair(expr):
         elif expr.sexpr1.string == "LET":
             return tagLet(expr.sexpr2)
         
+        # Identify: LET*
+        elif expr.sexpr1.string == "LET*":
+            return tagLetStar(expr.sexpr2)
+        
         # Identify: OR
         elif expr.sexpr1.string == "OR":
             return tagOr(expr.sexpr2)
@@ -228,6 +232,7 @@ def tagLambda(expr):
     # Lambda Simple
     return LambdaSimple(params,body)
 
+
 def tagLetrec(expressions):
     params , args = seperateParamsAndArgs(expressions.sexpr1)
     # paramsAsSchemePairs = buildPairForParamsInLet(params)
@@ -315,7 +320,60 @@ def tagLet(expr):
     pairForApplic = sexprs.Pair(sum([[tagLambda(pairForLambda)],['.',argsPair]],[])) #warning!
 
     return  tagApplic(pairForApplic)
-                      
+
+def buildPairForParamsInLet(list_params):
+        return sexprs.Pair(list_params)
+
+def tagLetStartRec(expr):
+    
+    finalPair1 = ['.',expr.sexpr2.sexpr1]
+
+    if isinstance(expr.sexpr2.sexpr1.sexpr1.sexpr2,sexprs.Nil):
+        finalPairWithString = sexprs.Pair(sum([[sexprs.Symbol("LET",3)],
+                                                    finalPair1],[]))
+    else:
+        finalPairWithString = sexprs.Pair(sum([[sexprs.Symbol("LET*",4)],
+                                                    finalPair1],[]))
+    body = finalPairWithString
+    if isinstance(expr.sexpr1,sexprs.Nil):
+        raise SyntaxError("In Let Parameters Bound Are Empty") 
+
+    list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
+
+    paramsPair    = buildPairForParamsInLet(list_params)
+    argsPair      = buildPairForParamsInLet(list_args)
+    bodyPair      = ['.', sexprs.Pair([body])]
+    pairForLambda = sexprs.Pair(sum([[paramsPair],bodyPair],[])) #warning!
+    pairForApplic = sexprs.Pair(sum([[tagLambda(pairForLambda)],['.',argsPair]],[])) #warning!
+    
+    return  tagApplic(pairForApplic)
+
+def tagLetStar(expr):
+
+    if isinstance(expr.sexpr1.sexpr2,sexprs.Nil):  # last bound, need to use body
+        return tagLet(sexprs.Pair(expr))
+    else:
+        single_bound = expr.sexpr1.sexpr1
+        pairSingleBound = sexprs.Pair([single_bound])  #[ | NIL ] -> [ X | ] -> [5 | NIL]
+        cont_body    = ['.', expr.sexpr2]
+        pairForLet   = sexprs.Pair(sum([[expr.sexpr1.sexpr2],cont_body],[]))
+        bodyWithLet  = sexprs.Pair([pairForLet])
+
+        cont_body_withLet = ['.',bodyWithLet]
+        #test - cont_body_withLet = ['.',pairForLet]
+#     origin   finalPair = sexprs.Pair(sum([[pairSingleBound],cont_body_withLet],[]))
+        finalPair = sexprs.Pair(sum([[pairSingleBound],cont_body_withLet],[]))
+
+        #test
+        #finalPair1 = ['.',sexprs.Pair(sum([[pairSingleBound],cont_body_withLet],[]))]
+        #finalPairWithString = sexprs.Pair(sum([[sexprs.Symbol("LET",3)],
+        #                                        finalPair1],[]))
+
+        # lets check how the body is printed
+        #return tagLet(pairForLet)
+
+        return tagLetStartRec(finalPair)
+
 ##############################
 #       Exceptions           #
 ##############################

@@ -109,12 +109,20 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
     
     def test_let_2_arg(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5) (y 7)) (+ 1 2))')
-        self.assertEqual(str(sexpr) , '((LAMBDA (X Y) (+ 1 2)) 5 7)')
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x (+ 1 2)) (y 7)) (+ 1 2))')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X Y) (+ 1 2)) (+ 1 2) 7)')
     
     def test_let_1_arg(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5)) (+ 1 2))')
-        self.assertEqual(str(sexpr) , '((LAMBDA (X) (+ 1 2)) 5)')
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5)) 2)')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X) 2) 5)')
+    
+    def test_letstar_1_arg(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let* ((x 5) (y (+ x 1))) (+ x y))')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X) ((LAMBDA (Y) (+ X Y)) (+ X 1))) 5)')
+
+    def test_letstar_2_arg(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let* ((x 5) (y (+ x 1)) (z 18)) (+ x y))')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X) ((LAMBDA (Y) ((LAMBDA (Z) (+ X Y)) 18)) (+ X 1))) 5)')
 
     def test_letrec(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(letrec ((a 2)) 'hello)")
