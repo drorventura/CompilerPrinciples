@@ -62,6 +62,10 @@ def tagPair(expr):
         elif expr.sexpr1.string == "OR":
             return tagOr(expr.sexpr2)
         
+        # Identify: LET
+        elif expr.sexpr1.string == "LET":
+            return tagLet(expr.sexpr2)
+        
         # Identify: APPLICATION
         else:
             return tagApplic(expr)
@@ -109,11 +113,9 @@ def tagPairLambda(expr):
 #END#########################################
 
 def tagVariable(expr):
-    print('in tagVariable')
     return Variable(expr)
 
 def tagVector(expr):
-    print('in tagVector')
     return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
@@ -161,10 +163,8 @@ def tagDefine(expr):
         raise SyntaxError
 
 def tagLambda(expr):
-    print("empty input")
     body      = parserRecursive(expr.sexpr2.sexpr1)
 
-    print(isinstance(expr.sexpr1, sexprs.Nil))
     if not isinstance(expr.sexpr1, sexprs.Nil):
         params = parserRecursiveForLambda(expr.sexpr1)
         if isinstance(params,list):
@@ -199,7 +199,6 @@ def tagLambda(expr):
                             temp_args = temp_args.sexpr1
                 else:
                     temp_args = temp_args.sexpr2
-                print(temp_args)
                 if not isinstance(temp_args,sexprs.Pair):
                     return LambdaSimple(params,body)
 
@@ -219,6 +218,34 @@ def tagApplic(applic):
 def tagOr(arguments):
     return Or(arguments)
 
+def tagLet(expr):
+    body = expr.sexpr2.sexpr1
+    if isinstance(expr.sexpr1,sexprs.Nil):
+        raise SyntaxError("In Let Parameters Bound Are Empty") 
+
+    bound = expr.sexpr1
+    list_params = []
+    list_args   = []
+
+    while isinstance(bound,sexprs.Pair):
+        list_params.append(bound.sexpr1.sexpr1)
+        list_args.append(bound.sexpr1.sexpr2.sexpr1)
+
+        if isinstance(bound.sexpr2,sexprs.Nil):
+            break
+        else:
+            bound = bound.sexpr2
+
+    paramsPair    = buildPairForParamsInLet(list_params)
+    argsPair      = buildPairForParamsInLet(list_args)
+    bodyPair      = ['.', sexprs.Pair([body])]
+    pairForLambda = sexprs.Pair(sum([[paramsPair],bodyPair],[])) #warning!
+    pairForApplic = sexprs.Pair(sum([[tagLambda(pairForLambda)],['.',argsPair]],[])) #warning!
+
+    return  tagApplic(pairForApplic)
+                      
+def buildPairForParamsInLet(list_params):
+        return sexprs.Pair(list_params)
 
 ##############################
 #       Exceptions           #
@@ -264,7 +291,6 @@ class Constant(AbstractSchemeExpr):
 # Variable Class
 class Variable(AbstractSchemeExpr):
     def __init__(self,variable):
-        print("in Variable")
         self.variable = variable
 
     def accept(self, visitor):
@@ -289,7 +315,6 @@ class AbstractLambda(AbstractSchemeExpr):
 # LambdaSimple Class
 class LambdaSimple(AbstractLambda):
     def __init__(self,arguments,body):
-        print("in LambdaSimple")
         self.arguments = arguments
         self.body = body
 
@@ -299,7 +324,6 @@ class LambdaSimple(AbstractLambda):
 # LambdaOpt Class
 class LambdaOpt(AbstractLambda):
     def __init__(self,arguments,body):
-        print("in LambdaOpt")
         self.arguments = arguments
         self.body = body
 
@@ -309,7 +333,6 @@ class LambdaOpt(AbstractLambda):
 # LambdaVar Class
 class LambdaVar(AbstractLambda):
     def __init__(self,arguments,body):
-        print("in LambdaVar")
         self.arguments = arguments
         self.body = body
 
@@ -319,7 +342,6 @@ class LambdaVar(AbstractLambda):
 # Applic Class
 class Applic(AbstractSchemeExpr):
     def __init__(self,applic,arguments):
-        print("in Applic")
         self.applic = applic
         self.arguments = arguments
 
@@ -380,8 +402,9 @@ class AsStringVisitor(AbstractSchemeExpr):
     def visitApplic(self):
         if isinstance(self.arguments,sexprs.Nil):
             return '(' + str(self.applic) + ')'
-        return '(' + str(self.applic) + ' '\
-                + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
+        else:
+            return '(' + str(self.applic) + ' '\
+                    + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
         return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
