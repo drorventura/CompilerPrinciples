@@ -36,9 +36,11 @@ def parserRecursive(expr):
 def tagPair(expr):
     if isinstance(expr.sexpr1, sexprs.Symbol):
         # Identify: Quoted Like Strings
-        if expr.sexpr1.string in QuotedLike_Strings:    # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
-            print("creating Constant: " + str(expr.sexpr2.sexpr1))
-            return Constant(expr.sexpr2.sexpr1)         # This case handles only the Sexpression above
+        if expr.sexpr1.string in QuotedLike_Strings:        # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+            if expr.sexpr2.sexpr1.__class__.__name__ in Constants_Strings:
+                return Constant(expr.sexpr2.sexpr1)         # This case handles the Sexpressions like boolean, int, ect.
+            else:
+                return Constant(expr)                       # This case handles other symbols that are quoted
 
         # Identify: IF
         elif expr.sexpr1.string == "IF":
@@ -120,7 +122,6 @@ def tagConstant(expr):
 def tagIf(expr):
     try:
         if isinstance(expr.sexpr2.sexpr2, sexprs.Nil):
-
             return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
                               parserRecursive(expr.sexpr2.sexpr1),  # Than
                               Constant(sexprs.Void()))              #Void
@@ -153,11 +154,6 @@ def tagDefine(expr):
                        parserRecursive(expr.sexpr2.sexpr1))
         else:
             #MIT-style
-            # if isinstance(expr.sexpr1.sexpr2, sexprs.Symbol):
-            #     return Def(Variable(expr.sexpr1.sexpr1),
-            #                LambdaVar(expr.sexpr1.sexpr2,
-            #                          expr.sexpr2.sexpr1))
-            # else:
             return Def(Variable(expr.sexpr1.sexpr1),
                        tagLambda(sexprs.Pair([expr.sexpr1.sexpr2,           # <arg1>
                                               expr.sexpr2.sexpr1])))        # <expr>
@@ -319,16 +315,8 @@ class Applic(AbstractSchemeExpr):
     def accept(self,visitor):
         return visitor.visitApplic(self)
 
-# AbstractNumber Class
-class AbstractNumber(AbstractSchemeExpr):
-    def __init__(self):
-        print("AbstractNumber class")
-
-    def accept(self,visitor):
-        return self.accept(self,visitor)
-
 # Or Class
-class Or(AbstractNumber):
+class Or(AbstractSchemeExpr):
     def __init__(self,arguments):
         self.arguments = arguments
 
@@ -336,7 +324,7 @@ class Or(AbstractNumber):
         return visitor.visitOr(self)
 
 # Def Class
-class Def(AbstractNumber):
+class Def(AbstractSchemeExpr):
     def __init__(self,name,expr):
         self.name = name
         self.expr = expr
@@ -374,7 +362,6 @@ class AsStringVisitor(AbstractSchemeExpr):
                           + str(self.body) + ')'
     
     def visitLambdaVar(self):
-        print("QQQQQQQQQQQQQQQQQ")
         return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ')'
     
     def visitApplic(self):
