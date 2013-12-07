@@ -275,8 +275,8 @@ symbolParser = ps   .const(lambda x: x >= 'a' and x <= 'z')\
 
 quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol('quote'.upper()            ,   5)) \
                             .parser(pc.pcChar("`")).pack(lambda x: sexprs.Symbol('quasiquote'.upper()       ,   10)) \
-                            .parser(pc.pcChar(",")).pack(lambda x: sexprs.Symbol('unquote'.upper()          ,   7)) \
                             .parser(pc.pcWord(",@")).pack(lambda x: sexprs.Symbol('unquote-splicing'.upper(),   16)) \
+                            .parser(pc.pcChar(",")).pack(lambda x: sexprs.Symbol('unquote'.upper()          ,   7)) \
                             .disjs(4) \
                             .delayed_parser(lambda: sexpression) \
                             .caten() \
