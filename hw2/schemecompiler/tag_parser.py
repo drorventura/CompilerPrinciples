@@ -47,6 +47,10 @@ def parserRecursive(expr):
 def tagPair(expr):
     if isinstance(expr.sexpr1, sexprs.Symbol):
         # Identify: Quoted Like Strings
+        if expr.sexpr1.string == "QUASIQUOTE":
+            res = expandQQ(expr.sexpr2)
+            return parserRecursive(res)
+
         if expr.sexpr1.string in QuotedLike_Strings:        # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
             if expr.sexpr2.sexpr1.__class__.__name__ in Constants_Strings:
                 return Constant(expr.sexpr2.sexpr1)         # This case handles the Sexpressions like boolean, int, ect.
@@ -374,6 +378,40 @@ def tagLetStar(expr):
 
         return tagLetStartRec(finalPair)
 
+def expandQQ(expr):
+
+    if isinstance(expr,sexprs.Nil):
+        return ()
+
+    if isinstance(expr,sexprs.Pair):
+        head = expr.sexpr1
+        tail = expr.sexpr2 
+        
+        if isinstance(head,sexprs.Pair) and\
+            head.sexpr1 == "UNQUOTE-SPLICING":
+            return sexprs.Pair(sum([[sexprs.Symbol('APPEND',6)],
+                ['.',sexprs.Pair(sum([[head.sexpr2.sexpr1],\
+                    ['.',sexprs.Pair([expandQQ(tail)])]],[]))]],[]))
+
+        elif isinstance(tail,sexprs.Pair) and\
+                tail.sexpr1 == "UNQUOTE-SPLICING":
+            return sexprs.Pair(sum([[sexprs.Symbol('CONS',4)],
+                                ['.',sexprs.Pair(sum([[expandQQ(head)],
+                                             ['.',sexprs.Pair[expr.sexpr2.sexpr1]]],[]))]],[]))
+        else:
+            return sexprs.Pair(sum([[sexprs.Symbol('CONS',4)], 
+                                ['.',sexprs.Pair(sum([[expandQQ(head)], 
+                                             ['.',sexprs.Pair([expandQQ(tail)])]],[]))]],[]))
+    elif isinstance(expr,sexprs.Vector):
+        return sexprs.Pair(sum([[sexprs.Symbol('LIST->VECTOR',12)], ['.',sexprs.Pair([expandQQ(expr)])]],[])) # may be need last arg
+
+    elif isinstance(expr,sexprs.Nil) or\
+            isinstance(expr,sexprs.Symbol):
+            return sexprs.Pair(sum([[sexprs.Symbol('QUOTE_LAST',5)], 
+                ['.',sexprs.Pair([expr])]],[]))
+    else:
+        return expr
+
 ##############################
 #       Exceptions           #
 ##############################
@@ -496,6 +534,8 @@ class Def(AbstractSchemeExpr):
 class AsStringVisitor(AbstractSchemeExpr):
 
     def visitConstant(self):
+        if isinstance(self.constant,sexprs.String):
+            return '"' + str(self.constant) + '"'
         if not isinstance(self.constant , sexprs.Nil):
             return str(self.constant)
         else:
