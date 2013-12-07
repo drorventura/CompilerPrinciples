@@ -252,7 +252,6 @@ def tagLetrec(expressions):
         listLetrecExpr.append(letrecExp)
         args = args[1:]
 
-
     yag = sexprs.Symbol('Yag', 3)
     return parserRecursive(sexprs.Pair(sum([[yag], [firstLetrecExp], listLetrecExpr],[])))
 
