@@ -107,6 +107,14 @@ class TestSexprs(unittest.TestCase):
     def test_lambdaSimple5(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda a (+ a b c))')
         self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
+    
+    def test_let_2_arg(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5) (y 7)) (+ 1 2))')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X Y) (+ 1 2)) 5 7)')
+    
+    def test_let_1_arg(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5)) (+ 1 2))')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X) (+ 1 2)) 5)')
 
     def test_letrec(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(letrec ((a 2)) 'hello)")
