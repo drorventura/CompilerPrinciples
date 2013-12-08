@@ -236,7 +236,7 @@ namedChar =   ps   .const(lambda x: x == '#')\
                    .const(lambda x: x == '\\')\
                    .parser(pc.pcWordCI("newline")).pack(lambda x: chr(10))\
                    .parser(pc.pcWordCI("return" )).pack(lambda x: chr(13))\
-                   .parser(pc.pcWordCI("tab"    )).pack(lambda x: chr(11))\
+                   .parser(pc.pcWordCI("tab"    )).pack(lambda x: chr(9))\
                    .parser(pc.pcWordCI("page"   )).pack(lambda x: chr(12))\
                    .parser(pc.pcWordCI("lambda" )).pack(lambda x: '\u03bb')\
                    .disjs(5)\
