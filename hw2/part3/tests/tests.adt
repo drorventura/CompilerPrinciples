@@ -1,0 +1,75 @@
+/**
+ * Abstract data type specification of a Boosted undirected graph. 
+ */
+
+/* just a comment */
+
+// a line comment check
+
+// number checks
+
+/*
+This
+is
+a
+few
+lines
+comment
+*/
+
+007
+1234567890
+-1234567890
+2 + 2 = 5
+
+/*identifiers check*/
+batz
+__
+_batz
+batz__
+_batz_
+batz1
+batz_23
+batz456_7
+
+
+/*tokens check*/
+assert | / { <= rev ; - ! < choose in ( , lock ) + = if
+. } && return new += || != -= == >= * : else @ > set
+
+/*string check*/
+""
+"the quick brown fox jumps over lazy dog"
+"THE QUICK BROWN FOX JUMPS OVER LAZY DOG"
+"!@#$%^&*()-=+"
+"\""
+"\\"
+"\\t"
+"\\n"
+"ab\n"
+
+
+/*error check*/
+//  ^
+//  $
+//  ~
+//  "\s"
+//  "\a"
+
+//"a \ n"
+
+//"a \\ m"
+
+//"\\m"
+
+//" \m "
+
+/*
+"
+more than one line string
+"
+*/
+
+//'batz'
+
+

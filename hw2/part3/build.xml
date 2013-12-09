@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  =======================================================================
+    Compiler build file
+  =======================================================================
+-->
+<project name="ADTL Scanner" default="build" basedir=".">
+    <!-- Set global properties for this build -->
+    <property name="src" value="src"/>
+    <property name="lib" value="lib"/>
+    <property name="classes" value="classes"/>
+    <property name="javadocs" value="javadocs"/>
+
+    <!--
+       ===================================================================
+         Sets up internal values
+       ===================================================================
+  -->
+    <target name="init" description="-> sets up internal values">
+        <!-- Create the classes directory structure used by compile -->
+        <mkdir dir="${classes}"/>
+    </target>
+
+    <!--
+       ===================================================================
+         Generates the scanner
+       ===================================================================
+  -->
+    <target name="scanner" depends="init" description="-> generates the scanner">
+        <java classname="JFlex.Main" classpath="${lib}/JFlex.jar">
+            <arg value="${src}/ADTL/ADTL.lex"/>
+        </java>
+        <replace file="${src}/ADTL/Lexer.java" value='@SuppressWarnings(value={"all"}) class Lexer'>
+            <replacetoken>class Lexer</replacetoken>
+        </replace>
+    </target>
+
+    <!--
+       ===================================================================
+         Compiles the sources
+       ===================================================================
+  -->
+    <target name="classes" depends="init" description="-> compiles the source code to create the tree of classes">
+        <!-- Compile the java code from ${src} into ${classes} -->
+        <echo message="Compiling sources..."/>
+        <javac classpath="${lib}/JFlex.jar"
+               srcdir="${src}"
+               destdir="${classes}"
+               source="1.7"
+               includeantruntime="false" />
+    </target>
+
+    <!--
+       ===================================================================
+         Cleans and the builds
+       ===================================================================
+  -->
+    <target name="rebuild" depends="clean, build" description="-> first cleans and then build everything">
+    </target>
+
+    <!--
+       ===================================================================
+         Builds everything
+       ===================================================================
+  -->
+    <target name="build" depends="init,scanner,classes" description="-> generates the scanner and parser and compiles all classes">
+    </target>
+
+    <!--
+       ===================================================================
+         Deletes the build directory tree
+       ===================================================================
+  -->
+    <target name="clean" description="-> cleans up build and dist directories">
+        <delete dir="${build}"/>
+    </target>
+</project>
