@@ -1,3 +1,9 @@
+# java classes
+*.class
+
+# Binary files #
+out/
+
 *.py[cod]
 
 # C extensions
