@@ -85,7 +85,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_proper_list(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 ( 1 2 ) 7)')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 ( 1 ;sdfsdfsd\\n ;sdfsdfsd\\n  2 ) 7)')
         self.assertEqual(str(sexpr) , '(5 6 (1 2) 7)')
         self.assertEqual(str(remaining) , '')
 
