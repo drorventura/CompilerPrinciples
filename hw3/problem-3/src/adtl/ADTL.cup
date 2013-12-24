@@ -52,7 +52,7 @@ precedence nonassoc IN;
 
 /* The grammar */
 ADT                 ::= ID:name LCBR  ElementList:list RCBR
-                        /*{: RESULT = new ADT(name, list); :}*/
+                        {: RESULT = new ADT(name, list); :}
                         ;
 
 ElementList         ::= ElementList Element
