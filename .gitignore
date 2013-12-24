@@ -1,5 +1,6 @@
 # java classes
 *.class
+*~
 
 # Binary files #
 out/
@@ -45,6 +46,7 @@ nosetests.xml
 
 # Windows text file
 *.txt
+*.html
 
 # iml files
 *.iml
