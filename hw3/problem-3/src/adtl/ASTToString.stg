@@ -1,0 +1,70 @@
+ADT(name, elements) ::= <<
+$name$ {
+  $elements; separator="\n\n"$
+}
+>>
+
+Args(args) ::= <<$args:{arg|$arg.first$ : $arg.second$}; separator=", "$>>
+
+Assert(cond, message) ::= <<
+$if(message)$assert $cond$ : "$message$";$else$assert $cond$;$endif$
+>>
+
+Assign(lhs, rhs) ::= <<$lhs$ = $rhs$;>>
+
+BinaryExpr(op, lhs, rhs) ::= <<($lhs$ $op$ $rhs$)>>
+
+Call(name, args) ::= <<$name$($args; separator=", "$)>>
+
+Choose(setExpr) ::= <<choose $setExpr$>>
+
+Condition(cond, thenStmt, elseStmt) ::= <<
+if ($cond$) {
+  $thenStmt$
+}
+$if(elseStmt)$
+else {
+  $elseStmt$
+}
+$endif$
+>>
+
+FieldDef(name, type) ::= <<
+$name$ : $type$;
+>>
+
+Lock(pathExpr) ::= <<lock $pathExpr$;>>
+
+MethodDef(name, args, stmts) ::= <<
+$name$($args; separator=", "$) {
+  $stmts; separator="\n"$
+}
+>>
+
+NewExpr(type, args) ::= <<
+new $type$($args:{arg|$arg.first$=$arg.second$}; separator=", "$)
+>>
+
+NotExpr(subExpr) ::= <<!$subExpr$>>
+
+PathExpr(positions) ::= <<$positions; separator="."$>>
+
+PathElement(name, reversed, marked) ::= <<
+$if(reversed)$rev($name$)$if(marked)$@$endif$$else$$name$$if(marked)$@$endif$$endif$
+>>
+
+Return(retExpr) ::= <<return $retExpr$;>>
+
+Size(sizeExpr) ::= <<|$sizeExpr$|>>
+
+StmtList(stmts) ::= <<
+$stmts; separator="\n"$
+>>
+
+Type(name) ::= <<$name$>>
+
+INT(value) ::= <<$value$>>
+
+
+
+

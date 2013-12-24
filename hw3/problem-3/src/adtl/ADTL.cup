@@ -1,0 +1,72 @@
+package adtl;
+
+import java_cup.runtime.*;
+import java.util.*;
+import adtl.Lexer.*;
+import adtl.ast.*;
+
+parser code {:
+    public void syntax_error(java_cup.runtime.Symbol current) {
+        Token t = (Token) current;
+        throw new SyntaxError("Syntax error in line " + t.line + " '" + t.toText() + "'");
+    }
+:};
+
+/* Terminals (tokens returned by the scanner). */
+terminal            REV, ASSERT, CHOOSE, IN, LOCK, IF, RETURN, NEW, ELSE, SET;
+terminal            LCBR, SEMI, LT, LP, COMMA, RP, DOT, RCBR, COLON, AT;
+terminal            DIVIDE, LTE, MINUS, BAR, NOT, PLUS, ASSIGN, LAND, ASSIGN_PLUS, LOR, NEQ, ASSIGN_MINUS, EQ, GTE, TIMES, GT;
+terminal String     ID, QUOTE;
+terminal Integer    INT;
+
+/* Non terminals */
+non terminal ADT            ADT;
+non terminal ElementList    ElementList;
+non terminal Element        Element;
+non terminal FieldDef       FieldDef;
+non terminal Type           Type;
+non terminal MethodDef      MethodDef;
+non terminal                ArgPart;
+non terminal Args            Arg;
+non terminal StmtList       StmtList;
+non terminal Stmt          Stmt;
+
+
+/* Precedences */
+
+
+/* The grammar */
+ADT         ::= ID:name LCBR  ElementList:list RCBR      {: RESULT = new ADT(name, list); :} ;
+
+ElementList ::= ElementList Element
+                |
+                Element
+                ;
+
+Element     ::= FieldDef
+                |
+                MethodDef
+                ;
+
+FieldDef    ::= ID:name COLON Type:type SEMI;
+
+Type        ::= ID:name
+                |
+                SET
+                ;
+
+MethodDef   ::= ID:name LP ArgPart RP LCBR StmtList RCBR;
+
+ArgPart     ::= Arg COMMA
+                |
+                Arg
+                ;
+
+Arg         ::= ID:name COLON Type;
+
+StmtList    ::= StmtList Stmt
+                |
+                Stmt
+                ;
+
+Stmt        ::= RETURN ;
