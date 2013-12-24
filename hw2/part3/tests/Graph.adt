@@ -1,0 +1,83 @@
+/**
+ * Abstract data type specification of a Boosted undirected graph. 
+ */
+Graph {
+	ns : set; // graph nodes
+	es : set; // graph edges
+	
+	getNeighbors(n : Node) {
+		lock n.rev(src).dst;
+		lock n.rev(dst).src;
+		
+		assert n in ns : "Attempt to get neighbors of a node that is not contained in the graph!";
+		nghbors = n.rev(src).dst + n.rev(dst).src;
+		return new Set(content = nghbrs);
+	}
+	
+	addEdge(f : Node, t : Node, d : ED) {
+		lock f;
+		lock t;
+		lock f.rev(src).dst.t;
+		lock t.rev(dst).src.f;
+
+		eft = f.rev(src)@.dst.t;
+		etf = t.rev(dst)@.src.f;
+		assert eft == etf : "Graph is not undirected: detected a directed edge!";
+		assert |eft| == 1 : "Detected parallel edges!";
+		if (eft in es) {
+			ne = new Edge(src=f, dst=t , ed=d) + new Edge(src=t, dst=f , ed=d);
+			es += ne;
+		}
+	}
+	
+	addNode(n : Node) {
+		lock n;
+		
+		assert !(n in ns) : "Attempt to add a node already contained in the graph!";
+		ns += n;
+	}
+	
+	removeNode(n : Node) {
+		lock n.rev(src).dst;
+		lock n.rev(dst).src;
+		
+		if (n in ns) {
+			es -= n.rev(src) + n.rev(dst);
+			ns -= n;
+		}		
+	}
+	
+	removeEdge(f : Node, t : Node) {
+		lock f.rev(src).dst.t;
+		lock t.rev(dst).src.f;
+
+		eft = f.rev(src)@.dst.t;
+		etf = t.rev(dst)@.src.f;
+		assert eft == etf : "Graph is not undirected: detected a directed edge!";
+		if (eft in es) {
+			es -= eft + etf;
+		}
+	}
+	
+	getNodeData(n : Node) {
+		lock n;
+		
+		return n.nd;
+	}
+	
+	getEdgeData(e : Edge) {
+		lock e;
+		lock e.src;
+		lock e.dst;
+		
+		return e.ed;
+	}
+	
+	setEdgeData(e : Edge, d : ED) {
+		lock e;
+		lock e.src;
+		lock e.dst;
+		
+		e.ed = d;
+	}
+}

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  =======================================================================
+    Compiler build file
+  =======================================================================
+-->
+<project name="ADTL Compiler" default="build" basedir=".">
+    <!-- Set global properties for this build -->
+    <property name="src" value="src"/>
+    <property name="lib" value="lib"/>
+    <property name="build" value="build"/>
+    <property name="javadocs" value="javadocs"/>
+	<property name="package" value="adtl"/>
+
+    <!--
+       ===================================================================
+         Sets up internal values
+       ===================================================================
+  -->
+    <target name="init" description="-> sets up internal values">
+        <!-- Create the classes directory structure used by compile -->
+        <mkdir dir="${build}"/>
+    </target>
+
+    <!--
+       ===================================================================
+         Generates the parser
+       ===================================================================
+  -->
+    <target name="parser" depends="init" description="-> generates the parser">
+    <java classname="java_cup.Main" classpath="${lib}/java-cup-11a.jar">
+       <arg value="-parser"/>
+       <arg value="Parser"/>
+       <arg value="-package"/>
+       <arg value="adtl"/>
+       <arg value="${src}/${package}/ADTL.cup"/>
+    </java>
+    	
+    <move file="Parser.java" tofile="${src}/${package}/Parser.java"/>
+    <move file="sym.java" tofile="${src}/${package}/sym.java"/>
+    <replace file="${src}/${package}/Parser.java" value='@SuppressWarnings(value={"all"}) class Parser'>
+     <replacetoken>class Parser</replacetoken>
+    </replace>
+        <replace file="${src}/${package}/Parser.java" value='@SuppressWarnings(value={"all"}) public final java_cup.runtime.Symbol CUP$Parser$do_action'>
+         <replacetoken>public final java_cup.runtime.Symbol CUP$Parser$do_action</replacetoken>
+        </replace>
+    </target>
+
+    <!--
+       ===================================================================
+         Generates the scanner
+       ===================================================================
+  -->
+    <target name="scanner" depends="init" description="-> generates the scanner">
+    <java classname="JFlex.Main" classpath="${lib}/JFlex.jar">
+       <arg value="${src}/${package}/ADTL.lex"/>
+    </java>
+    	
+    <replace file="${src}/${package}/Lexer.java" value='@SuppressWarnings(value={"all"}) class Lexer'>
+     <replacetoken>class Lexer</replacetoken>
+    </replace>
+    </target>
+
+    <!--
+       ===================================================================
+         Compiles the sources
+       ===================================================================
+  -->
+    <target name="classes" depends="init" description="-> compiles the source code to create the tree of classes">
+        <!-- Compile the java code from ${src} into ${classes} -->
+        <echo message="Compiling sources..."/>
+        <javac srcdir="${src}"
+           destdir="${build}"
+           source="1.7"
+           classpath="${lib}/java-cup-11a-runtime.jar;${lib}/antlr-4.1-complete.jar"
+           includeantruntime="false"/>
+    </target>
+
+    <!--
+       ===================================================================
+         Cleans and the builds
+       ===================================================================
+  -->
+    <target name="rebuild" depends="clean, build" description="-> first cleans and then build everything">
+    </target>
+
+    <!--
+       ===================================================================
+         Builds everything
+       ===================================================================
+  -->
+    <target name="build" depends="init,scanner,parser,classes" description="-> generates the scanner and parser and compiles all classes">
+    </target>
+
+    <!--
+       ===================================================================
+         Deletes the build directory tree
+       ===================================================================
+  -->
+    <target name="clean" description="-> cleans up build and dist directories">
+        <delete dir="${build}"/>
+    </target>
+</project>

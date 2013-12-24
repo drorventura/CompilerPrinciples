@@ -100,6 +100,13 @@ class delayed(AbstractParsingCombinator):
     def match(self, s):
         return self.thunk().match(s)
 
+class end(AbstractParsingCombinator):
+    def match(self, s):
+        if s:
+            raise NoMatch
+        else:
+            return (True, s)
+
 class debugged(AbstractParsingCombinator):
     def __init__(self, pc, msg):
         self.pc = pc
@@ -206,6 +213,10 @@ class ParserStack:
         pc2 = self.pop()
         pc1 = self.pop()
         return self.push(caten(pc1, pc2))
+    def butNot(self):
+        pc2 = self.pop()
+        pc1 = self.pop()
+        return self.push(butNot(pc1, pc2))
 
     def disj(self):
         pc2 = self.pop()

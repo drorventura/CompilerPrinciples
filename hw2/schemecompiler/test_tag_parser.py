@@ -44,7 +44,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_define_singleExpression(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define foo '1)")
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(;sdfsdfsd\\ndefine foo '1)")
         self.assertEqual(str(sexpr) , '(DEFINE FOO 1)')
         self.assertEqual(str(remaining) , '')
 
@@ -54,7 +54,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_define_MIT_lambdaSimple(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define (foo . (a b c)) c)")
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define (foo .;sdfsdfsd\\n (a b c)) c)")
         self.assertEqual(str(sexpr) , "(DEFINE FOO (LAMBDA (A B C) C))")
         self.assertEqual(str(remaining) , '')
 
