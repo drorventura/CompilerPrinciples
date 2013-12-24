@@ -33,6 +33,7 @@ non terminal StmtList       StmtList;
 non terminal Stmt           Stmt;
 non terminal Assign         Assign;
 non terminal Expr           Expr;
+non terminal                AssignedArgPart;
 non terminal AssignedArgs   AssignedArg;
 non terminal PathExpr       PathExpr;
 non terminal PathElement    PathElement;
@@ -121,7 +122,7 @@ Expr                ::= CHOOSE Expr
                         |
                         BAR Expr BAR
                         |
-                        NEW Type LP AssignedArg RP  /* 99999999999 need assigned arg * seperated with commas 9999999999*/
+                        NEW Type LP AssignedArgPart RP
                         |
                         MINUS Expr %prec UMINUS
                         |
@@ -156,6 +157,11 @@ Expr                ::= CHOOSE Expr
                         PathExpr
                         |
                         LP Expr RP
+                        ;
+
+AssignedArgPart     ::= AssignedArg COMMA AssignedArgPart
+                        |
+                        AssignedArg
                         ;
 
 AssignedArg         ::= ID:name ASSIGN Expr ;
