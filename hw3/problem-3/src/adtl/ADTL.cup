@@ -13,11 +13,12 @@ parser code {:
 :};
 
 /* Terminals (tokens returned by the scanner). */
-terminal            REV, ASSERT, CHOOSE, IN, LOCK, IF, RETURN, NEW, ELSE, SET;
-terminal            LCBR, SEMI, LT, LP, COMMA, RP, DOT, RCBR, COLON, AT;
-terminal            DIVIDE, LTE, MINUS, BAR, NOT, PLUS, ASSIGN, LAND, ASSIGN_PLUS, LOR, NEQ, ASSIGN_MINUS, EQ, GTE, TIMES, GT;
-terminal String     ID, QUOTE;
-terminal Integer    INT;
+terminal                    REV, ASSERT, CHOOSE, IN, LOCK, IF, RETURN, NEW, ELSE, SET;
+terminal                    LCBR, SEMI, LT, LP, COMMA, RP, DOT, RCBR, COLON, AT;
+terminal                    DIVIDE, LTE, MINUS, BAR, NOT, PLUS, ASSIGN, LAND, ASSIGN_PLUS, LOR, NEQ, ASSIGN_MINUS, EQ, GTE, TIMES, GT;
+terminal                    UMINUS;
+terminal String             ID, QUOTE;
+terminal Integer            INT;
 
 /* Non terminals */
 non terminal ADT            ADT;
@@ -27,46 +28,148 @@ non terminal FieldDef       FieldDef;
 non terminal Type           Type;
 non terminal MethodDef      MethodDef;
 non terminal                ArgPart;
-non terminal Args            Arg;
+non terminal Args           Arg;
 non terminal StmtList       StmtList;
-non terminal Stmt          Stmt;
+non terminal Stmt           Stmt;
+non terminal Assign         Assign;
+non terminal Expr           Expr;
+non terminal AssignedArgs   AssignedArg;
+non terminal PathExpr       PathExpr;
+non terminal PathElement    PathElement;
+non terminal                SingleOrBlockStmt;
 
 
 /* Precedences */
+precedence left ELSE;
+precedence left LOR, LAND;
+precedence nonassoc NOT, LT, LTE, GT, GTE, EQ, NEQ;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE;
+precedence left UMINUS;
+precedence nonassoc IN;
 
 
 /* The grammar */
-ADT         ::= ID:name LCBR  ElementList:list RCBR      {: RESULT = new ADT(name, list); :} ;
+ADT                 ::= ID:name LCBR  ElementList:list RCBR
+                        {: RESULT = new ADT(name, list); :}
+                        ;
 
-ElementList ::= ElementList Element
-                |
-                Element
-                ;
+ElementList         ::= ElementList Element
+                        |
+                        Element
+                        ;
 
-Element     ::= FieldDef
-                |
-                MethodDef
-                ;
+Element             ::= FieldDef
+                        |
+                        MethodDef
+                        ;
 
-FieldDef    ::= ID:name COLON Type:type SEMI;
+FieldDef            ::= ID:name COLON Type:type SEMI;
 
-Type        ::= ID:name
-                |
-                SET
-                ;
+Type                ::= ID:name
+                        |
+                        SET
+                        ;
 
-MethodDef   ::= ID:name LP ArgPart RP LCBR StmtList RCBR;
+MethodDef           ::= ID:name LP ArgPart RP LCBR StmtList RCBR
+                        |
+                        ID:name LP ArgPart RP LCBR RCBR
+                        ;
 
-ArgPart     ::= Arg COMMA
-                |
-                Arg
-                ;
+ArgPart             ::= Arg COMMA ArgPart
+                        |
+                        Arg
+                        ;
 
-Arg         ::= ID:name COLON Type;
+Arg                 ::= ID:name COLON Type;
 
-StmtList    ::= StmtList Stmt
-                |
-                Stmt
-                ;
+StmtList            ::= StmtList Stmt
+                        |
+                        Stmt
+                        ;
 
-Stmt        ::= RETURN ;
+Stmt                ::= RETURN Expr SEMI
+                        |
+                        Assign SEMI
+                        |
+                        IF LP Expr RP SingleOrBlockStmt
+                        |
+                        IF LP Expr RP SingleOrBlockStmt ELSE SingleOrBlockStmt
+                        |
+                        ASSERT Expr SEMI
+                        |
+                        ASSERT Expr COLON QUOTE SEMI
+                        |
+                        LOCK PathExpr SEMI
+                        ;
+
+Assign              ::= PathExpr ASSIGN_PLUS Expr
+                        |
+                        PathExpr ASSIGN_MINUS Expr
+                        |
+                        PathExpr ASSIGN Expr
+                        ;
+
+SingleOrBlockStmt   ::= Stmt
+                        |
+                        LCBR StmtList RCBR
+                        ;
+
+Expr                ::= CHOOSE Expr
+                        |
+                        INT
+                        |
+                        BAR Expr BAR
+                        |
+                        NEW Type LP AssignedArg RP  /* 99999999999 need assigned arg * seperated with commas 9999999999*/
+                        |
+                        MINUS Expr %prec UMINUS
+                        |
+                        Expr PLUS Expr
+                        |
+                        Expr TIMES Expr
+                        |
+                        Expr MINUS Expr
+                        |
+                        Expr DIVIDE Expr
+                        |
+                        Expr LT Expr
+                        |
+                        Expr LTE Expr
+                        |
+                        Expr GT Expr
+                        |
+                        Expr GTE Expr
+                        |
+                        Expr EQ Expr
+                        |
+                        Expr NEQ Expr
+                        |
+                        NOT Expr
+                        |
+                        Expr LAND Expr
+                        |
+                        Expr LOR Expr
+                        |
+                        Expr IN Expr
+                        |
+                        PathExpr
+                        |
+                        LP Expr RP
+                        ;
+
+AssignedArg         ::= ID:name ASSIGN Expr ;
+
+PathExpr            ::= PathElement DOT PathExpr
+                        |
+                        PathElement
+                        ;
+
+PathElement         ::= ID:name
+                        |
+                        ID:name AT
+                        |
+                        REV LP ID:name RP
+                        |
+                        REV LP ID:name RP AT
+                        ;
