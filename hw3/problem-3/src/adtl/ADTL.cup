@@ -52,7 +52,7 @@ precedence nonassoc IN;
 
 /* The grammar */
 ADT                 ::= ID:name LCBR  ElementList:list RCBR
-                        {: RESULT = new ADT(name, list); :}
+                        /*{: RESULT = new ADT(name, list); :}*/
                         ;
 
 ElementList         ::= ElementList Element
@@ -75,6 +75,10 @@ Type                ::= ID:name
 MethodDef           ::= ID:name LP ArgPart RP LCBR StmtList RCBR
                         |
                         ID:name LP ArgPart RP LCBR RCBR
+                        |
+                        ID:name LP RP LCBR StmtList RCBR
+                        |
+                        ID:name LP RP LCBR RCBR
                         ;
 
 ArgPart             ::= Arg COMMA ArgPart
@@ -116,41 +120,62 @@ SingleOrBlockStmt   ::= Stmt
                         LCBR StmtList RCBR
                         ;
 
-Expr                ::= CHOOSE Expr
+Expr                ::= CHOOSE:sym_num Expr:expr /**************************************************/
+                        {: RESULT = new ExprList();
+                           RESULT.append(new Expr(sym_num));
+                           RESULT.append(expr)
+                        :}
                         |
-                        INT
+                        INT:value
+                        {: RESULT = new Integer(value); :}
                         |
-                        BAR Expr BAR
+                        BAR Expr:expr BAR
+                        {: RESULT = new Size(expr); :}
                         |
-                        NEW Type LP AssignedArgPart RP
+                        NEW Type:type LP AssignedArgPart:args RP
+                        {: RESULT = new NewExpr(type,args); :}
                         |
-                        MINUS Expr %prec UMINUS
+                        MINUS Expr:expr
+                        {: RESULT = new Integer(0 - expr.intValue()); :}
+                        %prec UMINUS
                         |
-                        Expr PLUS Expr
+                        Expr:expr_lhs PLUS:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr TIMES Expr
+                        Expr:expr_lhs TIMES:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr MINUS Expr
+                        Expr:expr_lhs MINUS:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr DIVIDE Expr
+                        Expr:expr_lhs DIVIDE:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr LT Expr
+                        Expr:expr_lhs LT:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr LTE Expr
+                        Expr:expr_lhs LTE:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr GT Expr
+                        Expr:expr_lhs GT:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr GTE Expr
+                        Expr:expr_lhs GTE:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr EQ Expr
+                        Expr:expr_lhs EQ:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr NEQ Expr
+                        Expr:expr_lhs NEQ:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
                         NOT Expr
                         |
-                        Expr LAND Expr
+                        Expr:expr_lhs LAND:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
-                        Expr LOR Expr
+                        Expr:expr_lhs LOR:op Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
                         |
                         Expr IN Expr
                         |
@@ -164,18 +189,26 @@ AssignedArgPart     ::= AssignedArg COMMA AssignedArgPart
                         AssignedArg
                         ;
 
-AssignedArg         ::= ID:name ASSIGN Expr ;
+AssignedArg         ::= ID:arg ASSIGN Expr:val
+                        {: RESULT = new AssignedArgs(arg,val); :}
+                        ;
 
-PathExpr            ::= PathElement DOT PathExpr
+PathExpr            ::= PathElement:pathElement DOT PathExpr:pathExpr
+                        {: RESULT = ( pathExpr.append(pathElement) ); :}
                         |
-                        PathElement
+                        PathElement:pathElement
+                        {: RESULT = new PathExpr(pathElement); :}
                         ;
 
 PathElement         ::= ID:name
+                        {: RESULT = new PathElement(name,false,false); :}
                         |
                         ID:name AT
+                        {: RESULT = new PathElement(name,false,true); :}
                         |
                         REV LP ID:name RP
+                        {: RESULT = new PathElement(name, true, false); :}
                         |
                         REV LP ID:name RP AT
+                        {: RESULT = new PathElement(name, true, true); :}
                         ;
