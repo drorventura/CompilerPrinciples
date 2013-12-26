@@ -18,7 +18,7 @@ terminal                    LCBR, SEMI, LT, LP, COMMA, RP, DOT, RCBR, COLON, AT;
 terminal                    DIVIDE, LTE, MINUS, BAR, NOT, PLUS, ASSIGN, LAND, ASSIGN_PLUS, LOR, NEQ, ASSIGN_MINUS, EQ, GTE, TIMES, GT;
 terminal                    UMINUS;
 terminal String             ID, QUOTE;
-terminal Integer            INT;
+terminal INT                INT;
 
 /* Non terminals */
 non terminal ADT            ADT;
@@ -27,17 +27,17 @@ non terminal Element        Element;
 non terminal FieldDef       FieldDef;
 non terminal Type           Type;
 non terminal MethodDef      MethodDef;
-non terminal                ArgPart;
+non terminal Args           ArgPart;
 non terminal Args           Arg;
 non terminal StmtList       StmtList;
 non terminal Stmt           Stmt;
 non terminal Assign         Assign;
 non terminal Expr           Expr;
-non terminal                AssignedArgPart;
+non terminal AssignedArgs   AssignedArgPart;
 non terminal AssignedArgs   AssignedArg;
 non terminal PathExpr       PathExpr;
 non terminal PathElement    PathElement;
-non terminal                SingleOrBlockStmt;
+non terminal Stmt           SingleOrBlockStmt;
 
 
 /* Precedences */
@@ -51,13 +51,15 @@ precedence nonassoc IN;
 
 
 /* The grammar */
-ADT                 ::= ID:name LCBR  ElementList:list RCBR
-                        /*{: RESULT = new ADT(name, list); :}*/
+ADT                 ::= ID:name LCBR  ElementList:elements RCBR
+                        {: RESULT = new ADT(name, elements); :}
                         ;
 
-ElementList         ::= ElementList Element
+ElementList         ::= ElementList:list Element:element
+                        {: RESULT = new ElementList(element); :}
                         |
-                        Element
+                        Element:element
+                        {: RESULT = new ElementList(element); :}
                         ;
 
 Element             ::= FieldDef
@@ -65,20 +67,28 @@ Element             ::= FieldDef
                         MethodDef
                         ;
 
-FieldDef            ::= ID:name COLON Type:type SEMI;
-
-Type                ::= ID:name
-                        |
-                        SET
+FieldDef            ::= ID:name COLON Type:type SEMI
+                        {: RESULT = new FieldDef(name, type); :}
                         ;
 
-MethodDef           ::= ID:name LP ArgPart RP LCBR StmtList RCBR
+Type                ::= ID:name
+                        {: RESULT = new Type(name); :}
                         |
-                        ID:name LP ArgPart RP LCBR RCBR
+                        SET
+                        {: RESULT = new Type(Type.setTypeName); :}
+                        ;
+
+MethodDef           ::= ID:name LP ArgPart:args RP LCBR StmtList:stmts RCBR
+                        {: RESULT = new MethodDef(name, args, stmts); :}
                         |
-                        ID:name LP RP LCBR StmtList RCBR
+                        ID:name LP ArgPart:args RP LCBR RCBR
+                        {: RESULT = new MethodDef(name, args, new StmtList()); :}
+                        |
+                        ID:name LP RP LCBR StmtList:stmts RCBR
+                        {: RESULT = new MethodDef(name, new Args(), stmts); :}
                         |
                         ID:name LP RP LCBR RCBR
+                        {: RESULT = new MethodDef(name, new Args(), new StmtList()); :}
                         ;
 
 ArgPart             ::= Arg COMMA ArgPart
@@ -86,33 +96,46 @@ ArgPart             ::= Arg COMMA ArgPart
                         Arg
                         ;
 
-Arg                 ::= ID:name COLON Type;
-
-StmtList            ::= StmtList Stmt
-                        |
-                        Stmt
+Arg                 ::= ID:arg COLON Type:t
+                        {: RESULT = new Args(arg, t); :}
                         ;
 
-Stmt                ::= RETURN Expr SEMI
+StmtList            ::= StmtList Stmt:stmt
+                        {: RESULT = new StmtList(stmt); :}
+                        |
+                        Stmt:stmt
+                        {: RESULT = new StmtList(stmt); :}
+                        ;
+
+Stmt                ::= RETURN Expr:retExpr SEMI
+                        {: RESULT = new Return(retExpr); :}
                         |
                         Assign SEMI
                         |
-                        IF LP Expr RP SingleOrBlockStmt
+                        IF LP Expr:cond RP SingleOrBlockStmt:thenExpr
+                        {: RESULT = new Condition(cond, thenExpr); :}
                         |
-                        IF LP Expr RP SingleOrBlockStmt ELSE SingleOrBlockStmt
+                        IF LP Expr:cond RP SingleOrBlockStmt:thenExpr ELSE SingleOrBlockStmt:elseExpr
+                        {: RESULT = new Condition(cond, thenExpr, elseExpr); :}
                         |
-                        ASSERT Expr SEMI
+                        ASSERT Expr:cond SEMI
+                        {: RESULT = new Assert(cond, new String()); :}
                         |
-                        ASSERT Expr COLON QUOTE SEMI
+                        ASSERT Expr:cond COLON QUOTE:message SEMI
+                        {: RESULT = new Assert(cond, message); :}
                         |
-                        LOCK PathExpr SEMI
+                        LOCK PathExpr:pathExpr SEMI
+                        {: RESULT = new Lock(pathExpr); :}
                         ;
 
-Assign              ::= PathExpr ASSIGN_PLUS Expr
+Assign              ::= PathExpr:lhs ASSIGN_PLUS Expr:expr
+                        {: RESULT = new Assign(lhs, new BinaryExpr(Ops.PLUS,lhs,expr)); :}
                         |
-                        PathExpr ASSIGN_MINUS Expr
+                        PathExpr:lhs ASSIGN_MINUS Expr:expr
+                        {: RESULT = new Assign(lhs, new BinaryExpr(Ops.MINUS,lhs,expr)); :}
                         |
-                        PathExpr ASSIGN Expr
+                        PathExpr:lhs ASSIGN Expr:rhs
+                        {: RESULT = new Assign(lhs, rhs); :}
                         ;
 
 SingleOrBlockStmt   ::= Stmt
@@ -120,91 +143,89 @@ SingleOrBlockStmt   ::= Stmt
                         LCBR StmtList RCBR
                         ;
 
-Expr                ::= CHOOSE:sym_num Expr:expr /**************************************************/
-                        {: RESULT = new ExprList();
-                           RESULT.append(new Expr(sym_num));
-                           RESULT.append(expr)
-                        :}
+Expr                ::= CHOOSE:sym_num Expr:setExpr
+                        {: RESULT = new Choose(setExpr); :}
                         |
-                        INT:value
-                        {: RESULT = new Integer(value); :}
+                        INT
                         |
                         BAR Expr:expr BAR
                         {: RESULT = new Size(expr); :}
                         |
                         NEW Type:type LP AssignedArgPart:args RP
-                        {: RESULT = new NewExpr(type,args); :}
+                        {: RESULT = new NewExpr(type, args); :}
                         |
                         MINUS Expr:expr
-                        {: RESULT = new Integer(0 - expr.intValue()); :}
+                        {: RESULT = new BinaryExpr(Ops.MINUS, new INT(0), expr); :}
                         %prec UMINUS
                         |
-                        Expr:expr_lhs PLUS:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs PLUS Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.PLUS, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs TIMES:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs TIMES Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.TIMES, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs MINUS:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs MINUS Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.MINUS, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs DIVIDE:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs DIVIDE Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.DIVIDE, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs LT:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs LT Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.LT, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs LTE:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs LTE Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.LTE, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs GT:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs GT Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.GT, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs GTE:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs GTE Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.GTE, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs EQ:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs EQ Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.EQ, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs NEQ:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs NEQ Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.NEQ, expr_lhs, expr_rhs); :}
                         |
-                        NOT Expr
+                        NOT Expr:subExpr
+                        {: RESULT = new NotExpr(subExpr); :}
                         |
-                        Expr:expr_lhs LAND:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs LAND Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.LAND, expr_lhs, expr_rhs); :}
                         |
-                        Expr:expr_lhs LOR:op Expr:expr_rhs
-                        {: RESULT = new BinaryExpr(op,expr_lhs,expr_rhs) :}
+                        Expr:expr_lhs LOR Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.LOR, expr_lhs, expr_rhs); :}
                         |
-                        Expr IN Expr
+                        Expr:expr_lhs IN Expr:expr_rhs
+                        {: RESULT = new BinaryExpr(Ops.IN, expr_lhs, expr_rhs); :}
                         |
                         PathExpr
                         |
                         LP Expr RP
                         ;
 
-AssignedArgPart     ::= AssignedArg COMMA AssignedArgPart
+AssignedArgPart     ::= AssignedArg:arg COMMA AssignedArgPart:args
                         |
                         AssignedArg
                         ;
 
 AssignedArg         ::= ID:arg ASSIGN Expr:val
-                        {: RESULT = new AssignedArgs(arg,val); :}
+                        {: RESULT = new AssignedArgs(arg, val); :}
                         ;
 
-PathExpr            ::= PathElement:pathElement DOT PathExpr:pathExpr
-                        {: RESULT = ( pathExpr.append(pathElement) ); :}
+PathExpr            ::= PathElement:pathElement DOT PathExpr
+                        {: RESULT = new PathExpr(pathElement); :}
                         |
                         PathElement:pathElement
                         {: RESULT = new PathExpr(pathElement); :}
                         ;
 
 PathElement         ::= ID:name
-                        {: RESULT = new PathElement(name,false,false); :}
+                        {: RESULT = new PathElement(name, false, false); :}
                         |
                         ID:name AT
-                        {: RESULT = new PathElement(name,false,true); :}
+                        {: RESULT = new PathElement(name, false, true); :}
                         |
                         REV LP ID:name RP
                         {: RESULT = new PathElement(name, true, false); :}
