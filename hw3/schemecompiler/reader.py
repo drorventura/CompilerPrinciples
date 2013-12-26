@@ -9,18 +9,18 @@ ps = pc.ParserStack()
 anyParser = ps  .const(lambda ch: ch) \
                 .done()
 
-commentParser = ps  .parser(pc.pcChar(';')) \
+commentParser = ps  .parser(pc.pcWhite1)\
+                    .parser(pc.pcChar(';')) \
                     .parser(anyParser) \
                     .parser(pc.pcWord("\\n")) \
                     .butNot() \
                     .star() \
-                    .caten()\
+                    .caten() \
                     .parser(pc.pcWord("\\n")) \
                     .caten().pack(lambda x: '') \
+                    .disj() \
+                    .star() \
                     .done()
-                    
-                    #.star() \
-                    #.caten().pack(lambda x: '') \
 
 # Parser for the Boolean sexpression
 boolParser = ps .const(lambda x: x == '#') \
@@ -284,22 +284,24 @@ quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol
                             .done() \
 
 # Sexpression parser - Main parsing function
-sexpression = ps   .parser(commentParser) \
-                   .maybe() \
-                   .parser(fractionParser) \
-                   .parser(hexNumberParser) \
-                   .parser(intParser) \
-                   .parser(boolParser) \
-                   .parser(charParser)\
-                   .parser(stringParser)\
-                   .parser(nilParser) \
-                   .parser(pairParser) \
-                   .parser(vectorParser) \
-                   .parser(quoteLikeFormsParser) \
-                   .parser(symbolParser) \
-                   .disjs(11) \
-                   .caten().pack(lambda x: x[1]) \
-                   .done()
+sexpression = ps    .parser(commentParser) \
+                    .maybe() \
+                    .parser(fractionParser) \
+                    .parser(hexNumberParser) \
+                    .parser(intParser) \
+                    .parser(boolParser) \
+                    .parser(charParser)\
+                    .parser(stringParser)\
+                    .parser(nilParser) \
+                    .parser(pairParser) \
+                    .parser(vectorParser) \
+                    .parser(quoteLikeFormsParser) \
+                    .parser(symbolParser) \
+                    .disjs(11) \
+                    .parser(commentParser) \
+                    .maybe() \
+                    .catens(3).pack(lambda x: x[1]) \
+                    .done()
 
 def show(x):
     print('recived '+ str(x))

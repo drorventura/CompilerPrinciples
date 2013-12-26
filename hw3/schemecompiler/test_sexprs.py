@@ -11,7 +11,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_positive_with_leadingZeros(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString(';sdfsdfsd\\n+0088')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('          ;sdfsdfsd\\n       +0088')
         self.assertEqual(str(sexpr) , '88')
         self.assertEqual(str(remaining) , '')
 
@@ -75,7 +75,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_pair(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5)')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('( ;batz\\n 5)')
         self.assertEqual(str(sexpr) , '(5)')
         self.assertEqual(str(remaining) , '')
 
@@ -85,7 +85,7 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_proper_list(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 ( 1 ;sdfsdfsd\\n ;sdfsdfsd\\n  2 ) 7)')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString('(5 6 ;sdfsdfsd\\n( 1 2 );sdfsdfsd\\n 7)')
         self.assertEqual(str(sexpr) , '(5 6 (1 2) 7)')
         self.assertEqual(str(remaining) , '')
 
@@ -95,12 +95,12 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(remaining) , '')
 
     def test_vector(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('#(1 2)')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString(';sdfsdfsd\\n#( ;sdfsdfsd\\n 1 2) ;sdfsdfsd\\n')
         self.assertEqual(str(sexpr) , '#(1 2)')
         self.assertEqual(str(remaining) , '')
 
     def test_symbol(self):
-        sexpr , remaining = sexprs.AbstractSexpr.readFromString('a')
+        sexpr , remaining = sexprs.AbstractSexpr.readFromString(';sdfsdfsd\\n    a;sdfsdfsd\\n ;sdfsdfsd\\n')
         self.assertEqual(str(sexpr) , 'A')
         self.assertEqual(str(remaining) , '')
 

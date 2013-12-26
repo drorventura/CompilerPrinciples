@@ -135,7 +135,8 @@ def tagPairLambda(expr):
                 except lambdaParametersIsNotVariable:
                     return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1)])
     else: 
-        raise lambdaParametersIsNotVariable("Lambda Parameters Need To Be Variables") 
+        raise lambdaParametersIsNotVariable("Lambda Parameters Need To Be Variables")
+
 #END#########################################
 
 def tagVariable(expr):
