@@ -151,9 +151,9 @@ def tagConstant(expr):
 def tagIf(expr):
     try:
         if isinstance(expr.sexpr2.sexpr2, sexprs.Nil):
-            return IfThenElse(parserRecursive(expr.sexpr1),         # Condition
-                              parserRecursive(expr.sexpr2.sexpr1),  # Than
-                              Constant(sexprs.Void()))              #Void
+            return IfThenElse(parserRecursive(expr.sexpr1),                 # Condition
+                              parserRecursive(expr.sexpr2.sexpr1),          # Than
+                              Constant(sexprs.Void()))                      #Void
         else:
             return IfThenElse(parserRecursive(expr.sexpr1),                 # Condition
                               parserRecursive(expr.sexpr2.sexpr1),          # Than
