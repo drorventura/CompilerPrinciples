@@ -18,6 +18,9 @@ commentParser = ps  .parser(pc.pcChar(';')) \
                     .parser(pc.pcWord("\\n")) \
                     .caten().pack(lambda x: '') \
                     .done()
+                    
+                    #.star() \
+                    #.caten().pack(lambda x: '') \
 
 # Parser for the Boolean sexpression
 boolParser = ps .const(lambda x: x == '#') \
@@ -282,9 +285,6 @@ quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol
 
 # Sexpression parser - Main parsing function
 sexpression = ps   .parser(commentParser) \
-                   .parser(pc.pcWhite1) \
-                   .disj() \
-                   .star() \
                    .maybe() \
                    .parser(fractionParser) \
                    .parser(hexNumberParser) \
