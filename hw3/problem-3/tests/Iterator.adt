@@ -1,0 +1,34 @@
+/**
+ * Abstract data type specification of an iterator over a Boosted set. 
+ */
+Iterator {
+	all : set;
+	past : set;
+	at : E;
+	future : set;
+	
+	hasNext() {
+		lock at;
+		lock future;
+		 
+		return future == empty;
+	}
+	
+	next() {
+		lock at;
+		lock future;
+		
+		next = choose future;
+		future -= next;
+		past += at;
+		at = next;
+		return at;
+	}
+	
+	remove() {
+		lock this;
+		
+		all -= at;
+		return at;
+	}	
+}

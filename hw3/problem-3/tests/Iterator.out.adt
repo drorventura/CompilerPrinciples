@@ -1,0 +1,31 @@
+Iterator {
+  all : set;
+
+  past : set;
+
+  at : E;
+
+  future : set;
+
+  hasNext() {
+    lock at;
+    lock future;
+    return (future == empty);
+  }
+
+  next() {
+    lock at;
+    lock future;
+    next = choose future;
+    future = (future - next);
+    past = (past + at);
+    at = next;
+    return at;
+  }
+
+  remove() {
+    lock this;
+    all = (all - at);
+    return at;
+  }
+}

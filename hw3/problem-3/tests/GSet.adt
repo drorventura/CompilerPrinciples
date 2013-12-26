@@ -1,0 +1,25 @@
+/**
+ * Abstract data type specification for a Boosted set. 
+ */
+GSet {
+	cont : set;
+	
+	contains(e : E) {
+		lock e;
+		
+		return e in cont;
+	}
+	
+	add(e : E) {
+		lock e;
+		
+		answer = !(e in cont);
+		cont += e;
+		return answer;
+	}
+	
+	size() {
+		lock this;
+		return |cont|;
+	}
+}
