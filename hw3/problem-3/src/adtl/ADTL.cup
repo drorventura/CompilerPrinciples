@@ -18,7 +18,7 @@ terminal                    LCBR, SEMI, LT, LP, COMMA, RP, DOT, RCBR, COLON, AT;
 terminal                    DIVIDE, LTE, MINUS, BAR, NOT, PLUS, ASSIGN, LAND, ASSIGN_PLUS, LOR, NEQ, ASSIGN_MINUS, EQ, GTE, TIMES, GT;
 terminal                    UMINUS;
 terminal String             ID, QUOTE;
-terminal INT                INT;
+terminal Integer            INT;
 
 /* Non terminals */
 non terminal ADT            ADT;
@@ -27,21 +27,18 @@ non terminal Element        Element;
 non terminal FieldDef       FieldDef;
 non terminal Type           Type;
 non terminal MethodDef      MethodDef;
-non terminal Args           ArgPart;
-non terminal Args           Arg;
+non terminal Args           Args;
 non terminal StmtList       StmtList;
 non terminal Stmt           Stmt;
 non terminal Assign         Assign;
 non terminal Expr           Expr;
-non terminal AssignedArgs   AssignedArgPart;
-non terminal AssignedArgs   AssignedArg;
+non terminal AssignedArgs   AssignedArgs;
 non terminal PathExpr       PathExpr;
 non terminal PathElement    PathElement;
 non terminal Stmt           SingleOrBlockStmt;
 
-
 /* Precedences */
-precedence left ELSE;
+precedence left ELSE, COMMA;
 precedence left LOR, LAND;
 precedence nonassoc NOT, LT, LTE, GT, GTE, EQ, NEQ;
 precedence left PLUS, MINUS;
@@ -49,22 +46,26 @@ precedence left TIMES, DIVIDE;
 precedence left UMINUS;
 precedence nonassoc IN;
 
-
 /* The grammar */
 ADT                 ::= ID:name LCBR  ElementList:elements RCBR
                         {: RESULT = new ADT(name, elements); :}
                         ;
 
-ElementList         ::= ElementList:list Element:element
-                        {: RESULT = new ElementList(element); :}
+ElementList         ::= ElementList:elementList Element:element
+                        {:
+                           elementList.append(element);
+                           RESULT = elementList;
+                        :}
                         |
                         Element:element
                         {: RESULT = new ElementList(element); :}
                         ;
 
-Element             ::= FieldDef
+Element             ::= FieldDef:fieldDef
+                        {: RESULT = fieldDef; :}
                         |
-                        MethodDef
+                        MethodDef: methodDef
+                        {: RESULT = methodDef; :}
                         ;
 
 FieldDef            ::= ID:name COLON Type:type SEMI
@@ -78,10 +79,10 @@ Type                ::= ID:name
                         {: RESULT = new Type(Type.setTypeName); :}
                         ;
 
-MethodDef           ::= ID:name LP ArgPart:args RP LCBR StmtList:stmts RCBR
+MethodDef           ::= ID:name LP Args:args RP LCBR StmtList:stmts RCBR
                         {: RESULT = new MethodDef(name, args, stmts); :}
                         |
-                        ID:name LP ArgPart:args RP LCBR RCBR
+                        ID:name LP Args:args RP LCBR RCBR
                         {: RESULT = new MethodDef(name, args, new StmtList()); :}
                         |
                         ID:name LP RP LCBR StmtList:stmts RCBR
@@ -91,17 +92,21 @@ MethodDef           ::= ID:name LP ArgPart:args RP LCBR StmtList:stmts RCBR
                         {: RESULT = new MethodDef(name, new Args(), new StmtList()); :}
                         ;
 
-ArgPart             ::= Arg COMMA ArgPart
+Args                ::= Args:args COMMA ID:arg COLON Type:t
+                        {:
+                           args.append(arg, t);
+                           RESULT = args;
+                        :}
                         |
-                        Arg
-                        ;
-
-Arg                 ::= ID:arg COLON Type:t
+                        ID:arg COLON Type:t
                         {: RESULT = new Args(arg, t); :}
                         ;
 
-StmtList            ::= StmtList Stmt:stmt
-                        {: RESULT = new StmtList(stmt); :}
+StmtList            ::= StmtList:stmtList Stmt:stmt
+                        {:
+                           stmtList.append(stmt);
+                           RESULT = stmtList;
+                        :}
                         |
                         Stmt:stmt
                         {: RESULT = new StmtList(stmt); :}
@@ -110,7 +115,8 @@ StmtList            ::= StmtList Stmt:stmt
 Stmt                ::= RETURN Expr:retExpr SEMI
                         {: RESULT = new Return(retExpr); :}
                         |
-                        Assign SEMI
+                        Assign:assign SEMI
+                        {: RESULT = assign; :}
                         |
                         IF LP Expr:cond RP SingleOrBlockStmt:thenExpr
                         {: RESULT = new Condition(cond, thenExpr); :}
@@ -138,20 +144,23 @@ Assign              ::= PathExpr:lhs ASSIGN_PLUS Expr:expr
                         {: RESULT = new Assign(lhs, rhs); :}
                         ;
 
-SingleOrBlockStmt   ::= Stmt
+SingleOrBlockStmt   ::= Stmt:stmt
+                        {: RESULT = stmt; :}
                         |
-                        LCBR StmtList RCBR
+                        LCBR StmtList:stmtList RCBR
+                        {: RESULT = stmtList; :}
                         ;
 
 Expr                ::= CHOOSE:sym_num Expr:setExpr
                         {: RESULT = new Choose(setExpr); :}
                         |
-                        INT
+                        INT:integer
+                        {: RESULT = new INT(integer.intValue()); :}
                         |
                         BAR Expr:expr BAR
                         {: RESULT = new Size(expr); :}
                         |
-                        NEW Type:type LP AssignedArgPart:args RP
+                        NEW Type:type LP AssignedArgs:args RP
                         {: RESULT = new NewExpr(type, args); :}
                         |
                         MINUS Expr:expr
@@ -200,22 +209,28 @@ Expr                ::= CHOOSE:sym_num Expr:setExpr
                         Expr:expr_lhs IN Expr:expr_rhs
                         {: RESULT = new BinaryExpr(Ops.IN, expr_lhs, expr_rhs); :}
                         |
-                        PathExpr
+                        PathExpr:pathExpr
+                        {: RESULT = pathExpr; :}
                         |
-                        LP Expr RP
+                        LP Expr:expr RP
+                        {: RESULT = expr; :}
                         ;
 
-AssignedArgPart     ::= AssignedArg:arg COMMA AssignedArgPart:args
+AssignedArgs        ::= AssignedArgs:args COMMA ID:arg ASSIGN Expr:val
+                        {:
+                           args.append(arg, val);
+                           RESULT = args;
+                        :}
                         |
-                        AssignedArg
-                        ;
-
-AssignedArg         ::= ID:arg ASSIGN Expr:val
+                        ID:arg ASSIGN Expr:val
                         {: RESULT = new AssignedArgs(arg, val); :}
                         ;
 
-PathExpr            ::= PathElement:pathElement DOT PathExpr
-                        {: RESULT = new PathExpr(pathElement); :}
+PathExpr            ::= PathExpr:pathExpr DOT PathElement:pathElement
+                        {:
+                           pathExpr.append(pathElement);
+                           RESULT = pathExpr;
+                        :}
                         |
                         PathElement:pathElement
                         {: RESULT = new PathExpr(pathElement); :}
