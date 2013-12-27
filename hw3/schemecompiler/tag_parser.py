@@ -467,6 +467,14 @@ class AbstractSchemeExpr:
         expr , remaining = sexprs.AbstractSexpr.readFromString(string)
         return parserRecursive(expr) , remaining
 
+    # part 3
+    #def semantic_analysis(self):
+            #return self.debruijn().annotateTC()
+    #        return self.annotateTC)
+
+    #def annotateTC(self):
+
+
 # Constant Class
 class Constant(AbstractSchemeExpr):
     def __init__(self,constant):
@@ -636,6 +644,10 @@ class AsStringVisitor(AbstractSchemeExpr):
     def visitDef(self):
         return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 905db0602ddaa0a8c64a340926bb9034b113762d
 ##########################
 
 
