@@ -280,6 +280,21 @@ def seperateParamsAndArgs(expr):
             bound = bound.sexpr2
     return list_params , list_args
 
+# Seperating pairs argument to list
+def pairsToList(expr):
+    bound = expr
+    list_params = []
+
+    while isinstance(bound,sexprs.Pair):
+        list_params.append(bound.sexpr1)
+        if isinstance(bound.sexpr2,sexprs.Nil):
+            break
+        else:
+            bound = bound.sexpr2
+
+    print(list_params)
+    return list_params
+
 def buildPairForParamsInLet(list_params):
     return sexprs.Pair(list_params)
 
@@ -620,3 +635,46 @@ class AsStringVisitor(AbstractSchemeExpr):
 
     def visitDef(self):
         return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'
+
+##########################
+
+
+class ApplicTp(Applic):
+    def __init__(self,expr):
+        Applic.__init__(self,expr)
+
+    def accept(self,visitor):
+        return visitor.visitLambdaVar(self)
+
+# Visitor design pattern
+class Annotate(AbstractSchemeExpr):
+
+    def visitAnnotateConstant(self):
+        return self.constant
+
+    def visitAnnotateVariable(self):
+        return self.variables
+
+    def visitAnnotateIfThenElse(self):
+        print("in here")
+
+    def visitAnnotateAbstractLambda(self):
+        print("in here")
+
+    def visitAnnotateLambdaSimple(self):
+        print("in here")
+    
+    def visitAnnotateLambdaOpt(self):
+        print("in here")
+    
+    def visitAnnotateLambdaVar(self):
+        print("in here")
+    
+    def visitAnnotateApplic(self):
+        print("in here")
+    
+    def visitAnnotateOr(self):
+        return Or(annotateTC(
+
+    def visitAnnotateDef(self):
+        print("in here")
