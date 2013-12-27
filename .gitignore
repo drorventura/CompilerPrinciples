@@ -53,3 +53,6 @@ nosetests.xml
 
 # Vi temp files
 *.sw[po]
+
+# Mac temp
+.DS_Store
