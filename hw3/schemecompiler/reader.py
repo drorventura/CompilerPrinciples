@@ -5,10 +5,11 @@ __author__ = 'Dror Ventura & Eldar Damari'
 
 ps = pc.ParserStack()
 
-# Whitespaces and Comments
+# Any char
 anyParser = ps  .const(lambda ch: ch) \
                 .done()
 
+# Whitespaces and Comments
 commentParser = ps  .parser(pc.pcWhite1)\
                     .parser(pc.pcChar(';')) \
                     .parser(anyParser) \
