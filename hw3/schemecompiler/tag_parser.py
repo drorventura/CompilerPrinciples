@@ -441,6 +441,12 @@ class AbstractSchemeExpr:
     def __str__(self):
         return self.accept(AsStringVisitor)
 
+    def debruijn(self):
+        return self.deruijn_helper(self, [], [], 0, 0, 0)
+
+    def deruijn_helper(self, bound, param, major, minor, index):
+        print("this is the function need to implement")
+
     @staticmethod
     def parse(string):
         expr , remaining = sexprs.AbstractSexpr.readFromString(string)
@@ -458,6 +464,30 @@ class Constant(AbstractSchemeExpr):
 class Variable(AbstractSchemeExpr):
     def __init__(self,variable):
         self.variable = variable
+
+    def accept(self, visitor):
+        return visitor.visitVariable(self)
+
+class VarFree(Variable):
+    def __init__(self, variable):
+        Variable.__init__(variable)
+
+    def accept(self, visitor):
+        return visitor.visitVariable(self)
+
+class VarParam(Variable):
+    def __init__(self, variable, minor):
+        Variable.__init__(variable)
+        self.minor = minor
+
+    def accept(self, visitor):
+        return visitor.visitVariable(self)
+
+class VarBound(Variable):
+    def __init__(self, variable,major, minor):
+        Variable.__init__(variable)
+        self.major = major
+        self.minor = minor
 
     def accept(self, visitor):
         return visitor.visitVariable(self)
@@ -533,7 +563,6 @@ class Def(AbstractSchemeExpr):
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSchemeExpr):
-
     def visitConstant(self):
         if isinstance(self.constant,sexprs.String):
             return '"' + str(self.constant) + '"'
@@ -544,6 +573,15 @@ class AsStringVisitor(AbstractSchemeExpr):
 
     def visitVariable(self):
         return str(self.variable)
+
+    # def visitFreeVariable(self):
+    #     return str(self.variable)
+    #
+    # def visitParamVariable(self):
+    #     return str(self.variable)
+    #
+    # def visitBoundVariable(self):
+    #     return str(self.variable)
 
     def visitIfThenElse(self):
         return '(IF ' + str(self.pair.sexpr1) + ' ' \
