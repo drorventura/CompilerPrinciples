@@ -644,10 +644,6 @@ class AsStringVisitor(AbstractSchemeExpr):
     def visitDef(self):
         return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 905db0602ddaa0a8c64a340926bb9034b113762d
 ##########################
 
 
@@ -686,7 +682,7 @@ class Annotate(AbstractSchemeExpr):
         print("in here")
     
     def visitAnnotateOr(self):
-        return Or(annotateTC(
+        return "FIXME"
 
     def visitAnnotateDef(self):
-        print("in here")
+        return "n here"
