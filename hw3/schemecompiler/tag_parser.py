@@ -466,11 +466,11 @@ class AbstractSchemeExpr:
         expr , remaining = sexprs.AbstractSexpr.readFromString(string)
         return parserRecursive(expr) , remaining
 
-    def debruijn(self):
-        return self.deruijn_helper(self, [], [], 0, 0, 0)
+#    def debruijn(self):
+#        return self.deruijn_helper(self, [], [], 0, 0, 0)
 
-    def deruijn_helper(self, bound, param, major, minor, index):
-        print("this is the function need to implement")
+#    def deruijn_helper(self, bound, param, major, minor, index):
+#        print("this is the function need to implement")
 
     # part 3
     def semantic_analysis(self):
@@ -642,10 +642,15 @@ class AsStringVisitor(AbstractSchemeExpr):
                     + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
-        if isinstance(self.arguments,sexprs.Nil):
+        if len(self.arguments) is 0:
             return '(OR)'
         else:
-            return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
+            args = ""
+            for x in self.arguments[:-1]:
+                args += str(x) + " "
+            args +=str(self.arguments[len(self.arguments)-1])
+            return '(OR ' + args + ')'
+
 
     def visitDef(self):
         return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'
