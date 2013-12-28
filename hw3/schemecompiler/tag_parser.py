@@ -304,7 +304,8 @@ def tagApplic(applic):
     return Applic(app,arguments)
 
 def tagOr(arguments):
-    return Or(arguments)
+    argsList = [parserRecursive(x) for x in pairsToList(arguments)]
+    return Or(argsList)
 
 def tagAnd(expr):
 
@@ -456,24 +457,25 @@ class AbstractSchemeExpr:
     def __str__(self):
         return self.accept(AsStringVisitor)
 
-    def debruijn(self):
-        return self.deruijn_helper(self, [], [], 0, 0, 0)
-
-    def deruijn_helper(self, bound, param, major, minor, index):
-        print("this is the function need to implement")
+    #Overide annotate(...)
+    def annotateTC(self,inTp):
+        return self.annotate(AnnotateVisitor,inTp)
 
     @staticmethod
     def parse(string):
         expr , remaining = sexprs.AbstractSexpr.readFromString(string)
         return parserRecursive(expr) , remaining
 
+    def debruijn(self):
+        return self.deruijn_helper(self, [], [], 0, 0, 0)
+
+    def deruijn_helper(self, bound, param, major, minor, index):
+        print("this is the function need to implement")
+
     # part 3
-    #def semantic_analysis(self):
+    def semantic_analysis(self):
             #return self.debruijn().annotateTC()
-    #        return self.annotateTC)
-
-    #def annotateTC(self):
-
+            return self.annotateTC(False)
 
 # Constant Class
 class Constant(AbstractSchemeExpr):
@@ -574,6 +576,9 @@ class Or(AbstractSchemeExpr):
 
     def accept(self,visitor):
         return visitor.visitOr(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateOr(self,inTp)
 
 # Def Class
 class Def(AbstractSchemeExpr):
@@ -586,6 +591,7 @@ class Def(AbstractSchemeExpr):
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSchemeExpr):
+
     def visitConstant(self):
         if isinstance(self.constant,sexprs.String):
             return '"' + str(self.constant) + '"'
@@ -646,43 +652,54 @@ class AsStringVisitor(AbstractSchemeExpr):
 
 ##########################
 
-
 class ApplicTp(Applic):
     def __init__(self,expr):
+        print("in ApplicTp")
         Applic.__init__(self,expr)
 
     def accept(self,visitor):
         return visitor.visitLambdaVar(self)
 
 # Visitor design pattern
-class Annotate(AbstractSchemeExpr):
+class AnnotateVisitor(AbstractSchemeExpr):
 
-    def visitAnnotateConstant(self):
-        return self.constant
+    def visitAnnotateConstant(self,inTp):
+        return self,inTp.constant
 
-    def visitAnnotateVariable(self):
-        return self.variables
+    def visitAnnotateVariable(self,inTp):
+        return self,inTp.variables
 
-    def visitAnnotateIfThenElse(self):
+    def visitAnnotateIfThenElse(self,inTp):
         print("in here")
 
-    def visitAnnotateAbstractLambda(self):
+    def visitAnnotateAbstractLambda(self,inTp):
         print("in here")
 
-    def visitAnnotateLambdaSimple(self):
-        print("in here")
-    
-    def visitAnnotateLambdaOpt(self):
+    def visitAnnotateLambdaSimple(self,inTp):
         print("in here")
     
-    def visitAnnotateLambdaVar(self):
+    def visitAnnotateLambdaOpt(self,inTp):
         print("in here")
     
-    def visitAnnotateApplic(self):
+    def visitAnnotateLambdaVar(self,inTp):
         print("in here")
     
-    def visitAnnotateOr(self):
-        return "FIXME"
+    def visitAnnotateApplic(self,inTp):
+        print("in here")
+    
+    def visitAnnotateOr(self,inTp):
+        print("in annotate Or")
+        i = 0;
+        for arg in self.arguments:
 
-    def visitAnnotateDef(self):
+            if i is len(arguments)-1:
+                if inTp is True: self.arguments[i] = ApplicTp(arg.annotate(inTp))
+                else:            self.arguments[i] = annotate(inTp)
+
+            self.arguments[i] = arg.annotateTC(False)
+            i+=1
+        return  Or(argsList)
+                    
+
+    def visitAnnotateDef(self,inTp):
         return "n here"
