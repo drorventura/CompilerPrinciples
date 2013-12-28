@@ -133,16 +133,22 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '(Yag (LAMBDA (&39@ A B) (IF A B #f)) (LAMBDA (&416@ A B) (A 3)) (LAMBDA (&525@ A B) #t))')
 
     def test_classes(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda () (+ 1 2))")
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a b) (lambda (c d) (lambda (x y) (+ 1 2)))))")
+        # print(sexpr.__class__)
+        # print(sexpr.arguments.__class__)
+        # print(sexpr.body.__class__)
+        # print(sexpr.body.applic.__class__)
+        # print(sexpr.body.arguments.__class__)
+        # print(sexpr.body.arguments.sexpr1.__class__)
+        # print(sexpr.body.arguments.sexpr2.__class__)
+        # print(sexpr.body.arguments.sexpr2.sexpr1.__class__)
+        # print(sexpr.body.arguments.sexpr2.sexpr2.__class__)
+        sexpr.debruijn()
+        print("\n")
         print(sexpr.__class__)
         print(sexpr.arguments.__class__)
         print(sexpr.body.__class__)
-        print(sexpr.body.applic.__class__)
-        print(sexpr.body.arguments.__class__)
-        print(sexpr.body.arguments.sexpr1.__class__)
-        print(sexpr.body.arguments.sexpr2.__class__)
-        print(sexpr.body.arguments.sexpr2.sexpr1.__class__)
-        print(sexpr.body.arguments.sexpr2.sexpr2.__class__)
+
 
 
 
