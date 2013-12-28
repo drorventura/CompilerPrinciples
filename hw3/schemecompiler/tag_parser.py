@@ -295,6 +295,19 @@ def pairsToList(expr):
     print(list_params)
     return list_params
 
+def pairsAnnotate(expr,inTp):
+    bound = expr
+
+    while isinstance(bound,sexprs.Pair):
+        bound.sexpr1 = parserRecursive(bound.sexpr1)
+        if isinstance(bound.sexpr2,sexprs.Nil):
+            bound.sexpr1 = bound.sexpr1.annotateTC(inTp)
+        if isinstance(bound.sexpr2,sexprs.Nil):
+            break
+        else:
+            bound = bound.sexpr2
+    return 
+
 def buildPairForParamsInLet(list_params):
     return sexprs.Pair(list_params)
 
@@ -304,8 +317,7 @@ def tagApplic(applic):
     return Applic(app,arguments)
 
 def tagOr(arguments):
-    argsList = [parserRecursive(x) for x in pairsToList(arguments)]
-    return Or(argsList)
+    return Or(arguments)
 
 def tagAnd(expr):
 
@@ -484,6 +496,9 @@ class Constant(AbstractSchemeExpr):
 
     def accept(self, visitor):
         return visitor.visitConstant(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateConstant(self,inTp)
 
 # Variable Class
 class Variable(AbstractSchemeExpr):
@@ -492,6 +507,9 @@ class Variable(AbstractSchemeExpr):
 
     def accept(self, visitor):
         return visitor.visitVariable(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateVariable(self,inTp)
 
 class VarFree(Variable):
     def __init__(self, variable):
@@ -524,6 +542,9 @@ class IfThenElse(AbstractSchemeExpr):
 
     def accept(self, visitor):
         return visitor.visitIfThenElse(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateIfThenElse(self,inTp)
 
 # AbstractLambda Class
 class AbstractLambda(AbstractSchemeExpr):
@@ -541,6 +562,9 @@ class LambdaSimple(AbstractLambda):
 
     def accept(self, visitor):
         return visitor.visitAbstractLambda(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateLambdaSimple(self,inTp)
 
 # LambdaOpt Class
 class LambdaOpt(AbstractLambda):
@@ -550,6 +574,9 @@ class LambdaOpt(AbstractLambda):
 
     def accept(self,visitor):
         return visitor.visitLambdaOpt(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateLambdaOpt(self,inTp)
 
 # LambdaVar Class
 class LambdaVar(AbstractLambda):
@@ -559,6 +586,9 @@ class LambdaVar(AbstractLambda):
 
     def accept(self,visitor):
         return visitor.visitLambdaVar(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateLambdaVar(self,inTp)
 
 # Applic Class
 class Applic(AbstractSchemeExpr):
@@ -568,6 +598,9 @@ class Applic(AbstractSchemeExpr):
 
     def accept(self,visitor):
         return visitor.visitApplic(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateApplic(self,inTp)
 
 # Or Class
 class Or(AbstractSchemeExpr):
@@ -588,6 +621,9 @@ class Def(AbstractSchemeExpr):
 
     def accept(self,visitor):
         return visitor.visitDef(self)
+    
+    def annotate(self,visitor,inTp):
+        return visitor.visitAnnotateDef(self,inTp)
 
 # Visitor design pattern
 class AsStringVisitor(AbstractSchemeExpr):
@@ -642,14 +678,10 @@ class AsStringVisitor(AbstractSchemeExpr):
                     + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
     
     def visitOr(self):
-        if len(self.arguments) is 0:
+        if isinstance(self.arguments,sexprs.Nil):
             return '(OR)'
         else:
-            args = ""
-            for x in self.arguments[:-1]:
-                args += str(x) + " "
-            args +=str(self.arguments[len(self.arguments)-1])
-            return '(OR ' + args + ')'
+            return '(OR ' + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
 
 
     def visitDef(self):
@@ -663,48 +695,78 @@ class ApplicTp(Applic):
         Applic.__init__(self,expr)
 
     def accept(self,visitor):
-        return visitor.visitLambdaVar(self)
+        return visitor.visitApplic(self)
 
 # Visitor design pattern
 class AnnotateVisitor(AbstractSchemeExpr):
 
     def visitAnnotateConstant(self,inTp):
-        return self,inTp.constant
+        print("annotate Constants")
+        return self.constant
 
     def visitAnnotateVariable(self,inTp):
-        return self,inTp.variables
+        print("annotate Variable")
+        return self.variable
 
     def visitAnnotateIfThenElse(self,inTp):
-        print("in here")
-
-    def visitAnnotateAbstractLambda(self,inTp):
-        print("in here")
+        print("in IfThenElse annotate")
+        self.pair.sexpr1 = self.pair.sexpr1.annotateTC(False)
+        annotatePairs(self.pair.sexpr2,inTp)
+        return self
 
     def visitAnnotateLambdaSimple(self,inTp):
-        print("in here")
+        print("annotate LambdaSimple")
+        self.body = self.body.annotateTC(True)
+        return self
     
     def visitAnnotateLambdaOpt(self,inTp):
-        print("in here")
+        print("annotate LambdaOpt")
+        self.body = self.body.annotateTC(True)
+        return self
     
     def visitAnnotateLambdaVar(self,inTp):
-        print("in here")
+        print("annotate LambdaVar")
+        self.body = self.body.annotateTC(True)
+        return self
     
     def visitAnnotateApplic(self,inTp):
-        print("in here")
-    
+        print("annotate Applic")
+        self.applic = self.applic.annotateTC(False)
+        annotatePairs(self.arguments,False)
+
+        if inTp is False:   return self
+        if inTp is True :   return ApplicTp(self)
+
     def visitAnnotateOr(self,inTp):
         print("in annotate Or")
-        i = 0;
-        for arg in self.arguments:
+        bound = self.arguments
 
-            if i is len(arguments)-1:
-                if inTp is True: self.arguments[i] = ApplicTp(arg.annotate(inTp))
-                else:            self.arguments[i] = annotate(inTp)
+        while isinstance(bound,sexprs.Pair):
+            bound.sexpr1 = parserRecursive(bound.sexpr1)
 
-            self.arguments[i] = arg.annotateTC(False)
-            i+=1
-        return  Or(argsList)
+            if isinstance(bound.sexpr2,sexprs.Nil):
+                bound.sexpr1 = bound.sexpr1.annotateTC(inTp)
+                break
+            bound.sexpr1.annotateTC(False)
+            bound = bound.sexpr2
+
+        return self
                     
 
     def visitAnnotateDef(self,inTp):
-        return "n here"
+        self.expr = self.expr.annotateTC(False)
+        return self
+
+
+def annotatePairs(self,inTp):
+    if isinstance(self.sexpr2, sexprs.Nil):                #proper list end tree
+        self.sexpr1 = self.sexpr1.annotateTC(inTp)
+    else:
+        if isinstance(self.sexpr2, sexprs.Pair):
+            #recursive call
+            self.sexpr1 = self.sexpr1.annotateTC(inTp)
+            annotatePairs(self.sexpr2,inTp)
+        else:
+            #impreper list end tree
+            self.sexpr1 = self.sexpr1.annotateTC(inTp)
+            self.sexpr2 = self.sexpr2.annotateTC(inTp)
