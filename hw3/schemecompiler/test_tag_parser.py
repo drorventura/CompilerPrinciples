@@ -135,6 +135,7 @@ class TestSexprs(unittest.TestCase):
     def test_classes(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a b) (lambda (c d) (lambda (x y) (+ a x)))))")
         sexpr.debruijn()
+        print(sexpr.body.body.body.applic.__class__)
         # assert
     def test_classes2(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a) (lambda (x y) (if #t a b)))))")
@@ -149,6 +150,23 @@ class TestSexprs(unittest.TestCase):
     def test_classes4(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define foo (lambda (x) (+ x y)))")
         sexpr.debruijn()
+        self.assertEqual(type(sexpr.expr.body.arguments.sexpr1).__name__ , 'VarParam')
+
+    def test_classes5(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(LAMBDA (X) (+ x (- 3 2)))")
+        sexpr.debruijn()
+        self.assertEqual(sexpr.body.arguments.sexpr1.__class__.__name__ , 'VarParam')
+
+    def test_classes6(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("((LAMBDA (X V) (F Z X)) (+ V Z X) 2)")
+        print(sexpr)
+        # sexpr.debruijn()
+
+        # assert
+
+    def test_vector(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("#((lambda (x) (+ x y)))")
+        # sexpr.debruijn()
         # assert
 
 
