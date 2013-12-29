@@ -732,6 +732,7 @@ class AnnotateVisitor(AbstractSchemeExpr):
     def visitAnnotateApplic(self,inTp):
         print("annotate Applic")
         self.applic = self.applic.annotateTC(False)
+        # maybe should use left flatting
         annotatePairs(self.arguments,False)
 
         if inTp is False:   return self
@@ -749,7 +750,6 @@ class AnnotateVisitor(AbstractSchemeExpr):
                 break
             bound.sexpr1.annotateTC(False)
             bound = bound.sexpr2
-
         return self
                     
 
