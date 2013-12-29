@@ -177,7 +177,13 @@ class AsStringVisitor(AbstractSexpr):
         else:
             if isinstance(self.sexpr2, Pair):
                 #recursive call
-                return str(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
+                str1 = str(self.sexpr1)
+                str2 = AsStringVisitor.pairToString(self.sexpr2)
+                if str2:
+                    return str1 + ' ' + str2
+                else:
+                    return str1
+                # return str(self.sexpr1) + ' ' + AsStringVisitor.pairToString(self.sexpr2)
             else:
                 #impreper list end tree
                 return str(self.sexpr1) + ' . ' + str(self.sexpr2)

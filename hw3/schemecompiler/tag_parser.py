@@ -38,8 +38,8 @@ def parserRecursive(expr):
         elif className == "Symbol":
             return Variable(expr)
 
-        # elif className == "Vector":
-        #     return tagVector(expr)
+        elif className == "Vector":
+            return parserRecursive(expr.sexpr)
 
         elif className in Constants_Strings:
             return tagConstant(expr)
@@ -99,7 +99,8 @@ def tagPair(expr):
         else:
             return tagApplic(expr)
     else:
-        return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
+        return tagApplic(expr)
+            # sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
 ##########################################
 #           Special For LAMBDA           #
