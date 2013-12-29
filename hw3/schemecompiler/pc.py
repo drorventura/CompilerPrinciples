@@ -4,8 +4,6 @@
 #
 # Programmer: Mayer Goldberg, 2013
 
-#new pc
-
 class NoMatch(Exception):
     pass
 

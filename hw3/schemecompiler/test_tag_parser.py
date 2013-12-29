@@ -113,9 +113,9 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '((LAMBDA (X Y) (+ 1 2)) (+ 1 2) 7)')
     
     def test_let_1_arg(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5)) 2)')
-        self.assertEqual(str(sexpr) , '((LAMBDA (X) 2) 5)')
-    
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x 5)) (+ 2 1))')
+        self.assertEqual(str(sexpr) , '((LAMBDA (X) (+ 2 1)) 5)')
+
     def test_letstar_1_arg(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let* ((x 5) (y (+ x 1))) (+ x y))')
         self.assertEqual(str(sexpr) , '((LAMBDA (X) ((LAMBDA (Y) (+ X Y)) (+ X 1))) 5)')
@@ -133,22 +133,23 @@ class TestSexprs(unittest.TestCase):
         self.assertEqual(str(sexpr) , '(Yag (LAMBDA (&39@ A B) (IF A B #f)) (LAMBDA (&416@ A B) (A 3)) (LAMBDA (&525@ A B) #t))')
 
     def test_classes(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a b) (lambda (c d) (lambda (x y) (+ 1 2)))))")
-        # print(sexpr.__class__)
-        # print(sexpr.arguments.__class__)
-        # print(sexpr.body.__class__)
-        # print(sexpr.body.applic.__class__)
-        # print(sexpr.body.arguments.__class__)
-        # print(sexpr.body.arguments.sexpr1.__class__)
-        # print(sexpr.body.arguments.sexpr2.__class__)
-        # print(sexpr.body.arguments.sexpr2.sexpr1.__class__)
-        # print(sexpr.body.arguments.sexpr2.sexpr2.__class__)
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a b) (lambda (c d) (lambda (x y) (+ a x)))))")
         sexpr.debruijn()
-        print("\n")
-        print(sexpr.__class__)
-        print(sexpr.arguments.__class__)
-        print(sexpr.body.__class__)
+        # assert
+    def test_classes2(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a) (lambda (x y) (if #t a b)))))")
+        sexpr.debruijn()
+        # assert
 
+    def test_classes3(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a) (lambda (x y) (or #f x)))))")
+        sexpr.debruijn()
+        # assert
+
+    def test_classes4(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define foo (lambda (x) (+ x y)))")
+        sexpr.debruijn()
+        # assert
 
 
 
