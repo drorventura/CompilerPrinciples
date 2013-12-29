@@ -31,19 +31,22 @@ class Gensym:
 ##############################
 def parserRecursive(expr):
         className = expr.__class__.__name__
-        
+
         if className ==   "Pair":
             return tagPair(expr)
-    
+
         elif className == "Symbol":
             return Variable(expr)
-    
+
         # elif className == "Vector":
         #     return tagVector(expr)
 
         elif className in Constants_Strings:
             return tagConstant(expr)
-    
+
+        else:
+            return expr
+
 def tagPair(expr):
     if isinstance(expr.sexpr1, sexprs.Symbol):
         # Identify: Quoted Like Strings
@@ -65,7 +68,7 @@ def tagPair(expr):
         elif expr.sexpr1.string == "COND":
             return tagCond(expr.sexpr2)
 
-        # Identify: DEFINE 
+        # Identify: DEFINE
         elif expr.sexpr1.string == "DEFINE":
             return tagDefine(expr.sexpr2)
 
@@ -79,11 +82,11 @@ def tagPair(expr):
         # Identify: LET
         elif expr.sexpr1.string == "LET":
             return tagLet(expr.sexpr2)
-        
+
         # Identify: LET*
         elif expr.sexpr1.string == "LET*":
             return tagLetStar(expr.sexpr2)
-        
+
         # Identify: OR
         elif expr.sexpr1.string == "OR":
             return tagOr(expr.sexpr2)
@@ -95,7 +98,7 @@ def tagPair(expr):
         # Identify: APPLICATION
         else:
             return tagApplic(expr)
-    else: 
+    else:
         return sexprs.Pair([parserRecursive(expr.sexpr1), parserRecursive(expr.sexpr2)])
 
 ##########################################
@@ -103,16 +106,16 @@ def tagPair(expr):
 ##########################################
 def parserRecursiveForLambda(expr):
         className = expr.__class__.__name__
-        
+
         if className == "Symbol":
             return Variable(expr)
-    
+
         elif className in Constants_Strings:
-            raise lambdaParametersIsNotVariable("Lambda Parameters Need To Be Variables") 
-        
+            raise lambdaParametersIsNotVariable("Lambda Parameters Need To Be Variables")
+
         elif className ==   "Pair":
             return tagPairLambda(expr)
-    
+
 def tagPairLambda(expr):
 
     if isinstance(expr.sexpr1, sexprs.Symbol):
@@ -124,17 +127,17 @@ def tagPairLambda(expr):
             if isinstance(expr.sexpr2,sexprs.Pair) and\
                isinstance(expr.sexpr2.sexpr1, sexprs.Symbol) and\
                isinstance(expr.sexpr2.sexpr2, sexprs.Symbol):
-            # senfing to pair const. with list of lists, to work with sum  
+            # senfing to pair const. with list of lists, to work with sum
                 list_to_be_flatten = [[parserRecursiveForLambda(expr.sexpr1)],parserRecursiveForLambda(expr.sexpr2)]
                 if list_to_be_flatten[1][0] == '.':
                     return  sexprs.Pair(sum(list_to_be_flatten,[]))
             else:
-                try: 
+                try:
                     return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1),\
                                          parserRecursiveForLambda(expr.sexpr2)])
                 except lambdaParametersIsNotVariable:
                     return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1)])
-    else: 
+    else:
         raise lambdaParametersIsNotVariable("Lambda Parameters Need To Be Variables")
 
 #END#########################################
@@ -197,11 +200,11 @@ def tagLambda(expr):
         if isinstance(params,list):
             params = params[1]
     else:
-        return LambdaSimple(expr.sexpr1,body)    
+        return LambdaSimple(expr.sexpr1,body)
 
     temp_args = params
 
-    # Lambda Variadic 
+    # Lambda Variadic
     if isinstance(params, Variable):
         return LambdaVar(params,body)
 
@@ -214,7 +217,7 @@ def tagLambda(expr):
                     isinstance(temp_args.sexpr2.sexpr1,Variable) and\
                     isinstance(temp_args.sexpr2.sexpr2,sexprs.Nil):
                         return LambdaSimple(params,body)
-             
+
             elif  isinstance(temp_args.sexpr1,Variable) and\
                     isinstance(temp_args.sexpr2,sexprs.Pair) and\
                     isinstance(temp_args.sexpr2.sexpr1,Variable) and\
@@ -237,19 +240,18 @@ def tagLambda(expr):
     # Lambda Simple
     return LambdaSimple(params,body)
 
-
 def tagLetrec(expressions):
     params , args = seperateParamsAndArgs(expressions.sexpr1)
-    # paramsAsSchemePairs = buildPairForParamsInLet(params)
+
     expr = expressions.sexpr2.sexpr1
 
-    lambdaSymbol = sexprs.Symbol('LAMBDA', 6)
+    # lambdaSymbol = sexprs.Symbol('LAMBDA', 6)
 
     genTmp = Gensym.generate()
     g0 = sexprs.Symbol(genTmp,len(genTmp))
     params.insert(0,g0)
-    firstLetrecExp = sexprs.Pair(sum([[lambdaSymbol],
-                                      [buildPairForParamsInLet(params)],
+
+    firstLetrecExp = sexprs.Pair(sum([[buildPairForParamsInLet(params)],
                                       [expr]],[]))
 
     listLetrecExpr = []
@@ -258,12 +260,15 @@ def tagLetrec(expressions):
         genTmp = Gensym.generate()
         g0 = sexprs.Symbol(genTmp,len(genTmp))
         params.insert(0,g0)
-        letrecExp = sexprs.Pair(sum([[lambdaSymbol],[buildPairForParamsInLet(params)],[args[0]]],[]))
-        listLetrecExpr.append(letrecExp)
+        letrecExp = sexprs.Pair(sum([[buildPairForParamsInLet(params)],[args[0]]],[]))
+        listLetrecExpr.append(tagLambda(letrecExp))
         args = args[1:]
 
     yag = sexprs.Symbol('Yag', 3)
-    return parserRecursive(sexprs.Pair(sum([[yag], [firstLetrecExp], listLetrecExpr],[])))
+
+    pairForApplic = sexprs.Pair(sum([[yag], [tagLambda(firstLetrecExp)], listLetrecExpr],[]))
+
+    return tagApplic(pairForApplic)
 
 def seperateParamsAndArgs(expr):
     bound = expr
@@ -272,6 +277,7 @@ def seperateParamsAndArgs(expr):
 
     while isinstance(bound,sexprs.Pair):
         list_params.append(bound.sexpr1.sexpr1)
+
         list_args.append(bound.sexpr1.sexpr2.sexpr1)
 
         if isinstance(bound.sexpr2,sexprs.Nil):
@@ -281,19 +287,19 @@ def seperateParamsAndArgs(expr):
     return list_params , list_args
 
 # Seperating pairs argument to list
-def pairsToList(expr):
-    bound = expr
-    list_params = []
+#def pairsToList(expr):
+#    bound = expr
+#    list_params = []
 
-    while isinstance(bound,sexprs.Pair):
-        list_params.append(bound.sexpr1)
-        if isinstance(bound.sexpr2,sexprs.Nil):
-            break
-        else:
-            bound = bound.sexpr2
-
-    print(list_params)
-    return list_params
+#    while isinstance(bound,sexprs.Pair):
+#        list_params.append(bound.sexpr1)
+#        if isinstance(bound.sexpr2,sexprs.Nil):
+#            break
+#        else:
+#            bound = bound.sexpr2
+#
+#    print(list_params)
+#    return list_params
 
 def pairsAnnotate(expr,inTp):
     bound = expr
@@ -311,6 +317,20 @@ def pairsAnnotate(expr,inTp):
 def buildPairForParamsInLet(list_params):
     return sexprs.Pair(list_params)
 
+# Seperating pairs argument to list
+def pairsToList(expr):
+    bound = expr
+    list_params = []
+
+    while isinstance(bound,sexprs.Pair):
+        if isinstance(bound.sexpr1, sexprs.Pair):
+            list_params.append(bound.sexpr1)
+        else:
+            list_params.append(bound.sexpr1)
+        bound = bound.sexpr2
+
+    return list_params
+
 def tagApplic(applic):
     app = applic.sexpr1
     arguments = applic.sexpr2
@@ -320,7 +340,6 @@ def tagOr(arguments):
     return Or(arguments)
 
 def tagAnd(expr):
-
     # a single case when and procedure is called with no arguments (AND)
     if isinstance(expr,sexprs.Nil):
         e1 = Constant(sexprs.Boolean('t'))
@@ -346,9 +365,14 @@ def tagLet(expr):
 
     list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
+    tagged_list_args = []
+    for arg in list_args:
+        tagged_list_args.append(parserRecursive(arg))
+
     paramsPair    = buildPairForParamsInLet(list_params)
-    argsPair      = buildPairForParamsInLet(list_args)
+    argsPair      = buildPairForParamsInLet(tagged_list_args)
     bodyPair      = ['.', sexprs.Pair([body])]
+
     pairForLambda = sexprs.Pair(sum([[paramsPair],bodyPair],[])) #warning!
     pairForApplic = sexprs.Pair(sum([[tagLambda(pairForLambda)],['.',argsPair]],[])) #warning!
 
@@ -358,7 +382,7 @@ def buildPairForParamsInLet(list_params):
         return sexprs.Pair(list_params)
 
 def tagLetStartRec(expr):
-    
+
     finalPair1 = ['.',expr.sexpr2.sexpr1]
 
     if isinstance(expr.sexpr2.sexpr1.sexpr1.sexpr2,sexprs.Nil):
@@ -369,7 +393,7 @@ def tagLetStartRec(expr):
                                                     finalPair1],[]))
     body = finalPairWithString
     if isinstance(expr.sexpr1,sexprs.Nil):
-        raise SyntaxError("In Let Parameters Bound Are Empty") 
+        raise SyntaxError("In Let Parameters Bound Are Empty")
 
     list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
@@ -378,7 +402,7 @@ def tagLetStartRec(expr):
     bodyPair      = ['.', sexprs.Pair([body])]
     pairForLambda = sexprs.Pair(sum([[paramsPair],bodyPair],[])) #warning!
     pairForApplic = sexprs.Pair(sum([[tagLambda(pairForLambda)],['.',argsPair]],[])) #warning!
-    
+
     return  tagApplic(pairForApplic)
 
 def tagLetStar(expr):
@@ -390,20 +414,11 @@ def tagLetStar(expr):
         pairSingleBound = sexprs.Pair([single_bound])  #[ | NIL ] -> [ X | ] -> [5 | NIL]
         cont_body    = ['.', expr.sexpr2]
         pairForLet   = sexprs.Pair(sum([[expr.sexpr1.sexpr2],cont_body],[]))
+
         bodyWithLet  = sexprs.Pair([pairForLet])
 
         cont_body_withLet = ['.',bodyWithLet]
-        #test - cont_body_withLet = ['.',pairForLet]
-#     origin   finalPair = sexprs.Pair(sum([[pairSingleBound],cont_body_withLet],[]))
         finalPair = sexprs.Pair(sum([[pairSingleBound],cont_body_withLet],[]))
-
-        #test
-        #finalPair1 = ['.',sexprs.Pair(sum([[pairSingleBound],cont_body_withLet],[]))]
-        #finalPairWithString = sexprs.Pair(sum([[sexprs.Symbol("LET",3)],
-        #                                        finalPair1],[]))
-
-        # lets check how the body is printed
-        #return tagLet(pairForLet)
 
         return tagLetStartRec(finalPair)
 
@@ -414,8 +429,8 @@ def expandQQ(expr):
 
     if isinstance(expr,sexprs.Pair):
         head = expr.sexpr1
-        tail = expr.sexpr2 
-        
+        tail = expr.sexpr2
+
         if isinstance(head,sexprs.Pair) and\
             head.sexpr1 == "UNQUOTE-SPLICING":
             return sexprs.Pair(sum([[sexprs.Symbol('APPEND',6)],
@@ -428,15 +443,15 @@ def expandQQ(expr):
                                 ['.',sexprs.Pair(sum([[expandQQ(head)],
                                              ['.',sexprs.Pair[expr.sexpr2.sexpr1]]],[]))]],[]))
         else:
-            return sexprs.Pair(sum([[sexprs.Symbol('CONS',4)], 
-                                ['.',sexprs.Pair(sum([[expandQQ(head)], 
+            return sexprs.Pair(sum([[sexprs.Symbol('CONS',4)],
+                                ['.',sexprs.Pair(sum([[expandQQ(head)],
                                              ['.',sexprs.Pair([expandQQ(tail)])]],[]))]],[]))
     elif isinstance(expr,sexprs.Vector):
         return sexprs.Pair(sum([[sexprs.Symbol('LIST->VECTOR',12)], ['.',sexprs.Pair([expandQQ(expr)])]],[])) # may be need last arg
 
     elif isinstance(expr,sexprs.Nil) or\
             isinstance(expr,sexprs.Symbol):
-            return sexprs.Pair(sum([[sexprs.Symbol('QUOTE_LAST',5)], 
+            return sexprs.Pair(sum([[sexprs.Symbol('QUOTE_LAST',5)],
                 ['.',sexprs.Pair([expr])]],[]))
     else:
         return expr
@@ -473,21 +488,71 @@ class AbstractSchemeExpr:
     def annotateTC(self,inTp):
         return self.annotate(AnnotateVisitor,inTp)
 
+    def debruijn(self):
+        return self.debruijn_helper([], [])
+
+    def debruijn_helper(self, bound, param):
+        className = self.__class__.__name__
+        if className == "Variable":
+            minor = -1
+            for p in param:
+                if str(p) == str(self):
+                    minor = param.index(p)
+                    self.__class__ = VarParam
+                    self.minor = minor
+                    break
+            if minor < 0:
+                for major, list_params in enumerate(bound):
+                    for b in list_params:
+                        if str(b) == str(self):
+                            minor = list_params.index(b)
+                            self.__class__ = VarBound
+                            self.major = major
+                            self.minor = minor
+            if minor < 0:
+                self.__class__ = VarFree
+
+        elif className.__contains__("Lambda"):
+            if className == "LambdaSimple":
+                self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
+            if className == "LambdaVar":
+                return self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
+            if className == "LambdaOpt":
+                return self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
+
+        else:
+            if className == "Applic":
+                self.applic.debruijn_helper(bound, param)
+                arguments = pairsToList(self.arguments)
+                for arg in arguments:
+                    arg.debruijn_helper(bound,param)
+            elif className == "IfThenElse":
+                arguments = pairsToList(self.pair)
+                for arg in arguments:
+                    arg.debruijn_helper(bound,param)
+            elif className == "Or":
+                arguments = pairsToList(self.arguments)
+                for arg in arguments:
+                    arg.debruijn_helper(bound, param)
+            elif className == "Def":
+                self.name.debruijn_helper(bound,param)
+                self.expr.debruijn_helper(bound,param)
+            # this else is only for tests #
+            else:
+                print("did you forget to implement support to class " + className)
+
     @staticmethod
     def parse(string):
         expr , remaining = sexprs.AbstractSexpr.readFromString(string)
         return parserRecursive(expr) , remaining
 
-#    def debruijn(self):
-#        return self.deruijn_helper(self, [], [], 0, 0, 0)
-
-#    def deruijn_helper(self, bound, param, major, minor, index):
-#        print("this is the function need to implement")
-
     # part 3
     def semantic_analysis(self):
             #return self.debruijn().annotateTC()
-            return self.annotateTC(False)
+            self.debruijn()
+            self.annotateTC(False)
+            return self
+            #return obj.annotateTC(False)
 
 # Constant Class
 class Constant(AbstractSchemeExpr):
@@ -592,9 +657,21 @@ class LambdaVar(AbstractLambda):
 
 # Applic Class
 class Applic(AbstractSchemeExpr):
-    def __init__(self,applic,arguments):
-        self.applic = applic
-        self.arguments = arguments
+    def __init__(self, applic, arguments):
+        self.applic = Variable(applic)
+
+        argsList = pairsToList(arguments)
+        print("**argsList**")
+        print(argsList)
+        newArguments = []
+        if argsList:
+            for arg in argsList:
+                arg = (parserRecursive(arg))
+                newArguments.append(arg)
+            print("in applic Constructor")
+            self.arguments = sexprs.Pair(newArguments)
+        else:
+            self.arguments = arguments
 
     def accept(self,visitor):
         return visitor.visitApplic(self)
@@ -605,6 +682,11 @@ class Applic(AbstractSchemeExpr):
 # Or Class
 class Or(AbstractSchemeExpr):
     def __init__(self,arguments):
+        iter = arguments
+        while isinstance(iter,sexprs.Pair):
+            iter.sexpr1 = parserRecursive(iter.sexpr1)
+            iter = iter.sexpr2
+
         self.arguments = arguments
 
     def accept(self,visitor):
@@ -660,23 +742,35 @@ class AsStringVisitor(AbstractSchemeExpr):
                     + str(self.body) + ')'
 
     def visitLambdaSimple(self):
+        print("in lambda simple")
         return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
                           + str(self.body) + ')'
-    
+
     def visitLambdaOpt(self):
+        print("in lambda opt")
         return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
                           + str(self.body) + ')'
-    
+
     def visitLambdaVar(self):
+        print("in lambda var")
         return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ')'
-    
+
     def visitApplic(self):
+        print("invisit applic")
         if isinstance(self.arguments,sexprs.Nil):
             return '(' + str(self.applic) + ')'
         else:
             return '(' + str(self.applic) + ' '\
                     + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
-    
+
+    def visitApplicTP(self):
+        print("invisit applicTP")
+        if isinstance(self.obj.arguments,sexprs.Nil):
+            return '(' + str(self.obj.applic) + ')'
+        else:
+            return '(' + str(self.obj.applic) + ' '\
+                    + sexprs.AsStringVisitor.pairToString(self.obj.arguments) + ')'
+
     def visitOr(self):
         if isinstance(self.arguments,sexprs.Nil):
             return '(OR)'
@@ -689,13 +783,13 @@ class AsStringVisitor(AbstractSchemeExpr):
 
 ##########################
 
-class ApplicTp(Applic):
+class ApplicTP(Applic):
     def __init__(self,expr):
-        print("in ApplicTp")
-        Applic.__init__(self,expr)
+        print("in ApplicTP")
+        self.obj = expr
 
     def accept(self,visitor):
-        return visitor.visitApplic(self)
+        return visitor.visitApplicTP(self)
 
 # Visitor design pattern
 class AnnotateVisitor(AbstractSchemeExpr):
@@ -736,27 +830,25 @@ class AnnotateVisitor(AbstractSchemeExpr):
         annotatePairs(self.arguments,False)
 
         if inTp is False:   return self
-        if inTp is True :   return ApplicTp(self)
+        if inTp is True :   return ApplicTP(self)
 
     def visitAnnotateOr(self,inTp):
         print("in annotate Or")
         bound = self.arguments
 
         while isinstance(bound,sexprs.Pair):
-            bound.sexpr1 = parserRecursive(bound.sexpr1)
-
+      #      bound.sexpr1 = parserRecursive(bound.sexpr1)
             if isinstance(bound.sexpr2,sexprs.Nil):
                 bound.sexpr1 = bound.sexpr1.annotateTC(inTp)
                 break
             bound.sexpr1.annotateTC(False)
             bound = bound.sexpr2
+
         return self
                     
-
     def visitAnnotateDef(self,inTp):
         self.expr = self.expr.annotateTC(False)
         return self
-
 
 def annotatePairs(self,inTp):
     if isinstance(self.sexpr2, sexprs.Nil):                #proper list end tree
