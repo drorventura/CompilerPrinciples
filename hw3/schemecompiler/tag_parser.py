@@ -551,7 +551,6 @@ class AbstractSchemeExpr:
 
     # part 3
     def semantic_analysis(self):
-            print("in semantic_analysis")
             self.debruijn()
             self.annotateTC(True)
             return self
@@ -616,7 +615,7 @@ class IfThenElse(AbstractSchemeExpr):
 # AbstractLambda Class
 class AbstractLambda(AbstractSchemeExpr):
     def __init__(self):
-        print("in AbstractLambda")
+        print("blank")
 
     def accept(self, visitor):
         return visitor.visitAbstractLambda(self)
@@ -735,21 +734,17 @@ class AsStringVisitor(AbstractSchemeExpr):
                     + str(self.body) + ')'
 
     def visitLambdaSimple(self):
-        print("in lambda simple")
         return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
                           + str(self.body) + ')'
 
     def visitLambdaOpt(self):
-        print("in lambda opt")
         return '(LAMBDA ' +'(' + sexprs.AsStringVisitor.pairToString1(self.arguments) + ')' + ' '\
                           + str(self.body) + ')'
 
     def visitLambdaVar(self):
-        print("in lambda var")
         return '(LAMBDA ' + str(self.arguments) +  ' ' + str(self.body) + ')'
 
     def visitApplic(self):
-        print("invisit applic")
         if isinstance(self.arguments,sexprs.Nil):
             return '(' + str(self.applic) + ')'
         else:
@@ -757,7 +752,6 @@ class AsStringVisitor(AbstractSchemeExpr):
                     + sexprs.AsStringVisitor.pairToString(self.arguments) + ')'
 
     def visitApplicTP(self):
-        print("invisit applicTP")
         if isinstance(self.obj.arguments,sexprs.Nil):
             return '(' + str(self.obj.applic) + ')'
         else:
@@ -778,7 +772,6 @@ class AsStringVisitor(AbstractSchemeExpr):
 
 class ApplicTP(Applic):
     def __init__(self,expr):
-        print("in ApplicTP")
         self.obj = expr
 
     def accept(self,visitor):
@@ -788,31 +781,25 @@ class ApplicTP(Applic):
 class AnnotateVisitor(AbstractSchemeExpr):
 
     def visitAnnotateConstant(self,inTp):
-        print("annotate Constants")
         return self.constant
 
     def visitAnnotateVariable(self,inTp):
-        print("annotate Variable")
         return self.variable
 
     def visitAnnotateIfThenElse(self,inTp):
-        print("in IfThenElse annotate")
         self.pair.sexpr1 = self.pair.sexpr1.annotateTC(False)
         annotatePairs(self.pair.sexpr2,inTp)
         return self
 
     def visitAnnotateLambdaSimple(self,inTp):
-        print("annotate LambdaSimple")
         self.body = self.body.annotateTC(True)
         return self
     
     def visitAnnotateLambdaOpt(self,inTp):
-        print("annotate LambdaOpt")
         self.body = self.body.annotateTC(True)
         return self
     
     def visitAnnotateLambdaVar(self,inTp):
-        print("annotate LambdaVar")
         self.body = self.body.annotateTC(True)
         return self
     
@@ -832,7 +819,6 @@ class AnnotateVisitor(AbstractSchemeExpr):
         if inTp is True :   return ApplicTP(self)
 
     def visitAnnotateOr(self,inTp):
-        print("in annotate Or")
         bound = self.arguments
 
         while isinstance(bound,sexprs.Pair):
