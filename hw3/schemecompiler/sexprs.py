@@ -172,6 +172,8 @@ class AsStringVisitor(AbstractSexpr):
 
     # this is the recursive call, from visitPair
     def pairToString(self):
+        if not isinstance(self,(Pair,Nil)):
+            return str(self)
         if isinstance(self.sexpr2, Nil):                #proper list end tree
             return str(self.sexpr1)
         else:

@@ -310,6 +310,10 @@ def pairsToList(expr):
     list_params = []
 
     while isinstance(bound,sexprs.Pair):
+        if not isinstance(bound.sexpr2, (sexprs.Pair,sexprs.Nil)):
+            list_params.append(bound.sexpr1)
+            list_params.append(bound.sexpr2)
+            break
         if isinstance(bound.sexpr1, sexprs.Pair):
             list_params.append(bound.sexpr1)
         else:
