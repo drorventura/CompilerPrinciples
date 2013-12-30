@@ -158,7 +158,7 @@ class TestSexprs(unittest.TestCase):
         # assert
 
     def test_classes3(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a) (lambda (x y) (or #f x)))))")
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a) (lambda (x y) (or #f y)))))")
         sexpr.debruijn()
         # assert
 
@@ -180,7 +180,12 @@ class TestSexprs(unittest.TestCase):
     def test_classes7(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(LAMBDA (X) (LAMBDA (Y Z) ((LAMBDA (X V) (F Z X)) (+ V Z X))))")
         sexpr.debruijn()
-        print(sexpr)
+        # print(sexpr)
+
+    # def test_classes8(self):
+    #     sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(LAMBDA (A B C) (LAMBDA (E F G) (LIST (OR A B (OR C D)) (* G O G O) (LAMBDA Y (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (X Y)))))))))))) (IF (= 9 2) (OR 1 2 3) A) (IF A B (IF A B (IF A B C))) \"bye bye\")))")
+    #     sexpr.debruijn()
+    #     print(sexpr)
 
         # assert
 
