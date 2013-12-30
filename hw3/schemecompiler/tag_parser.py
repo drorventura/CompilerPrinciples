@@ -476,7 +476,7 @@ class AbstractSchemeExpr:
         return self.annotate(AnnotateVisitor,inTp)
 
     def debruijn(self):
-        return self.debruijn_helper([], [])
+        self.debruijn_helper([], [])
 
     def debruijn_helper(self, bound, param):
         className = self.__class__.__name__
@@ -484,6 +484,7 @@ class AbstractSchemeExpr:
             minor = -1
             for p in param:
                 if str(p) == str(self):
+                    print('in VarParam')
                     minor = param.index(p)
                     self.__class__ = VarParam
                     self.minor = minor
@@ -492,15 +493,18 @@ class AbstractSchemeExpr:
                 for major, list_params in enumerate(bound):
                     for b in list_params:
                         if str(b) == str(self):
+                            print('in VarBound')
                             minor = list_params.index(b)
                             self.__class__ = VarBound
                             self.major = major
                             self.minor = minor
             if minor < 0:
+                print('in VarFree')
                 self.__class__ = VarFree
 
         elif className.__contains__("Lambda"):
             if className == "LambdaSimple":
+                print(bound)
                 self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
             if className == "LambdaVar":
                 return self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
@@ -510,6 +514,7 @@ class AbstractSchemeExpr:
         else:
             if className == "Applic":
                 self.applic.debruijn_helper(bound, param)
+
                 arguments = pairsToList(self.arguments)
                 for arg in arguments:
                     arg.debruijn_helper(bound,param)
@@ -644,7 +649,10 @@ class LambdaVar(AbstractLambda):
 # Applic Class
 class Applic(AbstractSchemeExpr):
     def __init__(self, applic, arguments):
-        self.applic = Variable(applic)
+        if isinstance(applic , sexprs.Symbol):
+            self.applic = Variable(applic)
+        else:
+            self.applic = parserRecursive(applic)
 
         argsList = pairsToList(arguments)
         print("**argsList**")
@@ -652,7 +660,7 @@ class Applic(AbstractSchemeExpr):
         newArguments = []
         if argsList:
             for arg in argsList:
-                arg = (parserRecursive(arg))
+                arg = parserRecursive(arg)
                 newArguments.append(arg)
             print("in applic Constructor")
             self.arguments = sexprs.Pair(newArguments)
