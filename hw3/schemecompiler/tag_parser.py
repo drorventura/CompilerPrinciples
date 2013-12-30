@@ -287,20 +287,6 @@ def seperateParamsAndArgs(expr):
             bound = bound.sexpr2
     return list_params , list_args
 
-# Seperating pairs argument to list
-#def pairsToList(expr):
-#    bound = expr
-#    list_params = []
-
-#    while isinstance(bound,sexprs.Pair):
-#        list_params.append(bound.sexpr1)
-#        if isinstance(bound.sexpr2,sexprs.Nil):
-#            break
-#        else:
-#            bound = bound.sexpr2
-#
-#    print(list_params)
-#    return list_params
 
 def pairsAnnotate(expr,inTp):
     bound = expr
@@ -549,11 +535,10 @@ class AbstractSchemeExpr:
 
     # part 3
     def semantic_analysis(self):
-            #return self.debruijn().annotateTC()
+            print("in semantic_analysis")
             self.debruijn()
-            self.annotateTC(False)
+            self.annotateTC(True)
             return self
-            #return obj.annotateTC(False)
 
 # Constant Class
 class Constant(AbstractSchemeExpr):
@@ -722,15 +707,6 @@ class AsStringVisitor(AbstractSchemeExpr):
     def visitVariable(self):
         return str(self.variable)
 
-    # def visitFreeVariable(self):
-    #     return str(self.variable)
-    #
-    # def visitParamVariable(self):
-    #     return str(self.variable)
-    #
-    # def visitBoundVariable(self):
-    #     return str(self.variable)
-
     def visitIfThenElse(self):
         return '(IF ' + str(self.pair.sexpr1) + ' ' \
                       + sexprs.AsStringVisitor.pairToString(self.pair.sexpr2) + ')'
@@ -787,6 +763,7 @@ class AsStringVisitor(AbstractSchemeExpr):
 class ApplicTP(Applic):
     def __init__(self,expr):
         print("in ApplicTP")
+        print(expr)
         self.obj = expr
 
     def accept(self,visitor):
@@ -826,9 +803,20 @@ class AnnotateVisitor(AbstractSchemeExpr):
     
     def visitAnnotateApplic(self,inTp):
         print("annotate Applic")
+        print(self.applic)
+        print(self.arguments)
+        print("*****************")
         self.applic = self.applic.annotateTC(False)
         # maybe should use left flatting
-        annotatePairs(self.arguments,False)
+        #annotatePairs(self.arguments,False)
+        bound = self.arguments
+
+        while isinstance(bound,sexprs.Pair):
+            bound.sexpr1 = bound.sexpr1.annotateTC(False)
+            print(bound.sexpr1)
+            if isinstance(bound.sexpr2,sexprs.Nil):
+                break
+            bound = bound.sexpr2
 
         if inTp is False:   return self
         if inTp is True :   return ApplicTP(self)
@@ -842,7 +830,7 @@ class AnnotateVisitor(AbstractSchemeExpr):
             if isinstance(bound.sexpr2,sexprs.Nil):
                 bound.sexpr1 = bound.sexpr1.annotateTC(inTp)
                 break
-            bound.sexpr1.annotateTC(False)
+            bound.sexpr1 = bound.sexpr1.annotateTC(False)
             bound = bound.sexpr2
 
         return self
