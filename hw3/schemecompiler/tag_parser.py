@@ -655,14 +655,11 @@ class Applic(AbstractSchemeExpr):
             self.applic = parserRecursive(applic)
 
         argsList = pairsToList(arguments)
-        print("**argsList**")
-        print(argsList)
         newArguments = []
         if argsList:
             for arg in argsList:
                 arg = parserRecursive(arg)
                 newArguments.append(arg)
-            print("in applic Constructor")
             self.arguments = sexprs.Pair(newArguments)
         else:
             self.arguments = arguments
@@ -771,7 +768,6 @@ class AsStringVisitor(AbstractSchemeExpr):
 class ApplicTP(Applic):
     def __init__(self,expr):
         print("in ApplicTP")
-        print(expr)
         self.obj = expr
 
     def accept(self,visitor):
@@ -810,10 +806,6 @@ class AnnotateVisitor(AbstractSchemeExpr):
         return self
     
     def visitAnnotateApplic(self,inTp):
-        print("annotate Applic")
-        print(self.applic)
-        print(self.arguments)
-        print("*****************")
         self.applic = self.applic.annotateTC(False)
         # maybe should use left flatting
         #annotatePairs(self.arguments,False)
@@ -821,7 +813,6 @@ class AnnotateVisitor(AbstractSchemeExpr):
 
         while isinstance(bound,sexprs.Pair):
             bound.sexpr1 = bound.sexpr1.annotateTC(False)
-            print(bound.sexpr1)
             if isinstance(bound.sexpr2,sexprs.Nil):
                 break
             bound = bound.sexpr2
