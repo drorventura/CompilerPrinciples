@@ -4,41 +4,41 @@ import types
 import inspect
 
 class ExprStats:
-    f = 0
-    p = 0
-    b = 0
-    tp = 0
+	f = 0
+	p = 0
+	b = 0
+	tp = 0
 
-    @staticmethod
-    def count(e):
-        if not(isinstance(e, object)) or isinstance(e, (str, bool, int, float , sexprs.Nil)):
-            return
-        elif type(e) is list:
-            for x in e:
-                ExprStats.count(x)
-        elif isinstance(e, tag_parser.VarFree):
-            ExprStats.f += 1
-        elif isinstance(e, tag_parser.VarParam):
-            ExprStats.p += 1
-        elif isinstance(e, tag_parser.VarBound):
-            ExprStats.b += 1
-        elif isinstance(e, tag_parser.ApplicTP):
-            ExprStats.tp += 1
-            members = list(e.__dict__.keys())
-            for m in members:
-                ExprStats.count(getattr(e, m))
-        else:
-            members = list(e.__dict__.keys())
-            for m in members:
-                ExprStats.count(getattr(e, m))
-        return
+	@staticmethod
+	def count(e):
+		if not(isinstance(e, object)) or isinstance(e, (str, bool, int, float , sexprs.Nil)):
+			return
+		elif type(e) is list:
+			for x in e:
+				ExprStats.count(x)
+		elif isinstance(e, tag_parser.VarFree):
+			ExprStats.f += 1
+		elif isinstance(e, tag_parser.VarParam):
+			ExprStats.p += 1
+		elif isinstance(e, tag_parser.VarBound):
+			ExprStats.b += 1
+		elif isinstance(e, tag_parser.ApplicTP):
+			ExprStats.tp += 1
+			members = list(e.__dict__.keys())
+			for m in members:
+				ExprStats.count(getattr(e, m))
+		else:
+			members = list(e.__dict__.keys())
+			for m in members:
+				ExprStats.count(getattr(e, m))
+		return
 
-    @staticmethod
-    def reset():
-        ExprStats.f = 0
-        ExprStats.p = 0
-        ExprStats.b = 0
-        ExprStats.tp = 0
+	@staticmethod
+	def reset():
+		ExprStats.f = 0
+		ExprStats.p = 0
+		ExprStats.b = 0
+		ExprStats.tp = 0
 
 
 parse = tag_parser.AbstractSchemeExpr.parse 
@@ -53,28 +53,24 @@ tests.append(["(LAMBDA (A B C) (LAMBDA (E F G) (LIST (OR A B (OR C D)) (* G O G 
 index = 1
 
 for i in tests:
-    x, y = parse(i[0])
-    if y != '':
-        print("Test {0} failed. Entire string was not parsed. Left to parse: {1}".format(str(index), str(y)))
-        # x = x.semantic_analysis()
-    x.debruijn()
-    print(x.__class__)
-    z = tag_parser.pairsToList(x)
-    print(z)
-    ExprStats.count(z)
-    given = [ExprStats.f, ExprStats.p, ExprStats.b, ExprStats.tp]
-    expected = i[1:]
-    if given == expected:
-        print("Test {0} passed.".format(str(index)))
-    else:
-        print("Test {0} failed!".format(str(index)))
-        if given[0] != expected[0]:
-            print("\t* Expected {1} FreeVars; found: {2}".format(str(index), expected[0], given[0]))
-        if given[1] != expected[1]:
-            print("\t* Expected {1} ParamVars; found: {2}".format(str(index), expected[1], given[1]))
-        if given[2] != expected[2]:
-            print("\t* Expected {1} BoundVars; found: {2}".format(str(index), expected[2], given[2]))
-        if given[3] != expected[3]:
-            print("\t* Expected {1} tails calls; found: {2}".format(str(index), expected[3], given[3]))
-    ExprStats.reset()
-    index += 1
+	x, y = parse(i[0])
+	if y != '':
+		print("Test {0} failed. Entire string was not parsed. Left to parse: {1}".format(str(index), str(y)))
+	x = x.semantic_analysis()
+	ExprStats.count(x)
+	given = [ExprStats.f, ExprStats.p, ExprStats.b, ExprStats.tp]
+	expected = i[1:]
+	if given == expected:
+		print("Test {0} passed.".format(str(index)))
+	else:
+		print("Test {0} failed!".format(str(index)))
+		if given[0] != expected[0]:
+			print("\t* Expected {1} FreeVars; found: {2}".format(str(index), expected[0], given[0]))
+		if given[1] != expected[1]:
+			print("\t* Expected {1} ParamVars; found: {2}".format(str(index), expected[1], given[1]))
+		if given[2] != expected[2]:
+			print("\t* Expected {1} BoundVars; found: {2}".format(str(index), expected[2], given[2]))
+		if given[3] != expected[3]:
+			print("\t* Expected {1} tails calls; found: {2}".format(str(index), expected[3], given[3]))
+	ExprStats.reset()
+	index += 1

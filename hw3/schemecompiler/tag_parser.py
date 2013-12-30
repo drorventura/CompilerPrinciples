@@ -304,6 +304,24 @@ def pairsToList(expr):
 
     return list_params
 
+def varsToList(expr):
+    bound = expr
+    list_params = []
+
+    while isinstance(bound,sexprs.Pair):
+        list_params.append(bound.sexpr1)
+        if not isinstance(bound.sexpr2, (sexprs.Pair,sexprs.Nil)):
+            list_params.append(bound.sexpr2)
+            break
+        if not isinstance(bound.sexpr2,sexprs.Nil):
+            bound = bound.sexpr2.sexpr1
+        else:
+            bound = bound.sexpr2
+
+    return list_params
+
+
+
 def tagApplic(applic):
     app = applic.sexpr1
     arguments = applic.sexpr2
@@ -466,7 +484,6 @@ class AbstractSchemeExpr:
             minor = -1
             for p in param:
                 if str(p) == str(self):
-                    print('in VarParam')
                     minor = param.index(p)
                     self.__class__ = VarParam
                     self.minor = minor
@@ -475,23 +492,20 @@ class AbstractSchemeExpr:
                 for major, list_params in enumerate(bound):
                     for b in list_params:
                         if str(b) == str(self):
-                            print('in VarBound')
                             minor = list_params.index(b)
                             self.__class__ = VarBound
                             self.major = major
                             self.minor = minor
             if minor < 0:
-                print('in VarFree')
                 self.__class__ = VarFree
 
         elif className.__contains__("Lambda"):
             if className == "LambdaSimple":
-                print(bound)
-                self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
+                self.arguments, self.body.debruijn_helper([param] + bound, varsToList(self.arguments))
             if className == "LambdaVar":
-                return self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
+                return self.arguments, self.body.debruijn_helper([param] + bound, varsToList(self.arguments))
             if className == "LambdaOpt":
-                return self.arguments, self.body.debruijn_helper([param] + bound, pairsToList(self.arguments))
+                return self.arguments, self.body.debruijn_helper([param] + bound, varsToList(self.arguments))
 
         else:
             if className == "Applic":
@@ -511,9 +525,6 @@ class AbstractSchemeExpr:
             elif className == "Def":
                 self.name.debruijn_helper(bound,param)
                 self.expr.debruijn_helper(bound,param)
-            # this else is only for tests #
-            else:
-                print("did you forget to implement support to class " + className)
 
     @staticmethod
     def parse(string):
