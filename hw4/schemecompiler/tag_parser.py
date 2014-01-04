@@ -585,7 +585,7 @@ class Variable(AbstractSchemeExpr):
         return visitor.visitAnnotateVariable(self,inTp)
 
     def generate(self, visitor):
-        return visitor.codeGenVariable
+        return visitor.codeGenVariable(self)
 
 class VarFree(Variable):
     def __init__(self, variable):
@@ -883,30 +883,65 @@ def annotatePairs(self,inTp):
 
 class codeGenVisitor(AbstractSchemeExpr):
     def codeGenConstant(self):
-        print("")
+        return "codeGenConstant"
 
     def codeGenVariable(self):
-        print("")
+        return "codeGenVariable"
 
     def codeGenIfThenElse(self):
-        print("")
+        result = ""
+        test = self.pair.sexpr1.code_gen()
+        result += test + "\n"
+        result += "CMP(R0, FALSE_CONSTANT);\n"
+        result += "JUMP EQ(DIF_LABEL);\n"
+        dit = self.pair.sexpr2.sexpr1.code_gen()
+        result += dit + "\n"
+        result += "JUMP (END_IF);\n"
+        result += "DIF_LABEL:\n"
+        dif = self.pair.sexpr2.sexpr2.sexpr1.code_gen()
+        result+= dif + "\n"
+        result += "END_IF:\n"
+
+        return result
 
     def codeGenLambdaSimple(self):
-        print("")
+        return "codeGenLambdaSimple"
 
     def codeGenLambdaOpt(self):
-        print("")
+        return "codeGenLambdaOpt"
 
     def codeGenLambdaVar(self):
-        print("")
+        return "codeGenLambdaVar"
 
     def codeGenApplic(self):
-        print("")
+        result = ""
+        argsList = list(reversed(pairsToList(self.arguments)))
+
+        for arg in argsList:
+            argi = arg.code_gen()
+            result += argi + "\n"
+            result += "PUSH (R0);\n"
+
+        result += "PUSH " + str(len(argsList)) + "\n"
+
+        proc = self.applic.code_gen()
+        result += proc + "\n"
+        result += "CMP(IND(R0), T_CLOSURE);\n"
+        result += "JUMP_NE(CLOSURE_FALSE);\n"
+        result += "PUSH (INDD(R0,1));\n"  # env
+        result += "PUSH (FPARG(0));\n"
+        result += "MOV (R1, FP);\n" # R1 <- old fp
+        # for(){...} override old frame
+        result += "MOV FP, R1);\n"
+        result += "JUMP(INND(R0,2));\n"
+
+        return result
 
     def codeGenOr(self):
-        print("")
+        return "codeGenOr"
 
     def codeGenDef(self):
-        print("")
+        return "codeGenDef"
 
-
+s,r = AbstractSchemeExpr.parse("(foo #t 1 c)")
+print(s.code_gen())
