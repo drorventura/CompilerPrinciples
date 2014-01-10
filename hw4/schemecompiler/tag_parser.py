@@ -447,7 +447,7 @@ def expandQQ(expr):
                 tail.sexpr1 == "UNQUOTE-SPLICING":
             return sexprs.Pair(sum([[sexprs.Symbol('CONS',4)],
                                 ['.',sexprs.Pair(sum([[expandQQ(head)],
-                                             ['.',sexprs.Pair[expr.sexpr2.sexpr1]]],[]))]],[]))
+                                             ['.',sexprs.Pair([expr.sexpr2.sexpr1])]],[]))]],[]))
         else:
             return sexprs.Pair(sum([[sexprs.Symbol('CONS',4)],
                                 ['.',sexprs.Pair(sum([[expandQQ(head)],
@@ -943,5 +943,5 @@ class codeGenVisitor(AbstractSchemeExpr):
     def codeGenDef(self):
         return "codeGenDef"
 
-s,r = AbstractSchemeExpr.parse("(foo #t 1 c)")
+s,r = AbstractSchemeExpr.parse("(if #t 1 c)")
 print(s.code_gen())
