@@ -1,4 +1,5 @@
 import sexprs
+import compiler
 import itertools
 
 __author__ = 'Dror & Eldar'
@@ -25,6 +26,13 @@ class Gensym:
         global n
         n = n + 1
         return '&' + '%s' %n + '%s' %(n*n) + '@'
+
+##############################
+#            GCD             #
+##############################
+#Calculate the gcd of two numbers
+def gcd(a, b):
+    return b and gcd(b, a % b) or a
 
 ##############################
 #           Parser           #
@@ -495,7 +503,7 @@ class AbstractSchemeExpr:
         return self.annotate(AnnotateVisitor,inTp)
 
     def code_gen(self):
-        return self.generate(codeGenVisitor)
+        return self.generate(CodeGenVisitor)
 
     def debruijn(self):
         self.debruijn_helper([], [])
@@ -799,7 +807,7 @@ class AsStringVisitor(AbstractSchemeExpr):
     def visitDef(self):
         return '(DEFINE ' + str(self.name) + ' ' + str(self.expr) + ')'
 
-##########################
+################################################################
 
 class ApplicTP(Applic):
     def __init__(self,expr):
@@ -879,27 +887,130 @@ def annotatePairs(self,inTp):
             self.sexpr1 = self.sexpr1.annotateTC(inTp)
             self.sexpr2 = self.sexpr2.annotateTC(inTp)
 
-##########################
+################################################################
 
-class codeGenVisitor(AbstractSchemeExpr):
+class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenConstant(self):
-        return "codeGenConstant"
+        result = ""
+        if type(self.constant) is sexprs.Boolean:
+            if self.constant.value.__eq__('f'):
+                return "MOV(R0,IND(3));\n"
+            else:
+                return "MOV(R0,IND(5));\n"
+
+        elif type(self.constant) is sexprs.Nil:
+            return "MOV(R0,IND(2));\n"
+
+        elif type(self.constant) is sexprs.Int:
+            if self.constant.sign:
+                if self.constant.sign.__eq__('-'):
+                    integer = 0 - int(self.constant.number)
+                else:
+                    integer = int(self.constant.number)
+            else:
+                integer = int(self.constant.number)
+
+            if compiler.memoryTable.get(integer) is None:
+                compiler.memoryTable.update( { integer : [ compiler.mem0 , ['T_INT',integer] ] } )
+                result += 'MOV(R0,%s);\n' %compiler.mem0
+                compiler.mem0 += 2
+            else:
+                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(integer)[0]
+
+            return result
+
+        elif type(self.constant) is sexprs.Fraction:
+            sign = self.constant.num.sign
+            int1 = self.constant.num.number
+            int2 = self.constant.denom.number
+            divider = gcd(int1,int2)
+
+            if divider > 1:
+                if divider == int2:
+                    newInt = int1/int2
+                    result += Constant(sexprs.Int(sign,newInt)).code_gen()
+                    return result
+                else:
+                    int1 = int(int1/divider)
+                    int2 = int(int2/divider)
+                    newFrac = sexprs.Fraction(sexprs.Int(sign,int1),sexprs.Int('+',int2))
+            else:
+                newFrac = self.constant
+
+            newFracName = '%s' %newFrac
+            if newFrac.num.sign.__eq__('-'):
+                num = 0 - newFrac.num.number
+            else:
+                num = newFrac.num.number
+
+            denom = newFrac.denom.number
+
+            if compiler.memoryTable.get(newFracName) is None:
+                compiler.memoryTable.update( { newFracName : [ compiler.mem0 , ['T_FRACTION',num,denom] ] } )
+                result += 'MOV(R0,%s);\n' %compiler.mem0
+                compiler.mem0 += 3
+            else:
+                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(newFracName)[0]
+
+            return result
+
+        elif type(self.constant) is sexprs.String:
+            str = self.constant.string
+            if compiler.memoryTable.get(str) is None:
+                value = ['T_STR',len(str)]
+                value.extend(list(str))
+                compiler.memoryTable.update( { str : [ compiler.mem0 , value ] } )
+                result += 'MOV(R0,%s);\n' %compiler.mem0
+                compiler.mem0 += (2 + len(str))
+            else:
+                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(str)[0]
+
+            return result
+
+        elif type(self.constant) is sexprs.Char:
+            value = self.constant.value
+            if compiler.memoryTable.get(value) is None:
+                compiler.memoryTable.update( { value : [ compiler.mem0 , ['T_CHAR' , value] ] } )
+                result += 'MOV(R0,%s);\n' %compiler.mem0
+                compiler.mem0 += 2
+            else:
+                result += 'MOV(R0,'+ str(compiler.memoryTable.get(value)[0]) + ');\n'
+
+            return result
+
+        elif type(self.constant) is sexprs.Vector:
+            return "codeGenVector"
+
+        elif type(self.constant) is sexprs.Pair:
+            return "codeGenPair"
 
     def codeGenVariable(self):
+        # if type(self.constant) is sexprs.Symbol:
+        # symbol = self.constant.string
+        # if compiler.memoryTable.get(symbol) is None:
+        #     result += Constant(sexprs.String(symbol)).code_gen()
+        #     bucketName = 'bucket_%s' %symbol
+        #     stringPtr = compiler.mem0-(2+len(symbol))
+        #     compiler.symbolTable.update( { bucketName : [ compiler.mem0 , [stringPtr,0] ]})
+        #     compiler.mem0 += 2
+        #     compiler.symbolTable.update( { "'" + symbol : [ compiler.mem0 , ['T_SYM',compiler.mem0-2] ] })
+        # #999999999999999999#################################################################################33
+        # if compiler.symbolTable.get(symbol) is None:
+        #     compiler.memoryTable.update( {} )
         return "codeGenVariable"
 
     def codeGenIfThenElse(self):
         result = ""
         test = self.pair.sexpr1.code_gen()
-        result += test + "\n"
+        result += test
         result += "CMP(R0, FALSE_CONSTANT);\n"
         result += "JUMP EQ(DIF_LABEL);\n"
         dit = self.pair.sexpr2.sexpr1.code_gen()
-        result += dit + "\n"
+        result += dit
         result += "JUMP (END_IF);\n"
         result += "DIF_LABEL:\n"
         dif = self.pair.sexpr2.sexpr2.sexpr1.code_gen()
-        result+= dif + "\n"
+        result+= dif
         result += "END_IF:\n"
 
         return result
@@ -919,13 +1030,13 @@ class codeGenVisitor(AbstractSchemeExpr):
 
         for arg in argsList:
             argi = arg.code_gen()
-            result += argi + "\n"
+            result += argi
             result += "PUSH (R0);\n"
 
         result += "PUSH " + str(len(argsList)) + "\n"
 
         proc = self.applic.code_gen()
-        result += proc + "\n"
+        result += proc
         result += "CMP(IND(R0), T_CLOSURE);\n"
         result += "JUMP_NE(CLOSURE_FALSE);\n"
         result += "PUSH (INDD(R0,1));\n"  # env
@@ -943,5 +1054,11 @@ class codeGenVisitor(AbstractSchemeExpr):
     def codeGenDef(self):
         return "codeGenDef"
 
-s,r = AbstractSchemeExpr.parse("(if #t 1 c)")
+s,r = AbstractSchemeExpr.parse('(if #t 4/8 2/4)')
+# s,r = AbstractSchemeExpr.parse("10/5")
+
+# print(type(s.constant.num))
+
 print(s.code_gen())
+print(compiler.mem0)
+print(compiler.memoryTable)
