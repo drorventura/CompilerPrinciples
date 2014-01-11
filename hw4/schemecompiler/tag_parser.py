@@ -912,10 +912,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             if compiler.memoryTable.get(integer) is None:
                 compiler.memoryTable.update( { integer : [ compiler.mem0 , ['T_INT',integer] ] } )
-                result += 'MOV(R0,%s);\n' %compiler.mem0
+                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
                 compiler.mem0 += 2
             else:
-                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(integer)[0]
+                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(integer)[0]
 
             return result
 
@@ -947,10 +947,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             if compiler.memoryTable.get(newFracName) is None:
                 compiler.memoryTable.update( { newFracName : [ compiler.mem0 , ['T_FRACTION',num,denom] ] } )
-                result += 'MOV(R0,%s);\n' %compiler.mem0
+                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
                 compiler.mem0 += 3
             else:
-                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(newFracName)[0]
+                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(newFracName)[0]
 
             return result
 
@@ -960,10 +960,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 value = ['T_STR',len(string)]
                 value.extend(list(string))
                 compiler.memoryTable.update( { string : [ compiler.mem0 , value ] } )
-                result += 'MOV(R0,%s);\n' %compiler.mem0
+                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
                 compiler.mem0 += (2 + len(string))
             else:
-                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(string)[0]
+                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(string)[0]
 
             return result
 
@@ -971,32 +971,47 @@ class CodeGenVisitor(AbstractSchemeExpr):
             value = self.constant.value
             if compiler.memoryTable.get(value) is None:
                 compiler.memoryTable.update( { value : [ compiler.mem0 , ['T_CHAR' , value] ] } )
-                result += 'MOV(R0,%s);\n' %compiler.mem0
+                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
                 compiler.mem0 += 2
             else:
-                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(value)[0]
+                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(value)[0]
 
             return result
 
-        elif type(self.constant) is sexprs.Vector:
-            return "codeGenVector"
-
         elif type(self.constant) is sexprs.Pair:
-            return "codeGenPair"
+            value = self.constant.sexpr2.sexpr1
+            if type(value) is sexprs.Vector:
+                return "Handle Vector"
+            elif type(value) is sexprs.Symbol:
+                return CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
+            else: #it is a list
+                return "Handle List"
+        else:
+            raise SyntaxError("no such constant %s" %self)      # for debug purpose
+
+    # this is a private method in order to assist us generate symbols code
+    @staticmethod
+    def codeGenSymbol(name,value):
+        symbol = "'%s" %name
+        bucketName = "bucket_%s" %symbol
+        result = ""
+        if compiler.memoryTable.get(bucketName) is None:
+            stringCode = Constant(sexprs.String(name)).code_gen()     # (*)
+            stringPtr = compiler.memoryTable.get(name)[0]             # the pointer of the string created in (*)
+            compiler.memoryTable.update( { symbol : [ compiler.mem0 , ['T_SYMBOL', value] ] })
+            symbolPtr = compiler.mem0                                 # the pointer to symbol's value
+            compiler.mem0 += 2
+            compiler.memoryTable.update( { bucketName : [ compiler.mem0 , ['T_BUCKET',stringPtr,symbolPtr] ]})
+            result += "MOV(R0,IND(%s));\n" %compiler.mem0
+            compiler.mem0 += 3
+        else:
+            result += "MOV(R0,INDD(%s);\n" %compiler.memoryTable.get(bucketName)[0]
+
+        result += "MOV(R0,INDD(R0,2));\n"
+        result += "MOV(R0,INDD(R0,1));\n"
+        return result
 
     def codeGenVariable(self):
-        # if type(self.constant) is sexprs.Symbol:
-        # symbol = self.constant.string
-        # if compiler.memoryTable.get(symbol) is None:
-        #     result += Constant(sexprs.String(symbol)).code_gen()
-        #     bucketName = 'bucket_%s' %symbol
-        #     stringPtr = compiler.mem0-(2+len(symbol))
-        #     compiler.symbolTable.update( { bucketName : [ compiler.mem0 , [stringPtr,0] ]})
-        #     compiler.mem0 += 2
-        #     compiler.symbolTable.update( { "'" + symbol : [ compiler.mem0 , ['T_SYM',compiler.mem0-2] ] })
-        # #999999999999999999#################################################################################33
-        # if compiler.symbolTable.get(symbol) is None:
-        #     compiler.memoryTable.update( {} )
         return "codeGenVariable"
 
     def codeGenIfThenElse(self):
@@ -1053,12 +1068,3 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenDef(self):
         return "codeGenDef"
-
-# s,r = AbstractSchemeExpr.parse('(if #t 4/8 2/4)')
-s,r = AbstractSchemeExpr.parse("'#(1 2 3)")
-
-print(type(s.constant))
-
-# print(s.code_gen())
-# print(compiler.mem0)
-# print(compiler.memoryTable)
