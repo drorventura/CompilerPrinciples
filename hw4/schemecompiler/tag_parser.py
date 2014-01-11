@@ -24,7 +24,7 @@ class Gensym:
     @staticmethod
     def generate():
         global n
-        n = n + 1
+        n += 1
         return '&' + '%s' %n + '%s' %(n*n) + '@'
 
 ##############################
@@ -716,10 +716,10 @@ class Applic(AbstractSchemeExpr):
 # Or Class
 class Or(AbstractSchemeExpr):
     def __init__(self,arguments):
-        iter = arguments
-        while isinstance(iter,sexprs.Pair):
-            iter.sexpr1 = parserRecursive(iter.sexpr1)
-            iter = iter.sexpr2
+        iterator = arguments
+        while isinstance(iterator,sexprs.Pair):
+            iterator.sexpr1 = parserRecursive(iterator.sexpr1)
+            iterator = iterator.sexpr2
 
         self.arguments = arguments
 
@@ -955,15 +955,15 @@ class CodeGenVisitor(AbstractSchemeExpr):
             return result
 
         elif type(self.constant) is sexprs.String:
-            str = self.constant.string
-            if compiler.memoryTable.get(str) is None:
-                value = ['T_STR',len(str)]
-                value.extend(list(str))
-                compiler.memoryTable.update( { str : [ compiler.mem0 , value ] } )
+            string = self.constant.string
+            if compiler.memoryTable.get(string) is None:
+                value = ['T_STR',len(string)]
+                value.extend(list(string))
+                compiler.memoryTable.update( { string : [ compiler.mem0 , value ] } )
                 result += 'MOV(R0,%s);\n' %compiler.mem0
-                compiler.mem0 += (2 + len(str))
+                compiler.mem0 += (2 + len(string))
             else:
-                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(str)[0]
+                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(string)[0]
 
             return result
 
@@ -974,7 +974,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 result += 'MOV(R0,%s);\n' %compiler.mem0
                 compiler.mem0 += 2
             else:
-                result += 'MOV(R0,'+ str(compiler.memoryTable.get(value)[0]) + ');\n'
+                result += 'MOV(R0,%s);\n' %compiler.memoryTable.get(value)[0]
 
             return result
 
@@ -1054,11 +1054,11 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenDef(self):
         return "codeGenDef"
 
-s,r = AbstractSchemeExpr.parse('(if #t 4/8 2/4)')
-# s,r = AbstractSchemeExpr.parse("10/5")
+# s,r = AbstractSchemeExpr.parse('(if #t 4/8 2/4)')
+s,r = AbstractSchemeExpr.parse("'#(1 2 3)")
 
-# print(type(s.constant.num))
+print(type(s.constant))
 
-print(s.code_gen())
-print(compiler.mem0)
-print(compiler.memoryTable)
+# print(s.code_gen())
+# print(compiler.mem0)
+# print(compiler.memoryTable)
