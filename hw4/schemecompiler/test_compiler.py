@@ -29,11 +29,17 @@ class TestCompiler(unittest.TestCase):
     def test_constant_quote_symbol(self):
        s , r = tag_parser.AbstractSchemeExpr.parse("'tomer")
        code = s.code_gen()
-       print(code)
        print(compiler.memoryTable)
-       # self.assertEqual(code , 'MOV(R0,IND(5));\nCMP(R0, FALSE_CONSTANT);\nJUMP EQ(DIF_LABEL);\nMOV(R0,7);\nJUMP (END_IF);\nDIF_LABEL:\nMOV(R0,7);\nEND_IF:\n')
+       self.assertEqual(compiler.mem0,19)
+       self.assertEqual(code , 'MOV(R0,IND(16));\nMOV(R0,INDD(R0,2));\nMOV(R0,INDD(R0,1));\n')
 
-
+    def test_constant_quote_list(self):
+       s , r = tag_parser.AbstractSchemeExpr.parse("'(1 (and 1 3) 4 6)")
+       tag_parser.CodeGenVisitor.topologicalSort(s.constant)
+       # code = s.code_gen()
+       # print(compiler.memoryTable)
+       # self.assertEqual(compiler.mem0,19)
+       # self.assertEqual(code , 'MOV(R0,IND(16));\nMOV(R0,INDD(R0,2));\nMOV(R0,INDD(R0,1));\n')
 
 if __name__ == '__main__':
      unittest.main()

@@ -985,11 +985,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
             elif type(value) is sexprs.Symbol:
                 return CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
             else: #it is a list
+
                 return "Handle List"
         else:
             raise SyntaxError("no such constant %s" %self)      # for debug purpose
 
-    # this is a private method in order to assist us generate symbols code
+    # this is a static method in order to assist us generate symbols code
     @staticmethod
     def codeGenSymbol(name,value):
         symbol = "'%s" %name
@@ -1010,6 +1011,20 @@ class CodeGenVisitor(AbstractSchemeExpr):
         result += "MOV(R0,INDD(R0,2));\n"
         result += "MOV(R0,INDD(R0,1));\n"
         return result
+
+    @staticmethod
+    def topologicalSort(exp):
+        if type(exp) is sexprs.Pair:
+            car = CodeGenVisitor.topologicalSort(exp.sexpr1)
+            cdr = CodeGenVisitor.topologicalSort(exp.sexpr2)
+            resultList = []
+            resultList.extend(cdr)
+            resultList.extend(car)
+            resultList.append(exp)
+            return resultList
+        else:
+            print(exp)
+            return exp
 
     def codeGenVariable(self):
         return "codeGenVariable"
