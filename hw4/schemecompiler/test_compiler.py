@@ -44,7 +44,7 @@ class TestCompiler(unittest.TestCase):
        self.assertEqual(code , 'MOV(R0,IND(16));\nMOV(R0,INDD(R0,2));\nMOV(R0,INDD(R0,1));\n')
 
     def test_constant_quote_proper_list(self):
-       s , r = tag_parser.AbstractSchemeExpr.parse("'(1 2 3)")#("'(1 (and 1 3) 4 6)")
+       s , r = tag_parser.AbstractSchemeExpr.parse("'(1 (and 1 3) 4 6)")
        s.code_gen()
        # code = s.code_gen()
        print(compiler.memoryTable)

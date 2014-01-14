@@ -997,22 +997,25 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     @staticmethod
     def codeGenPair(value):
-        result = ""
         constantList = CodeGenVisitor.topologicalSort(value)
-        # print(constantList)
-        for node in constantList:
 
+        for node in constantList:
             if type(node) is sexprs.Pair:
                 index = constantList.index(node)
 
-                if not type(constantList[index-1]) is sexprs.Nil:
-                    car = "%s" %constantList[index-1]
-                else:
+                if type(constantList[index-1]) is sexprs.Nil:
                     car = "nil"
-                if not type(constantList[index-2]) is sexprs.Nil:
-                    cdr = "%s" %constantList[index-2]
+                elif type(constantList[index-1]) is sexprs.Symbol:
+                    car = "bucket_'%s" %constantList[index-1]
                 else:
+                    car = "%s" %constantList[index-1]
+
+                if type(constantList[index-2]) is sexprs.Nil:
                     cdr = "nil"
+                elif type(constantList[index-2]) is sexprs.Symbol:
+                    cdr = "bucket_'%s" %constantList[index-2]
+                else:
+                    cdr = "%s" %constantList[index-1]
 
                 nodeName = "%s" %node
                 compiler.memoryTable.update( { nodeName : [ compiler.mem0,
