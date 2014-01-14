@@ -45,7 +45,7 @@ class TestCompiler(unittest.TestCase):
 
     def test_constant_quote_proper_list(self):
        s , r = tag_parser.AbstractSchemeExpr.parse("'(1 (and 1 3) 4 6)")
-       s.code_gen()
+       print(s.code_gen())
        # code = s.code_gen()
        print(compiler.memoryTable)
        # self.assertEqual(compiler.mem0,19)

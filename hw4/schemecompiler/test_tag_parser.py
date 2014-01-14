@@ -182,10 +182,10 @@ class TestSexprs(unittest.TestCase):
         sexpr.debruijn()
         # print(sexpr)
 
-    def test_classes8(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(LAMBDA (A B C) (LAMBDA (E F G) (LIST (OR A B (OR C D)) (* G O G O) (LAMBDA Y (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (X Y)))))))))))) (IF (= 9 2) (OR 1 2 3) A) (IF A B (IF A B (IF A B C))) \"bye bye\")))")
-        sexpr.debruijn()
-        print(sexpr)
+    # def test_classes8(self):
+    #     sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(LAMBDA (A B C) (LAMBDA (E F G) (LIST (OR A B (OR C D)) (* G O G O) (LAMBDA Y (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (LAMBDA X (X Y)))))))))))) (IF (= 9 2) (OR 1 2 3) A) (IF A B (IF A B (IF A B C))) \"bye bye\")))")
+    #     sexpr.debruijn()
+    #     print(sexpr)
 
         # assert
 
