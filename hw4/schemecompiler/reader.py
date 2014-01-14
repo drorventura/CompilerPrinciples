@@ -9,14 +9,17 @@ ps = pc.ParserStack()
 anyParser = ps  .const(lambda ch: ch) \
                 .done()
 
-commentParser = ps  .parser(pc.pcChar(';')) \
+commentParser = ps  .parser(pc.pcWhite1)\
+                    .parser(pc.pcChar(';')) \
                     .parser(anyParser) \
                     .parser(pc.pcWord("\\n")) \
                     .butNot() \
                     .star() \
-                    .caten()\
+                    .caten() \
                     .parser(pc.pcWord("\\n")) \
                     .caten().pack(lambda x: '') \
+                    .disj() \
+                    .star() \
                     .done()
                     
                     #.star() \
@@ -298,7 +301,9 @@ sexpression = ps   .parser(commentParser) \
                    .parser(quoteLikeFormsParser) \
                    .parser(symbolParser) \
                    .disjs(11) \
-                   .caten().pack(lambda x: x[1]) \
+                   .parser(commentParser) \
+                   .maybe() \
+                   .catens(3).pack(lambda x: x[1]) \
                    .done()
 
 def show(x):

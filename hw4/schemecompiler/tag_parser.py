@@ -910,12 +910,13 @@ class CodeGenVisitor(AbstractSchemeExpr):
             else:
                 integer = int(self.constant.number)
 
-            if compiler.memoryTable.get(integer) is None:
-                compiler.memoryTable.update( { integer : [ compiler.mem0 , ['T_INT',integer] ] } )
+            integerKey = "%s" %integer
+            if compiler.memoryTable.get(integerKey) is None:
+                compiler.memoryTable.update( { integerKey : [ compiler.mem0 , ['T_INT',integer] ] } )
                 result += 'MOV(R0,IND(%s));\n' %compiler.mem0
                 compiler.mem0 += 2
             else:
-                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(integer)[0]
+                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(integerKey)[0]
 
             return result
 
@@ -980,13 +981,34 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         elif type(self.constant) is sexprs.Pair:
             value = self.constant.sexpr2.sexpr1
-            if type(value) is sexprs.Vector:
+            if type(value) is sexprs.Vector: #Handle Vector
                 return "Handle Vector"
             elif type(value) is sexprs.Symbol:
-                return CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
+                result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
             else: #it is a list
+                constantList = CodeGenVisitor.topologicalSort(value)
+                print(constantList)
+                for node in constantList:
+                    # print("index: %s" %constantList.index(node))
+                    if type(node) is sexprs.Pair:
+                        index = constantList.index(node)
+                        # print(index)
+                        car = str(constantList[index-1])
+                        print(int(car))
+                        car = compiler.memoryTable.get(3)
+                        print(car)
 
-                return "Handle List"
+                        # compiler.memoryTable.update( { value : [ compiler.mem0 , ['T_PAIR' , , ] ] } )
+                        # compiler.mem0 += 3
+                        # result += 'MOV(R0,IND(%s));\n' %compiler.mem0
+
+                    elif type(node) is sexprs.Symbol:
+                        # print(node)
+                        result += CodeGenVisitor.codeGenSymbol(node.string.lower(),"'%s" %node.string)
+                    else:
+                        # print(node)
+                        result += Constant(node).code_gen()
+            return result
         else:
             raise SyntaxError("no such constant %s" %self)      # for debug purpose
 
@@ -1023,8 +1045,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             resultList.append(exp)
             return resultList
         else:
-            print(exp)
-            return exp
+            return [exp]
 
     def codeGenVariable(self):
         return "codeGenVariable"
