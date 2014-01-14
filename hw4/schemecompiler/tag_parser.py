@@ -982,35 +982,49 @@ class CodeGenVisitor(AbstractSchemeExpr):
         elif type(self.constant) is sexprs.Pair:
             value = self.constant.sexpr2.sexpr1
             if type(value) is sexprs.Vector: #Handle Vector
-                return "Handle Vector"
+                CodeGenVisitor.codeGenPair(value.sexpr)
+                pairPtr = compiler.mem0 - 3
+                result += 'MOV(R0,IND(%s));\n' %pairPtr
             elif type(value) is sexprs.Symbol:
                 result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
             else: #it is a list
-                constantList = CodeGenVisitor.topologicalSort(value)
-                print(constantList)
-                for node in constantList:
-                    # print("index: %s" %constantList.index(node))
-                    if type(node) is sexprs.Pair:
-                        index = constantList.index(node)
-                        # print(index)
-                        car = str(constantList[index-1])
-                        print(int(car))
-                        car = compiler.memoryTable.get(3)
-                        print(car)
-
-                        # compiler.memoryTable.update( { value : [ compiler.mem0 , ['T_PAIR' , , ] ] } )
-                        # compiler.mem0 += 3
-                        # result += 'MOV(R0,IND(%s));\n' %compiler.mem0
-
-                    elif type(node) is sexprs.Symbol:
-                        # print(node)
-                        result += CodeGenVisitor.codeGenSymbol(node.string.lower(),"'%s" %node.string)
-                    else:
-                        # print(node)
-                        result += Constant(node).code_gen()
+                CodeGenVisitor.codeGenPair(value)
+                pairPtr = compiler.mem0 - 3
+                result += 'MOV(R0,IND(%s));\n' %pairPtr
             return result
         else:
             raise SyntaxError("no such constant %s" %self)      # for debug purpose
+
+    @staticmethod
+    def codeGenPair(value):
+        result = ""
+        constantList = CodeGenVisitor.topologicalSort(value)
+        # print(constantList)
+        for node in constantList:
+
+            if type(node) is sexprs.Pair:
+                index = constantList.index(node)
+
+                if not type(constantList[index-1]) is sexprs.Nil:
+                    car = "%s" %constantList[index-1]
+                else:
+                    car = "nil"
+                if not type(constantList[index-2]) is sexprs.Nil:
+                    cdr = "%s" %constantList[index-2]
+                else:
+                    cdr = "nil"
+
+                nodeName = "%s" %node
+                compiler.memoryTable.update( { nodeName : [ compiler.mem0,
+                                                            ['T_PAIR',
+                                                             compiler.memoryTable.get(car)[0],
+                                                             compiler.memoryTable.get(cdr)[0]] ] } )
+                compiler.mem0 += 3
+
+            elif type(node) is sexprs.Symbol:
+                CodeGenVisitor.codeGenSymbol(node.string,"'%s" %node.string)
+            else:
+                Constant(node).code_gen()
 
     # this is a static method in order to assist us generate symbols code
     @staticmethod

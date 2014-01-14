@@ -24,12 +24,12 @@ class TestCompiler(unittest.TestCase):
     def test_constant_frac(self):
        s , r = tag_parser.AbstractSchemeExpr.parse("4/7 -3/2")
        code1 = s.code_gen()
-       print(code1)
        x, y = tag_parser.AbstractSchemeExpr.parse(r)
        code2 = x.code_gen()
-       print(code2)
        print(compiler.memoryTable)
        self.assertEqual(code1 , 'MOV(R0,IND(7));\n')
+       self.assertEqual(code2 , 'MOV(R0,IND(10));\n')
+
 
     def test_constant_if_then_else(self):
        s , r = tag_parser.AbstractSchemeExpr.parse("(if #t 4/8 2/4)")
@@ -55,7 +55,7 @@ class TestCompiler(unittest.TestCase):
        s , r = tag_parser.AbstractSchemeExpr.parse("'(1  . (and 1 3))")
        print(s.code_gen())
        # code = s.code_gen()
-       # print(compiler.memoryTable)
+       print(compiler.memoryTable)
        # self.assertEqual(compiler.mem0,19)
        # self.assertEqual(code , 'MOV(R0,IND(16));\nMOV(R0,INDD(R0,2));\nMOV(R0,INDD(R0,1));\n')
 
