@@ -45,19 +45,41 @@ class TestCompiler(unittest.TestCase):
 
     def test_constant_quote_proper_list(self):
        s , r = tag_parser.AbstractSchemeExpr.parse("'(1 (and 1 3) 4 6)")
-       print(s.code_gen())
-       # code = s.code_gen()
+       code = s.code_gen()
+       print(tag_parser.sortConstantList(compiler.memoryTable))
+       self.assertEqual(compiler.mem0,46)
+       self.assertEqual(code , 'MOV(R0,IND(43));\n')
+
+    def test_constant_quote_proper_list2(self):
+       s , r = tag_parser.AbstractSchemeExpr.parse("'(1 (3 4) 2 5)")
+       code = s.code_gen()
+       print(code)
        print(compiler.memoryTable)
-       # self.assertEqual(compiler.mem0,19)
-       # self.assertEqual(code , 'MOV(R0,IND(16));\nMOV(R0,INDD(R0,2));\nMOV(R0,INDD(R0,1));\n')
+       # self.assertEqual(compiler.mem0,46)
+       # self.assertEqual(code , 'MOV(R0,IND(43));\n')
 
     def test_constant_quote_improper_list(self):
        s , r = tag_parser.AbstractSchemeExpr.parse("'(1  . (and 1 3))")
-       print(s.code_gen())
+       code = s.code_gen()
+       # print(compiler.memoryTable)
+       self.assertEqual(compiler.mem0,33)
+       self.assertEqual(code , 'MOV(R0,IND(30));\n')
+
+    def test_constant_quote_vector(self):
+       s , r = tag_parser.AbstractSchemeExpr.parse("'#(a b 1 4 6 z))")
+       code = s.code_gen()
+       # print(compiler.memoryTable)
+       print(tag_parser.sortConstantList(compiler.memoryTable))
+       self.assertEqual(compiler.mem0,55)
+       self.assertEqual(code , 'MOV(R0,IND(52));\n')
+
+    def test_constant_empty(self):
+       s , r = tag_parser.AbstractSchemeExpr.parse("")
        # code = s.code_gen()
-       print(compiler.memoryTable)
-       # self.assertEqual(compiler.mem0,19)
-       # self.assertEqual(code , 'MOV(R0,IND(16));\nMOV(R0,INDD(R0,2));\nMOV(R0,INDD(R0,1));\n')
+       # print(compiler.memoryTable)
+       # print(tag_parser.sortConstantList(compiler.memoryTable))
+       # self.assertEqual(compiler.mem0,55)
+       # self.assertEqual(code , 'MOV(R0,IND(52));\n')
 
 if __name__ == '__main__':
      unittest.main()

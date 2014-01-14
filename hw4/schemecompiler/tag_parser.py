@@ -35,6 +35,12 @@ def gcd(a, b):
     return b and gcd(b, a % b) or a
 
 ##############################
+#           Sort             #
+##############################
+def sortConstantList(dictionarry):
+    return sorted(dictionarry.items(), key = lambda x: x[1])
+
+##############################
 #           Parser           #
 ##############################
 def parserRecursive(expr):
@@ -998,24 +1004,25 @@ class CodeGenVisitor(AbstractSchemeExpr):
     @staticmethod
     def codeGenPair(value):
         constantList = CodeGenVisitor.topologicalSort(value)
-        print (constantList)
-        for node in constantList:
+        index = 0
+        while len(constantList) > 1:
+            node = constantList[index]
             if type(node) is sexprs.Pair:
-                index = constantList.index(node)
-
-                if type(constantList[index-1]) is sexprs.Nil:
+                first = constantList[index - 1]
+                second = constantList[index - 2]
+                if type(first) is sexprs.Nil:
                     car = "nil"
-                elif type(constantList[index-1]) is sexprs.Symbol:
-                    car = "bucket_'%s" %constantList[index-1]
+                elif type(first) is sexprs.Symbol:
+                    car = "bucket_'%s" %first
                 else:
-                    car = "%s" %constantList[index-1]
+                    car = "%s" %first
 
-                if type(constantList[index-2]) is sexprs.Nil:
+                if type(second) is sexprs.Nil:
                     cdr = "nil"
-                elif type(constantList[index-2]) is sexprs.Symbol:
-                    cdr = "bucket_'%s" %constantList[index-2]
+                elif type(second) is sexprs.Symbol:
+                    cdr = "bucket_'%s" %second
                 else:
-                    cdr = "%s" %constantList[index-2]
+                    cdr = "%s" %second
 
                 nodeName = "%s" %node
 
@@ -1025,9 +1032,15 @@ class CodeGenVisitor(AbstractSchemeExpr):
                                                              compiler.memoryTable.get(cdr)[0]] ] } )
                 compiler.mem0 += 3
 
+                constantList.remove(first)
+                constantList.remove(second)
+                index -= 1
+
             elif type(node) is sexprs.Symbol:
+                index += 1
                 CodeGenVisitor.codeGenSymbol(node.string,"'%s" %node.string)
             else:
+                index += 1
                 Constant(node).code_gen()
 
     # this is a static method in order to assist us generate symbols code
