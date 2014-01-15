@@ -1,6 +1,4 @@
 import sexprs
-import compiler
-import itertools
 
 __author__ = 'Dror & Eldar'
 
@@ -35,10 +33,16 @@ def gcd(a, b):
     return b and gcd(b, a % b) or a
 
 ##############################
-#           Sort             #
+#        Constant List       #
 ##############################
-def sortConstantList(dictionarry):
-    return sorted(dictionarry.items(), key = lambda x: x[1])
+memoryTable = { 'void':[1,['T_VOID']],'nil':[2,['T_NIL']] }
+mem0 = 7
+
+def sortedConstantList():
+    return sorted(memoryTable.items(), key = lambda x: x[1])
+
+def appendTabs():
+    return "\t\t"
 
 ##############################
 #           Parser           #
@@ -897,15 +901,17 @@ def annotatePairs(self,inTp):
 
 class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenConstant(self):
+        global memoryTable
+        global mem0
         result = ""
         if type(self.constant) is sexprs.Boolean:
             if self.constant.value.__eq__('f'):
-                return "MOV(R0,IND(3));\n"
+                return appendTabs() + "MOV(R0,IMM(3));\n"
             else:
-                return "MOV(R0,IND(5));\n"
+                return appendTabs() + "MOV(R0,IMM(5));\n"
 
         elif type(self.constant) is sexprs.Nil:
-            return "MOV(R0,IND(2));\n"
+            return appendTabs() + "MOV(R0,IMM(2));\n"
 
         elif type(self.constant) is sexprs.Int:
             if self.constant.sign:
@@ -917,12 +923,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 integer = int(self.constant.number)
 
             integerKey = "%s" %integer
-            if compiler.memoryTable.get(integerKey) is None:
-                compiler.memoryTable.update( { integerKey : [ compiler.mem0 , ['T_INT',integer] ] } )
-                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
-                compiler.mem0 += 2
+            if memoryTable.get(integerKey) is None:
+                memoryTable.update( { integerKey : [ mem0 , ['T_INT',integer] ] } )
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                mem0 += 2
             else:
-                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(integerKey)[0]
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(integerKey)[0]
 
             return result
 
@@ -952,36 +958,36 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             denom = newFrac.denom.number
 
-            if compiler.memoryTable.get(newFracName) is None:
-                compiler.memoryTable.update( { newFracName : [ compiler.mem0 , ['T_FRACTION',num,denom] ] } )
-                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
-                compiler.mem0 += 3
+            if memoryTable.get(newFracName) is None:
+                memoryTable.update( { newFracName : [ mem0 , ['T_FRACTION',num,denom] ] } )
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                mem0 += 3
             else:
-                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(newFracName)[0]
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(newFracName)[0]
 
             return result
 
         elif type(self.constant) is sexprs.String:
             string = self.constant.string
-            if compiler.memoryTable.get(string) is None:
-                value = ['T_STR',len(string)]
+            if memoryTable.get(string) is None:
+                value = ['T_STRING',len(string)]
                 value.extend(list(string))
-                compiler.memoryTable.update( { string : [ compiler.mem0 , value ] } )
-                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
-                compiler.mem0 += (2 + len(string))
+                memoryTable.update( { string : [ mem0 , value ] } )
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                mem0 += (2 + len(string))
             else:
-                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(string)[0]
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(string)[0]
 
             return result
 
         elif type(self.constant) is sexprs.Char:
             value = self.constant.value
-            if compiler.memoryTable.get(value) is None:
-                compiler.memoryTable.update( { value : [ compiler.mem0 , ['T_CHAR' , value] ] } )
-                result += 'MOV(R0,IND(%s));\n' %compiler.mem0
-                compiler.mem0 += 2
+            if memoryTable.get(value) is None:
+                memoryTable.update( { value : [ mem0 , ['T_CHAR' , value] ] } )
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                mem0 += 2
             else:
-                result += 'MOV(R0,IND(%s));\n' %compiler.memoryTable.get(value)[0]
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(value)[0]
 
             return result
 
@@ -989,20 +995,22 @@ class CodeGenVisitor(AbstractSchemeExpr):
             value = self.constant.sexpr2.sexpr1
             if type(value) is sexprs.Vector: #Handle Vector
                 CodeGenVisitor.codeGenPair(value.sexpr)
-                pairPtr = compiler.mem0 - 3
-                result += 'MOV(R0,IND(%s));\n' %pairPtr
+                pairPtr = mem0 - 3
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %pairPtr
             elif type(value) is sexprs.Symbol:
                 result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
             else: #it is a list
                 CodeGenVisitor.codeGenPair(value)
-                pairPtr = compiler.mem0 - 3
-                result += 'MOV(R0,IND(%s));\n' %pairPtr
+                pairPtr = mem0 - 3
+                result += appendTabs() + 'MOV(R0,IND(%s));\n' %pairPtr
             return result
         else:
             raise SyntaxError("no such constant %s" %self)      # for debug purpose
 
     @staticmethod
     def codeGenPair(value):
+        global memoryTable
+        global mem0
         constantList = CodeGenVisitor.topologicalSort(value)
         index = 0
         while len(constantList) > 1:
@@ -1026,11 +1034,11 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
                 nodeName = "%s" %node
 
-                compiler.memoryTable.update( { nodeName : [ compiler.mem0,
+                memoryTable.update( { nodeName : [ mem0,
                                                             ['T_PAIR',
-                                                             compiler.memoryTable.get(car)[0],
-                                                             compiler.memoryTable.get(cdr)[0]] ] } )
-                compiler.mem0 += 3
+                                                             memoryTable.get(car)[0],
+                                                             memoryTable.get(cdr)[0]] ] } )
+                mem0 += 3
 
                 constantList.remove(first)
                 constantList.remove(second)
@@ -1046,23 +1054,25 @@ class CodeGenVisitor(AbstractSchemeExpr):
     # this is a static method in order to assist us generate symbols code
     @staticmethod
     def codeGenSymbol(name,value):
+        global memoryTable
+        global mem0
         symbol = "'%s" %name
         bucketName = "bucket_%s" %symbol
         result = ""
-        if compiler.memoryTable.get(bucketName) is None:
+        if memoryTable.get(bucketName) is None:
             stringCode = Constant(sexprs.String(name)).code_gen()     # (*)
-            stringPtr = compiler.memoryTable.get(name)[0]             # the pointer of the string created in (*)
-            compiler.memoryTable.update( { symbol : [ compiler.mem0 , ['T_SYMBOL', value] ] })
-            symbolPtr = compiler.mem0                                 # the pointer to symbol's value
-            compiler.mem0 += 2
-            compiler.memoryTable.update( { bucketName : [ compiler.mem0 , ['T_BUCKET',stringPtr,symbolPtr] ]})
-            result += "MOV(R0,IND(%s));\n" %compiler.mem0
-            compiler.mem0 += 3
+            stringPtr = memoryTable.get(name)[0]             # the pointer of the string created in (*)
+            memoryTable.update( { symbol : [ mem0 , ['T_SYMBOL', value] ] })
+            symbolPtr = mem0                                 # the pointer to symbol's value
+            mem0 += 2
+            memoryTable.update( { bucketName : [ mem0 , ['T_BUCKET',stringPtr,symbolPtr] ]})
+            result += appendTabs() + "MOV(R0,IND(%s));\n" %mem0
+            mem0 += 3
         else:
-            result += "MOV(R0,INDD(%s);\n" %compiler.memoryTable.get(bucketName)[0]
+            result += appendTabs() + "MOV(R0,INDD(%s);\n" %memoryTable.get(bucketName)[0]
 
-        result += "MOV(R0,INDD(R0,2));\n"
-        result += "MOV(R0,INDD(R0,1));\n"
+        result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
+        result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
         return result
 
     @staticmethod
@@ -1085,15 +1095,15 @@ class CodeGenVisitor(AbstractSchemeExpr):
         result = ""
         test = self.pair.sexpr1.code_gen()
         result += test
-        result += "CMP(R0, FALSE_CONSTANT);\n"
-        result += "JUMP EQ(DIF_LABEL);\n"
+        result += appendTabs() + "CMP(R0, BOOL_FALSE);\n"
+        result += appendTabs() + "JUMP_EQ(DIF_LABEL);\n"
         dit = self.pair.sexpr2.sexpr1.code_gen()
         result += dit
-        result += "JUMP (END_IF);\n"
-        result += "DIF_LABEL:\n"
+        result += appendTabs() + "JUMP(END_IF);\n"
+        result += appendTabs() + "DIF_LABEL:\n"
         dif = self.pair.sexpr2.sexpr2.sexpr1.code_gen()
         result+= dif
-        result += "END_IF:\n"
+        result += appendTabs() + "END_IF:\n"
 
         return result
 
@@ -1113,20 +1123,20 @@ class CodeGenVisitor(AbstractSchemeExpr):
         for arg in argsList:
             argi = arg.code_gen()
             result += argi
-            result += "PUSH (R0);\n"
+            result += appendTabs() + "PUSH (R0);\n"
 
-        result += "PUSH " + str(len(argsList)) + "\n"
+        result += appendTabs() + "PUSH " + str(len(argsList)) + "\n"
 
         proc = self.applic.code_gen()
         result += proc
-        result += "CMP(IND(R0), T_CLOSURE);\n"
-        result += "JUMP_NE(CLOSURE_FALSE);\n"
-        result += "PUSH (INDD(R0,1));\n"  # env
-        result += "PUSH (FPARG(0));\n"
-        result += "MOV (R1, FP);\n" # R1 <- old fp
+        result += appendTabs() + "CMP(IND(R0), T_CLOSURE);\n"
+        result += appendTabs() + "JUMP_NE(CLOSURE_FALSE);\n"
+        result += appendTabs() + "PUSH (INDD(R0,1));\n"  # env
+        result += appendTabs() + "PUSH (FPARG(0));\n"
+        result += appendTabs() + "MOV (R1, FP);\n" # R1 <- old fp
         # for(){...} override old frame
-        result += "MOV FP, R1);\n"
-        result += "JUMP(INND(R0,2));\n"
+        result += appendTabs() + "MOV FP, R1);\n"
+        result += appendTabs() + "JUMP(INND(R0,2));\n"
 
         return result
 
