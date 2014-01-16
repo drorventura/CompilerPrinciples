@@ -971,7 +971,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             string = self.constant.string
             if memoryTable.get(string) is None:
                 value = ['T_STRING',len(string)]
-                value.extend(list(string))
+                value.extend(reversed(list(string)))
                 memoryTable.update( { string : [ mem0 , value ] } )
                 result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
                 mem0 += (2 + len(string))

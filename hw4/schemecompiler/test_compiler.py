@@ -74,9 +74,10 @@ class TestCompiler(unittest.TestCase):
        self.assertEqual(code , 'MOV(R0,IND(52));\n')
 
     def test_constant_empty(self):
-       s , r = tag_parser.AbstractSchemeExpr.parse("")
-       # code = s.code_gen()
-       # print(compiler.memoryTable)
+       s , r = tag_parser.AbstractSchemeExpr.parse('"dror"')
+       code = s.code_gen()
+       print(code)
+       print(tag_parser.memoryTable)
        # print(tag_parser.sortConstantList(compiler.memoryTable))
        # self.assertEqual(compiler.mem0,55)
        # self.assertEqual(code , 'MOV(R0,IND(52));\n')

@@ -104,8 +104,10 @@ def initConstantTable():
 
         elif sobType is 'T_STRING':
             value = node[1][1][1]
-            print(value)
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
+            for i in range(value):
+                code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %node[1][1][i+2]
+
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_STRING);\n"
             code += tag_parser.appendTabs() + "DROP(1);\n"
 
