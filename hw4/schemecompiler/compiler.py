@@ -15,6 +15,8 @@ def compile_scheme_file(source, target):
 
         targetFile.write(generatedContent)
 
+        # targetFile.write(addCodePrintTo("1"))
+
         targetFile.write(endCode())
 
 def startCode():
@@ -86,7 +88,7 @@ def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
     print(sortedDic)
     code = tag_parser.appendTabs() + "/* make constant table*/\n"
-    for node in sortedDic:
+    for node in sortedDic[2:]:
         sobType = node[1][1][0]
         if sobType is 'T_INT':
             num = node[1][1][1]
@@ -126,13 +128,41 @@ def initConstantTable():
             code += tag_parser.appendTabs() + "DROP(2);\n"
 
         elif sobType is 'T_SYMBOL':
-            code += tag_parser.appendTabs() + "#####################MAKE_SOB_SYMBOL#####################\n"
+            bucket = node[1][1][1]
+            code += tag_parser.appendTabs() + "CALL(MAKE_SOB_SYMBOL);\n"
 
         elif sobType is 'T_BUCKET':
-            code += tag_parser.appendTabs() + "#####################MAKE_SOB_BUCKET#####################\n"
+            symbolName = node[1][1][1]
+            value = node[1][1][2]
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
+            code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
+            code += tag_parser.appendTabs() + "DROP(2);\n"
+
+        elif sobType is 'T_VECTOR':
+            # value = node[1][1][1]
+            # code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
+            # for i in range(value):
+            #     code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %node[1][1][i+2]
+            # code += tag_parser.appendTabs() + "CALL(MAKE_SOB_VECTOR);\n"
+            # code += tag_parser.appendTabs() + "DROP(1);\n"
+            print("##############MAKE_SOB_VECTOR##################")
 
         else:
+
+            print(sobType)
             print("need to implemet that")
+
+    return code
+
+def addCodePrintTo(key):
+    x = tag_parser.memoryTable.get(key)
+    code = ""
+    if x[1][0] is 'T_INT':
+        code += tag_parser.appendTabs() + "PUSH (%s);\n" %x[1][1]
+        code += tag_parser.appendTabs() + "CALL (WRITE_INTEGER);\n"
+    else:
+        code += tag_parser.appendTabs() + "CALL (WRITE);\n"
 
     return code
 

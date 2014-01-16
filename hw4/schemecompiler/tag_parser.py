@@ -1053,26 +1053,26 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     # this is a static method in order to assist us generate symbols code
     @staticmethod
-    def codeGenSymbol(name,value):
+    def codeGenSymbol(name,value):      # if Symbol is a constant value = symbol_value else value = 0
         global memoryTable
         global mem0
         symbol = "'%s" %name
         bucketName = "bucket_%s" %symbol
         result = ""
-        if memoryTable.get(bucketName) is None:
-            stringCode = Constant(sexprs.String(name)).code_gen()     # (*)
-            stringPtr = memoryTable.get(name)[0]             # the pointer of the string created in (*)
-            memoryTable.update( { symbol : [ mem0 , ['T_SYMBOL', value] ] })
-            symbolPtr = mem0                                 # the pointer to symbol's value
-            mem0 += 2
-            memoryTable.update( { bucketName : [ mem0 , ['T_BUCKET',stringPtr,symbolPtr] ]})
-            result += appendTabs() + "MOV(R0,IND(%s));\n" %mem0
+        if memoryTable.get(symbol) is None:
+            Constant(sexprs.String(name)).code_gen()                # (*)
+            stringPtr = memoryTable.get(name)[0]                    # the pointer of the string created in (*)
+            memoryTable.update( { bucketName : [ mem0 , ['T_BUCKET',stringPtr, value] ]})
+            bucketPtr = mem0                                        # the pointer to bucket
             mem0 += 3
+            memoryTable.update( { symbol : [ mem0 , ['T_SYMBOL', bucketPtr] ] })
+            result += appendTabs() + "MOV(R0,IND(%s));\n" %mem0
+            mem0 += 2
         else:
-            result += appendTabs() + "MOV(R0,INDD(%s);\n" %memoryTable.get(bucketName)[0]
+            result += appendTabs() + "MOV(R0,INDD(%s);\n" %memoryTable.get(symbol)[0]
 
-        result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
         result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
+        result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
         return result
 
     @staticmethod
@@ -1145,3 +1145,4 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenDef(self):
         return "codeGenDef"
+
