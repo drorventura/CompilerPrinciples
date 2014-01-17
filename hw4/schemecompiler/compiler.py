@@ -166,6 +166,22 @@ def addCodePrintTo(key):
 
     return code
 
+def addCodeforBuiltInProcedures(symbol,label):
+    symbolPtr = tag_parser.memoryTable.get(symbol)[1][0]
+    code = tag_parser.appendTabs() + "PUSH(0);\n"            #the empty environment for free vars
+    code += tag_parser.appendTabs() + "PUSH(LABEL(%s));\n" %label.upper()
+    code += \
+        """CALL (MAKE_SOB_CLOSURE);
+        DROP(2);
+        PUSH(R1);"""
+    code += tag_parser.appendTabs() + "MOV(R1,%s);\n" %symbolPtr
+    code += \
+        """MOV(R1,INDD(R1,1));
+        MOV(INDD(R1,2),R0);
+        POP(R1)
+        """
+    return  code
+
 class CompilationError(Exception):
     def __init__(self,message):
         Exception.__init__(self,message)
