@@ -166,7 +166,7 @@ def addCodePrintTo(key):
 
     return code
 
-def addCodeforBuiltInProcedures(symbol,label):
+def addCodeForBuiltInProcedures(symbol,label):
     symbolPtr = tag_parser.memoryTable.get(symbol)[1][0]
     code = tag_parser.appendTabs() + "PUSH(0);\n"            #the empty environment for free vars
     code += tag_parser.appendTabs() + "PUSH(LABEL(%s));\n" %label.upper()
