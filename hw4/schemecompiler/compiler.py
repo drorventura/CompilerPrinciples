@@ -99,8 +99,8 @@ def initConstantTable():
         elif sobType is 'T_FRACTION':
             num = node[1][1][1]
             denom = node[1][1][2]
-            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %num
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %denom
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %num
             code += tag_parser.appendTabs() + "CALL(IS_SOB_FRACTION);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
 
@@ -122,8 +122,8 @@ def initConstantTable():
         elif sobType is 'T_PAIR':
             car = node[1][1][1]
             cdr = node[1][1][2]
-            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %car
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %cdr
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %car
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_PAIR);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
 

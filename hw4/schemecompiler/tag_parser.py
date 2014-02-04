@@ -67,7 +67,6 @@ def setEnvDepth(exp,depth):
             setEnvDepth(arg.sexpr1,depth)
             arg = arg.sexpr2
 
-
 ##############################
 #           Parser           #
 ##############################
@@ -176,7 +175,7 @@ def tagPairLambda(expr):
                     return  sexprs.Pair(sum(list_to_be_flatten,[]))
             else:
                 try:
-                    return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1),\
+                    return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1),
                                          parserRecursiveForLambda(expr.sexpr2)])
                 except lambdaParametersIsNotVariable:
                     return  sexprs.Pair([parserRecursiveForLambda(expr.sexpr1)])
@@ -220,7 +219,7 @@ def tagCond(expr):
                               parserRecursive(expr.sexpr1.sexpr2.sexpr1),   # Than - Ei
                               tagCond(expr.sexpr2))                         # Recursive Alternative Ti+1
     except:
-        raise SyntaxError(expr)
+        raise SyntaxErrorException(expr)
 
 def tagDefine(expr):
     try:
@@ -233,7 +232,7 @@ def tagDefine(expr):
                        tagLambda(sexprs.Pair([expr.sexpr1.sexpr2,           # <arg1>
                                               expr.sexpr2.sexpr1])))        # <expr>
     except:
-        raise SyntaxError
+        raise SyntaxErrorException
 
 def tagLambda(expr):
     body = parserRecursive(expr.sexpr2.sexpr1)
@@ -267,8 +266,7 @@ def tagLambda(expr):
                     isinstance(temp_args.sexpr2.sexpr2,Variable):
                         return LambdaOpt(params,body)
             else:
-                if isinstance(temp_args.sexpr2,sexprs.Nil) and\
-                        isinstance(temp_args.sexpr1,sexprs.Pair):
+                if isinstance(temp_args.sexpr2,sexprs.Nil) and isinstance(temp_args.sexpr1,sexprs.Pair):
                             temp_args = temp_args.sexpr1
                 else:
                     temp_args = temp_args.sexpr2
@@ -409,7 +407,7 @@ def tagAnd(expr):
 def tagLet(expr):
     body = expr.sexpr2.sexpr1
     if isinstance(expr.sexpr1,sexprs.Nil):
-        raise SyntaxError("In Let Parameters Bound Are Empty")
+        raise SyntaxErrorException("In Let Parameters Bound Are Empty")
 
     list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
@@ -441,7 +439,7 @@ def tagLetStartRec(expr):
                                                     finalPair1],[]))
     body = finalPairWithString
     if isinstance(expr.sexpr1,sexprs.Nil):
-        raise SyntaxError("In Let Parameters Bound Are Empty")
+        raise SyntaxErrorException("In Let Parameters Bound Are Empty")
 
     list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
@@ -482,7 +480,7 @@ def expandQQ(expr):
         if isinstance(head,sexprs.Pair) and\
             head.sexpr1 == "UNQUOTE-SPLICING":
             return sexprs.Pair(sum([[sexprs.Symbol('APPEND',6)],
-                ['.',sexprs.Pair(sum([[head.sexpr2.sexpr1],\
+                ['.',sexprs.Pair(sum([[head.sexpr2.sexpr1],
                     ['.',sexprs.Pair([expandQQ(tail)])]],[]))]],[]))
 
         elif isinstance(tail,sexprs.Pair) and\
@@ -519,7 +517,7 @@ class NotEnoughParameters(Exception):
     def __init__(self,message):
         Exception.__init__(self,message)
 
-class SyntaxError(Exception):
+class SyntaxErrorException(Exception):
     def __init__(self,expr):
         Exception.__init__(self,str(expr))
 
@@ -628,7 +626,7 @@ class Variable(AbstractSchemeExpr):
 
 class VarFree(Variable):
     def __init__(self, variable):
-        Variable.__init__(variable)
+        super().__init__(variable)
 
     def accept(self, visitor):
         return visitor.visitVariable(self)
@@ -638,7 +636,7 @@ class VarFree(Variable):
 
 class VarParam(Variable):
     def __init__(self, variable, minor):
-        Variable.__init__(variable)
+        super().__init__(variable)
         self.minor = minor
 
     def accept(self, visitor):
@@ -649,7 +647,7 @@ class VarParam(Variable):
 
 class VarBound(Variable):
     def __init__(self, variable,major, minor):
-        Variable.__init__(variable)
+        super().__init__(variable)
         self.major = major
         self.minor = minor
 
@@ -1039,7 +1037,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 result += appendTabs() + 'MOV(R0,IND(%s));\n' %pairPtr
             return result
         else:
-            raise SyntaxError("no such constant %s" %self)      # for debug purpose
+            raise SyntaxErrorException("no such constant %s" %self)      # for debug purpose
 
     @staticmethod
     def codeGenPair(value):
@@ -1152,13 +1150,49 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return result
 
     def codeGenLambdaSimple(self):
-        depth = 1 + self.depth
-        code = "PUSH(IMM(%s));\n" %depth
-        code += "CALL(MALLOC);\n"
-        code += "DROP(1);\n"
-        code += "MOV;\n"
+        code = "MOV(R1,IMM(%s));\n" %self.depth
+        code += "CMP(R1,IMM(0));\n"
+        code += "JUMP_EQ(L_After_Env_Expansion_%s);\n" %LabelGenerator.getLabel()
+        code += \
+        """MOV(R3,R1);             /* remember envSize */
+           ADD(R1,IMM(1));         /* increment env size by 1 */
+           PUSH(IMM(R1));
+           CALL(MALLOC);           /* malloc space for new env */
+           DROP(1);
+           MOV(R1,R0);              /* move new env to R1 */
+           MOV(R2,FPARG(0));        /* get old env from stack */
+           int i,j;
+           for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
+           {
+                MOV(INDD(R1,j),INDD(R2,i));
+           }
+           MOV(R3,FPARG(1));       /* get the number of parameters from stack */
+           PUSH(IMM(R3));
+           CALL(MALLOC);           /* malloc size for parameters to add new env */
+           DROP(1);
+           for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
+           {
+                MOV(INDD(R0,i),FPARG(j));
+           }
+           MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
+        """
+        code += "L_After_Env_Expansion_%s:\n" %LabelGenerator.getLabel()
+        code += "PUSH(LABEL(L_CLOS_CODE_%s));\n" %LabelGenerator.getLabel() #push the label of the lambda's body
+        code += "PUSH(R1);\n" %LabelGenerator.getLabel()                    #push the new env
+        code += "CALL(MAKE_SOB_CLOSURE);\n"
+        code += "DROP(2);\n"
+        code += "JUMP(L_CLOS_EXIT_%s));\n" %LabelGenerator.getLabel()
 
-        return "codeGenLambdaSimple"
+        code += "L_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += "PUSH(FP);\n" %LabelGenerator.getLabel()
+        code += "MOV(FP,SP);\n" %LabelGenerator.getLabel()
+        code += self.body.code_gen
+        code += "POP(FP);\n"
+        code += "RETURN;\n"
+
+        code += "L_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+        return code
 
     def codeGenLambdaOpt(self):
         return "codeGenLambdaOpt"

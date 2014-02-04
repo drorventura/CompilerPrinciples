@@ -91,6 +91,8 @@ class TestSexprs(unittest.TestCase):
     def test_application_2(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ (lambda (x) x) (lambda (x) (lambda (y) 3)) 2 4 abc)')
         self.assertEqual(str(sexpr) , '(+ (LAMBDA (X) X) (LAMBDA (X) (LAMBDA (Y) 3)) 2 4 ABC)')
+        # tag_parser.setEnvDepth(sexpr,0)
+        # print(sexpr.arguments.sexpr2.sexpr1.body.depth)
 
     def test_lambdaSimple1(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c) c))')
