@@ -1184,8 +1184,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += "JUMP(L_CLOS_EXIT_%s));\n" %LabelGenerator.getLabel()
 
         code += "L_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
-        code += "PUSH(FP);\n" %LabelGenerator.getLabel()
-        code += "MOV(FP,SP);\n" %LabelGenerator.getLabel()
+        code += "PUSH(FP);\n"
+        code += "MOV(FP,SP);\n"
         code += self.body.code_gen
         code += "POP(FP);\n"
         code += "RETURN;\n"
