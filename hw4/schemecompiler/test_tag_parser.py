@@ -87,7 +87,11 @@ class TestSexprs(unittest.TestCase):
     def test_application_1(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ 1 2 4 abc)')
         self.assertEqual(str(sexpr) , '(+ 1 2 4 ABC)')
-    
+
+    def test_application_2(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(+ (lambda (x) x) (lambda (x) (lambda (y) 3)) 2 4 abc)')
+        self.assertEqual(str(sexpr) , '(+ (LAMBDA (X) X) (LAMBDA (X) (LAMBDA (Y) 3)) 2 4 ABC)')
+
     def test_lambdaSimple1(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c) c))')
         self.assertEqual(str(sexpr) , '(LAMBDA (A B C) C)')
@@ -103,6 +107,7 @@ class TestSexprs(unittest.TestCase):
     def test_lambdaSimple4(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a) (+ a b c))')
         self.assertEqual(str(sexpr) , '(LAMBDA (A) (+ A B C))')
+
 
     def test_lambdaSimple5(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda a (+ a b c))')
@@ -123,6 +128,8 @@ class TestSexprs(unittest.TestCase):
     def test_letstar_2_arg(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let* ((x 5) (y (+ x 1)) (z 18)) (+ x y))')
         self.assertEqual(str(sexpr) , '((LAMBDA (X) ((LAMBDA (Y) ((LAMBDA (Z) (+ X Y)) 18)) (+ X 1))) 5)')
+        tag_parser.setEnvDepth(sexpr,0)
+        # print(sexpr.applic.body.applic.body.applic.depth)
 
     def test_letrec(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(letrec ((a 2)) 'hello)")
@@ -131,6 +138,7 @@ class TestSexprs(unittest.TestCase):
     def test_letrec2(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(letrec ((a (a 3)) (b #t)) (if a b #f))")
         self.assertEqual(str(sexpr) , '(Yag (LAMBDA (&39@ A B) (IF A B #f)) (LAMBDA (&416@ A B) (A 3)) (LAMBDA (&525@ A B) #t))')
+
 
     def test_classes(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda (a b) (lambda (c d) (lambda (x y) (+ 1 2)))))")

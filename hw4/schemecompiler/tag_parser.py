@@ -25,6 +25,18 @@ class Gensym:
         n += 1
         return '&' + '%s' %n + '%s' %(n*n) + '@'
 
+num = 0
+class LabelGenerator:
+    @staticmethod
+    def getLabel():
+        global num
+        return '%s' %num
+
+    @staticmethod
+    def nextLabel():
+        global num
+        num += 1
+
 ##############################
 #            GCD             #
 ##############################
@@ -43,6 +55,18 @@ def sortedConstantList():
 
 def appendTabs():
     return "\t\t"
+
+def setEnvDepth(exp,depth):
+    if isinstance(exp,AbstractLambda):
+        exp.depth = depth
+        setEnvDepth(exp.body,depth + 1)
+    elif isinstance(exp,Applic):
+        setEnvDepth(exp.applic,depth)
+        arg = exp.arguments
+        while type(arg) is sexprs.Pair:
+            setEnvDepth(arg.sexpr1,depth)
+            arg = arg.sexpr2
+
 
 ##############################
 #           Parser           #
@@ -602,15 +626,15 @@ class Variable(AbstractSchemeExpr):
     def annotate(self,visitor,inTp):
         return visitor.visitAnnotateVariable(self,inTp)
 
-    def generate(self, visitor):
-        return visitor.codeGenVariable(self)
-
 class VarFree(Variable):
     def __init__(self, variable):
         Variable.__init__(variable)
 
     def accept(self, visitor):
         return visitor.visitVariable(self)
+
+    def generate(self, visitor):
+        return visitor.codeGenVarFree(self)
 
 class VarParam(Variable):
     def __init__(self, variable, minor):
@@ -620,6 +644,9 @@ class VarParam(Variable):
     def accept(self, visitor):
         return visitor.visitVariable(self)
 
+    def generate(self, visitor):
+        return visitor.codeGenVarParam(self)
+
 class VarBound(Variable):
     def __init__(self, variable,major, minor):
         Variable.__init__(variable)
@@ -628,6 +655,9 @@ class VarBound(Variable):
 
     def accept(self, visitor):
         return visitor.visitVariable(self)
+
+    def generate(self, visitor):
+        return visitor.codeGenVarBound(self)
 
 # IfThenElse Class
 class IfThenElse(AbstractSchemeExpr):
@@ -646,7 +676,8 @@ class IfThenElse(AbstractSchemeExpr):
 # AbstractLambda Class
 class AbstractLambda(AbstractSchemeExpr):
     def __init__(self):
-        print("blank")
+        self.depth = 0
+        self.numOfArgs = 0
 
     def accept(self, visitor):
         return visitor.visitAbstractLambda(self)
@@ -654,6 +685,7 @@ class AbstractLambda(AbstractSchemeExpr):
 # LambdaSimple Class
 class LambdaSimple(AbstractLambda):
     def __init__(self,arguments,body):
+        super().__init__()
         self.arguments = arguments
         self.body = body
 
@@ -669,6 +701,7 @@ class LambdaSimple(AbstractLambda):
 # LambdaOpt Class
 class LambdaOpt(AbstractLambda):
     def __init__(self,arguments,body):
+        super().__init__()
         self.arguments = arguments
         self.body = body
 
@@ -684,6 +717,7 @@ class LambdaOpt(AbstractLambda):
 # LambdaVar Class
 class LambdaVar(AbstractLambda):
     def __init__(self,arguments,body):
+        super().__init__()
         self.arguments = arguments
         self.body = body
 
@@ -1051,7 +1085,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 index += 1
                 Constant(node).code_gen()
 
-    # this is a static method in order to assist us generate symbols code
+    # this is a static method in order to assist the generate symbol's code
     @staticmethod
     def codeGenSymbol(name,value):      # if Symbol is a constant value = symbol_value else value = 0
         global memoryTable
@@ -1066,10 +1100,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
             bucketPtr = mem0                                        # the pointer to bucket
             mem0 += 3
             memoryTable.update( { symbol : [ mem0 , ['T_SYMBOL', bucketPtr] ] })
-            result += appendTabs() + "MOV(R0,IND(%s));\n" %mem0
+            result += appendTabs() + "MOV(R0,IMM(%s));\n" %mem0
             mem0 += 2
         else:
-            result += appendTabs() + "MOV(R0,INDD(%s);\n" %memoryTable.get(symbol)[0]
+            result += appendTabs() + "MOV(R0,IMM(%s);\n" %memoryTable.get(symbol)[0]
 
         result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
         result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
@@ -1088,26 +1122,42 @@ class CodeGenVisitor(AbstractSchemeExpr):
         else:
             return [exp]
 
-    def codeGenVariable(self):
-        return "codeGenVariable"
+    def codeGenVarFree(self):
+        return "codeGenVarFree"
+
+    def codeGenVarParam(self):
+        return "MOV(R0,FPARG(1 + %s);\n" %self.minor
+
+    def codeGenVarBound(self):
+        code = "MOV(R0,FPARG(1))"
+        code += "MOV(R0,INDD(R0,%s)" %self.major
+        code += "MOV(R0,INDD(R0,%s)" %self.minor
+        return code
 
     def codeGenIfThenElse(self):
         result = ""
         test = self.pair.sexpr1.code_gen()
         result += test
         result += appendTabs() + "CMP(R0, BOOL_FALSE);\n"
-        result += appendTabs() + "JUMP_EQ(DIF_LABEL);\n"
+        result += appendTabs() + "JUMP_EQ(L_DIF_%s);\n" %LabelGenerator.getLabel()
         dit = self.pair.sexpr2.sexpr1.code_gen()
         result += dit
-        result += appendTabs() + "JUMP(END_IF);\n"
-        result += appendTabs() + "DIF_LABEL:\n"
+        result += appendTabs() + "JUMP(L_END_IF_%s);\n" %LabelGenerator.getLabel()
+        result += appendTabs() + "L_DIF_%s:\n" %LabelGenerator.getLabel()
         dif = self.pair.sexpr2.sexpr2.sexpr1.code_gen()
         result+= dif
-        result += appendTabs() + "END_IF:\n"
+        result += appendTabs() + "L_END_IF_%s:\n" %LabelGenerator.getLabel()
 
+        LabelGenerator.nextLabel()
         return result
 
     def codeGenLambdaSimple(self):
+        depth = 1 + self.depth
+        code = "PUSH(IMM(%s));\n" %depth
+        code += "CALL(MALLOC);\n"
+        code += "DROP(1);\n"
+        code += "MOV;\n"
+
         return "codeGenLambdaSimple"
 
     def codeGenLambdaOpt(self):
@@ -1123,25 +1173,59 @@ class CodeGenVisitor(AbstractSchemeExpr):
         for arg in argsList:
             argi = arg.code_gen()
             result += argi
-            result += appendTabs() + "PUSH (R0);\n"
+            result += appendTabs() + "PUSH(R0);\n"
 
-        result += appendTabs() + "PUSH " + str(len(argsList)) + "\n"
+        result += appendTabs() + "PUSH(IMM(%s));" %len(argsList) # num of parameters
 
         proc = self.applic.code_gen()
         result += proc
-        result += appendTabs() + "CMP(IND(R0), T_CLOSURE);\n"
-        result += appendTabs() + "JUMP_NE(CLOSURE_FALSE);\n"
+        result += appendTabs() + "CMP (IND(R0), T_CLOSURE);\n"
+        result += appendTabs() + "JUMP_NE(L_error_not_a_closure);\n"
+
         result += appendTabs() + "PUSH (INDD(R0,1));\n"  # env
-        result += appendTabs() + "PUSH (FPARG(0));\n"
-        result += appendTabs() + "MOV (R1, FP);\n" # R1 <- old fp
-        # for(){...} override old frame
-        result += appendTabs() + "MOV FP, R1);\n"
-        result += appendTabs() + "JUMP(INND(R0,2));\n"
+        result += appendTabs() + "CALLA(INND(R0,2));\n"  # jumps to closure's code and returns here
+        result += appendTabs() + "DROP(1);\n"  # drops the env from stack
+        result += appendTabs() + "POP(R1);\n"  # get the number of params from stack to R1
+        result += appendTabs() + "DROP(R1);\n" # clear the stack
 
         return result
 
+    # def codeGenApplicTP(self):
+    #     result = ""
+    #     argsList = list(reversed(pairsToList(self.arguments)))
+    #
+    #     for arg in argsList:
+    #         argi = arg.code_gen()
+    #         result += argi
+    #         result += appendTabs() + "PUSH(R0);\n"
+    #
+    #     result += appendTabs() + "PUSH(IMM(%s))" %len(argsList)
+    #
+    #     proc = self.applic.code_gen()
+    #     result += proc
+    #     result += appendTabs() + "CMP (IND(R0), T_CLOSURE);\n"
+    #     result += appendTabs() + "JUMP_NE(L_error_not_a_closure);\n"
+    #     result += appendTabs() + "PUSH (INDD(R0,1));\n"  # env
+    #     result += appendTabs() + "PUSH (FPARG(0));\n"
+    #     result += appendTabs() + "MOV (R1, FP);\n" # R1 <- old fp
+    #     # for(){...} override old frame
+    #     result += appendTabs() + "MOV FP, R1);\n"
+    #     result += appendTabs() + "JUMP(INND(R0,2));\n"
+    #
+    #     return result
+
     def codeGenOr(self):
-        return "codeGenOr"
+        code = ""
+        argsList = pairsToList(self.arguments)
+        for arg in argsList[:-1]:
+            argi = arg.code_gen
+            code += argi
+            code += "CMP(R0, BOOL_FALSE);\n"
+            code += "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
+        code += argsList[-1].code_gen
+        code += "L_EXIT_%s:\n" %LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+        return code
 
     def codeGenDef(self):
         return "codeGenDef"
