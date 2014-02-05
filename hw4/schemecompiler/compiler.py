@@ -130,6 +130,7 @@ def initConstantTable():
 
         elif sobType is 'T_SYMBOL':
             bucket = node[1][1][1]
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %bucket
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_SYMBOL);\n"
 
         elif sobType is 'T_BUCKET':
