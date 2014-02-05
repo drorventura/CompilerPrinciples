@@ -76,8 +76,7 @@ def appendCodeGen(source):
         raise CompilationError('Input file is empty')
     else:
         s , r = tag_parser.AbstractSchemeExpr.parse(source)
-        s.debruijn()
-        tag_parser.setEnvDepth(s,0)
+        s.semantic_analysis()
         while not done:
             if r.__eq__(""):
                 done = True
@@ -85,7 +84,7 @@ def appendCodeGen(source):
             else:
                 code += "%s" %s.code_gen()
                 s, r = tag_parser.AbstractSchemeExpr.parse(r)
-
+                s.semantic_analysis()
         return code
 
 def initConstantTable():
@@ -112,14 +111,14 @@ def initConstantTable():
             value = node[1][1][1]
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
             for i in range(value):
-                code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %node[1][1][i+2]
+                code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %node[1][1][i+2]
 
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_STRING);\n"
             code += tag_parser.appendTabs() + "DROP(1);\n"
 
         elif sobType is 'T_CHAR':
             value = node[1][1][1]
-            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
+            code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_CHAR);\n"
             code += tag_parser.appendTabs() + "DROP(1);\n"
 
@@ -140,7 +139,7 @@ def initConstantTable():
             symbolName = node[1][1][1]
             value = node[1][1][2]
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
-            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
+            code += tag_parser.appendTabs() + 'PUSH(IMM("%s"));\n' %value
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
 

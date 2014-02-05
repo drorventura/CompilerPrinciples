@@ -112,10 +112,11 @@ class TestSexprs(unittest.TestCase):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a) (+ a b c))')
         self.assertEqual(str(sexpr) , '(LAMBDA (A) (+ A B C))')
 
-
     def test_lambdaSimple5(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda a (+ a b c))')
-        self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda a (+ (car a) (cdr  a)))")
+        # self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
+        sexpr.semantic_analysis()
+        print(sexpr.numOfArgs)
     
     def test_let_2_arg(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x (+ 1 2)) (y 7)) (+ 1 2))')

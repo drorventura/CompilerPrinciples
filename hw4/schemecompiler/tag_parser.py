@@ -606,6 +606,7 @@ class AbstractSchemeExpr:
     def semantic_analysis(self):
             self.debruijn()
             self.annotateTC(True)
+            setEnvDepth(self,0)
             return self
 
 # Constant Class
@@ -860,7 +861,7 @@ class AsStringVisitor(AbstractSchemeExpr):
 
 ################################################################
 
-class ApplicTP(Applic):
+class ApplicTP:
     def __init__(self,expr):
         self.obj = expr
 
@@ -871,10 +872,10 @@ class ApplicTP(Applic):
 class AnnotateVisitor(AbstractSchemeExpr):
 
     def visitAnnotateConstant(self,inTp):
-        return self.constant
+        return self
 
     def visitAnnotateVariable(self,inTp):
-        return self.variable
+        return self
 
     def visitAnnotateIfThenElse(self,inTp):
         self.pair.sexpr1 = self.pair.sexpr1.annotateTC(False)
@@ -1197,14 +1198,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
         """
         for(i = R1-1 ; i >= numOfArgs ; --i)
         {
-            /*PUSH(FPARG(i)); CALL(WRITE_SOB_INTEGER); DROP(1);CALL(NEWLINE);*/
-
             PUSH(R0);
             PUSH(FPARG(i));
             CALL(MAKE_SOB_PAIR);
             DROP(2);
         }
-        PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);CALL(NEWLINE);
+        /*PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);CALL(NEWLINE);*/
         MOV(FPARG(numOfArgs),R0);
         MOV(R2,numOfArgs);
         DECR(R2);
