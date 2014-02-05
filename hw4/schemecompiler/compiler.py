@@ -74,6 +74,7 @@ def appendCodeGen(source):
         raise CompilationError('Input file is empty')
     else:
         s , r = tag_parser.AbstractSchemeExpr.parse(source)
+        s.debruijn()
         while not done:
             if r.__eq__(""):
                 done = True
@@ -149,7 +150,6 @@ def initConstantTable():
             print("##############MAKE_SOB_VECTOR##################")
 
         else:
-
             print(sobType)
             print("need to implemet that")
 

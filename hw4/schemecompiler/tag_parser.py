@@ -1150,47 +1150,48 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return result
 
     def codeGenLambdaSimple(self):
-        code = "MOV(R1,IMM(%s));\n" %self.depth
-        code += "CMP(R1,IMM(0));\n"
-        code += "JUMP_EQ(L_After_Env_Expansion_%s);\n" %LabelGenerator.getLabel()
+        code = appendTabs() + "MOV(R1,IMM(%s));\n" %self.depth
+        code += appendTabs() + "CMP(R1,IMM(0));\n"
+        code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %LabelGenerator.getLabel()
         code += \
-        """MOV(R3,R1);             /* remember envSize */
-           ADD(R1,IMM(1));         /* increment env size by 1 */
-           PUSH(IMM(R1));
-           CALL(MALLOC);           /* malloc space for new env */
-           DROP(1);
-           MOV(R1,R0);              /* move new env to R1 */
-           MOV(R2,FPARG(0));        /* get old env from stack */
-           int i,j;
-           for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
-           {
-                MOV(INDD(R1,j),INDD(R2,i));
-           }
-           MOV(R3,FPARG(1));       /* get the number of parameters from stack */
-           PUSH(IMM(R3));
-           CALL(MALLOC);           /* malloc size for parameters to add new env */
-           DROP(1);
-           for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
-           {
-                MOV(INDD(R0,i),FPARG(j));
-           }
-           MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
-        """
+    """
+        MOV(R3,R1);             /* remember envSize */
+        ADD(R1,IMM(1));         /* increment env size by 1 */
+        PUSH(IMM(R1));
+        CALL(MALLOC);           /* malloc space for new env */
+        DROP(1);
+        MOV(R1,R0);              /* move new env to R1 */
+        MOV(R2,FPARG(0));        /* get old env from stack */
+        int i,j;
+        for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
+        {
+             MOV(INDD(R1,j),INDD(R2,i));
+        }
+        MOV(R3,FPARG(1));       /* get the number of parameters from stack */
+        PUSH(IMM(R3));
+        CALL(MALLOC);           /* malloc size for parameters to add new env */
+        DROP(1);
+        for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
+        {
+             MOV(INDD(R0,i),FPARG(j));
+        }
+        MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
+    """
         code += "L_After_Env_Expansion_%s:\n" %LabelGenerator.getLabel()
-        code += "PUSH(LABEL(L_CLOS_CODE_%s));\n" %LabelGenerator.getLabel() #push the label of the lambda's body
-        code += "PUSH(R1);\n" %LabelGenerator.getLabel()                    #push the new env
-        code += "CALL(MAKE_SOB_CLOSURE);\n"
-        code += "DROP(2);\n"
-        code += "JUMP(L_CLOS_EXIT_%s));\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %LabelGenerator.getLabel() #push the label of the lambda's body
+        code += appendTabs() + "PUSH(R1);\n"                                               #push the new env
+        code += appendTabs() + "CALL(MAKE_SOB_CLOSURE);\n"
+        code += appendTabs() + "DROP(2);\n"
+        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s));\n" %LabelGenerator.getLabel()
 
-        code += "L_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
-        code += "PUSH(FP);\n"
-        code += "MOV(FP,SP);\n"
-        code += self.body.code_gen
-        code += "POP(FP);\n"
-        code += "RETURN;\n"
+        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "PUSH(FP);\n"
+        code += appendTabs() + "MOV(FP,SP);\n"
+        code += self.body.code_gen()
+        code += appendTabs() + "POP(FP);\n"
+        code += appendTabs() + "RETURN;\n"
 
-        code += "L_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
+        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
         return code
 
@@ -1209,7 +1210,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             result += argi
             result += appendTabs() + "PUSH(R0);\n"
 
-        result += appendTabs() + "PUSH(IMM(%s));" %len(argsList) # num of parameters
+        result += appendTabs() + "PUSH(IMM(%s));\n" %len(argsList) # num of parameters
 
         proc = self.applic.code_gen()
         result += proc
