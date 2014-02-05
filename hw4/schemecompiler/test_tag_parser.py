@@ -95,12 +95,14 @@ class TestSexprs(unittest.TestCase):
         # print(sexpr.arguments.sexpr2.sexpr1.body.depth)
 
     def test_lambdaSimple1(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c) c))')
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c) c)')
         self.assertEqual(str(sexpr) , '(LAMBDA (A B C) C)')
+        # tag_parser.setEnvDepth(sexpr,0)
     
     def test_lambdaSimple2(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c . d) (+ a b c))')
         self.assertEqual(str(sexpr) , '(LAMBDA (A B C . D) (+ A B C))')
+        # tag_parser.setEnvDepth(sexpr,0)
     
     def test_lambdaSimple3(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(lambda (a b c d e . f) (+ a b c))')
@@ -130,7 +132,7 @@ class TestSexprs(unittest.TestCase):
     def test_letstar_2_arg(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let* ((x 5) (y (+ x 1)) (z 18)) (+ x y))')
         self.assertEqual(str(sexpr) , '((LAMBDA (X) ((LAMBDA (Y) ((LAMBDA (Z) (+ X Y)) 18)) (+ X 1))) 5)')
-        tag_parser.setEnvDepth(sexpr,0)
+        # tag_parser.setEnvDepth(sexpr,0)
         # print(sexpr.applic.body.applic.body.applic.depth)
 
     def test_letrec(self):

@@ -62,6 +62,8 @@ int main()
 
 def endCode():
     return """
+    L_error_not_a_closure:
+
     STOP_MACHINE;
     return 0;
 }
@@ -75,6 +77,7 @@ def appendCodeGen(source):
     else:
         s , r = tag_parser.AbstractSchemeExpr.parse(source)
         s.debruijn()
+        tag_parser.setEnvDepth(s,0)
         while not done:
             if r.__eq__(""):
                 done = True
@@ -153,19 +156,19 @@ def initConstantTable():
         else:
             print(sobType)
             print("need to implemet that")
-
+    code += tag_parser.appendTabs() + "/* end of creating constant table */\n\n"
     return code
 
-def addCodePrintTo(key):
-    x = tag_parser.memoryTable.get(key)
-    code = ""
-    if x[1][0] is 'T_INT':
-        code += tag_parser.appendTabs() + "PUSH (%s);\n" %x[1][1]
-        code += tag_parser.appendTabs() + "CALL (WRITE_INTEGER);\n"
-    else:
-        code += tag_parser.appendTabs() + "CALL (WRITE);\n"
-
-    return code
+# def addCodePrintTo(key):
+#     x = tag_parser.memoryTable.get(key)
+#     code = ""
+#     if x[1][0] is 'T_INT':
+#         code += tag_parser.appendTabs() + "PUSH (%s);\n" %x[1][1]
+#         code += tag_parser.appendTabs() + "CALL (WRITE_INTEGER);\n"
+#     else:
+#         code += tag_parser.appendTabs() + "CALL (WRITE);\n"
+#
+#     return code
 
 def addCodeForBuiltInProcedures(symbol,label):
     symbolPtr = tag_parser.memoryTable.get(symbol)[1][0]

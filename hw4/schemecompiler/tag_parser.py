@@ -56,9 +56,19 @@ def sortedConstantList():
 def appendTabs():
     return "\t\t"
 
+def countNumParams(exp,result):
+    if type(exp) is sexprs.Pair:
+        countNumParams(exp.sexpr1,result)
+        countNumParams(exp.sexpr2,result)
+    elif not type(exp) is sexprs.Nil:
+        result.append(exp)
+    return result
+
 def setEnvDepth(exp,depth):
     if isinstance(exp,AbstractLambda):
         exp.depth = depth
+        listParams = countNumParams(exp.arguments,[])
+        exp.numOfArgs = len(listParams)
         setEnvDepth(exp.body,depth + 1)
     elif isinstance(exp,Applic):
         setEnvDepth(exp.applic,depth)
@@ -374,7 +384,6 @@ def varsToList(expr):
             bound = bound.sexpr2.sexpr1
         else:
             bound = bound.sexpr2
-
     return list_params
 
 def tagApplic(applic):
@@ -957,10 +966,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
             integerKey = "%s" %integer
             if memoryTable.get(integerKey) is None:
                 memoryTable.update( { integerKey : [ mem0 , ['T_INT',integer] ] } )
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %mem0
                 mem0 += 2
             else:
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(integerKey)[0]
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %memoryTable.get(integerKey)[0]
 
             return result
 
@@ -992,10 +1001,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             if memoryTable.get(newFracName) is None:
                 memoryTable.update( { newFracName : [ mem0 , ['T_FRACTION',num,denom] ] } )
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %mem0
                 mem0 += 3
             else:
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(newFracName)[0]
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %memoryTable.get(newFracName)[0]
 
             return result
 
@@ -1005,10 +1014,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 value = ['T_STRING',len(string)]
                 value.extend(reversed(list(string)))
                 memoryTable.update( { string : [ mem0 , value ] } )
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %mem0
                 mem0 += (2 + len(string))
             else:
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(string)[0]
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %memoryTable.get(string)[0]
 
             return result
 
@@ -1016,10 +1025,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
             value = self.constant.value
             if memoryTable.get(value) is None:
                 memoryTable.update( { value : [ mem0 , ['T_CHAR' , value] ] } )
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %mem0
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %mem0
                 mem0 += 2
             else:
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %memoryTable.get(value)[0]
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %memoryTable.get(value)[0]
 
             return result
 
@@ -1028,13 +1037,13 @@ class CodeGenVisitor(AbstractSchemeExpr):
             if type(value) is sexprs.Vector: #Handle Vector
                 CodeGenVisitor.codeGenPair(value.sexpr)
                 pairPtr = mem0 - 3
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %pairPtr
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
             elif type(value) is sexprs.Symbol:
                 result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
             else: #it is a list
                 CodeGenVisitor.codeGenPair(value)
                 pairPtr = mem0 - 3
-                result += appendTabs() + 'MOV(R0,IND(%s));\n' %pairPtr
+                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
             return result
         else:
             raise SyntaxErrorException("no such constant %s" %self)      # for debug purpose
@@ -1121,7 +1130,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             return [exp]
 
     def codeGenVarFree(self):
-        return "codeGenVarFree"
+        return appendTabs() + "codeGenVarFree\n"
 
     def codeGenVarParam(self):
         return "MOV(R0,FPARG(1 + %s);\n" %self.minor
@@ -1150,7 +1159,83 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return result
 
     def codeGenLambdaSimple(self):
-        code = appendTabs() + "MOV(R1,IMM(%s));\n" %self.depth
+        code = CodeGenVisitor.environmentExpansionCodeGen(self)
+
+        # Label B of LambdaSimple
+        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "PUSH(FP);\n"
+        code += appendTabs() + "MOV(FP,SP);\n"
+        code += self.body.code_gen()
+        code += appendTabs() + "POP(FP);\n"
+        code += appendTabs() + "RETURN;\n"
+
+        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+        return code
+
+    def codeGenLambdaOpt(self):
+        code = CodeGenVisitor.environmentExpansionCodeGen(self)
+        # Label B of LambdaOPT
+        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "PUSH(FP);\n"
+        code += appendTabs() + "MOV(FP,SP);\n"
+
+        # stack fix
+        code += appendTabs() + "MOV(R1,FPARG(1));\n"
+        code += appendTabs() + "ADD(R1,IMM(1));\n"         # holds the num of params in stack
+
+        code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
+        code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
+        code += appendTabs() + "CALL(MAKE_SOB_PAIR);\n"    # R0 holds the last pair
+        code += appendTabs() + "DROP(2);\n"
+
+        # code += appendTabs() + "PUSH(R0); CALL(WRITE_INTEGER); DROP(1);\n"
+        # code += appendTabs() + "PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);\n"
+
+        code += appendTabs() + "int numOfArgs = %s;\n" %(self.numOfArgs + 1)
+        code +=\
+        """
+        for(i = R1-1 ; i >= numOfArgs ; --i)
+        {
+            /*PUSH(FPARG(i)); CALL(WRITE_SOB_INTEGER); DROP(1);CALL(NEWLINE);*/
+
+            PUSH(R0);
+            PUSH(FPARG(i));
+            CALL(MAKE_SOB_PAIR);
+            DROP(2);
+        }
+        PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);CALL(NEWLINE);
+        MOV(FPARG(numOfArgs),R0);
+        MOV(R2,numOfArgs);
+        DECR(R2);
+        MOV(FPARG(1),R2);
+
+        while(numOfArgs >= -2)
+        {
+            MOV(FPARG(R1),FPARG(numOfArgs));
+            DECR(R1);
+            numOfArgs-- ;
+        }
+        """
+
+        code += self.body.code_gen()
+        code += appendTabs() + "POP(FP);\n"
+        code += appendTabs() + "RETURN;\n"
+
+        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+        return code
+
+    def codeGenLambdaVar(self):
+        code = CodeGenVisitor.environmentExpansionCodeGen(self)
+        # Label B of LambdaVar
+
+        LabelGenerator.nextLabel()
+        return "codeGenLambdaVar"
+
+    @staticmethod
+    def environmentExpansionCodeGen(lambdaExp):
+        code = appendTabs() + "MOV(R1,IMM(%s));\n" %lambdaExp.depth
         code += appendTabs() + "CMP(R1,IMM(0));\n"
         code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %LabelGenerator.getLabel()
         code += \
@@ -1177,29 +1262,14 @@ class CodeGenVisitor(AbstractSchemeExpr):
         }
         MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
     """
-        code += "L_After_Env_Expansion_%s:\n" %LabelGenerator.getLabel()
+        code += "\n\tL_After_Env_Expansion_%s:\n" %LabelGenerator.getLabel()
         code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %LabelGenerator.getLabel() #push the label of the lambda's body
         code += appendTabs() + "PUSH(R1);\n"                                               #push the new env
         code += appendTabs() + "CALL(MAKE_SOB_CLOSURE);\n"
         code += appendTabs() + "DROP(2);\n"
-        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s));\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s);\n" %LabelGenerator.getLabel()
 
-        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "PUSH(FP);\n"
-        code += appendTabs() + "MOV(FP,SP);\n"
-        code += self.body.code_gen()
-        code += appendTabs() + "POP(FP);\n"
-        code += appendTabs() + "RETURN;\n"
-
-        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
-        LabelGenerator.nextLabel()
         return code
-
-    def codeGenLambdaOpt(self):
-        return "codeGenLambdaOpt"
-
-    def codeGenLambdaVar(self):
-        return "codeGenLambdaVar"
 
     def codeGenApplic(self):
         result = ""
@@ -1218,7 +1288,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         result += appendTabs() + "JUMP_NE(L_error_not_a_closure);\n"
 
         result += appendTabs() + "PUSH (INDD(R0,1));\n"  # env
-        result += appendTabs() + "CALLA(INND(R0,2));\n"  # jumps to closure's code and returns here
+        result += appendTabs() + "CALLA(INDD(R0,2));\n"  # jumps to closure's code and returns here
         result += appendTabs() + "DROP(1);\n"  # drops the env from stack
         result += appendTabs() + "POP(R1);\n"  # get the number of params from stack to R1
         result += appendTabs() + "DROP(R1);\n" # clear the stack
