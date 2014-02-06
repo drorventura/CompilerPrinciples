@@ -1175,62 +1175,22 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return code
 
     def codeGenLambdaOpt(self):
+        # Environment expansion
         code = CodeGenVisitor.environmentExpansionCodeGen(self)
+
         # Label B of LambdaOPT
-        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "PUSH(FP);\n"
-        code += appendTabs() + "MOV(FP,SP);\n"
+        code += CodeGenVisitor.stackFixForLambda(self)
 
-        # stack fix
-        code += appendTabs() + "MOV(R1,FPARG(1));\n"
-        code += appendTabs() + "ADD(R1,IMM(1));\n"         # holds the num of params in stack
-
-        code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
-        code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
-        code += appendTabs() + "CALL(MAKE_SOB_PAIR);\n"    # R0 holds the last pair
-        code += appendTabs() + "DROP(2);\n"
-
-        # code += appendTabs() + "PUSH(R0); CALL(WRITE_INTEGER); DROP(1);\n"
-        # code += appendTabs() + "PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);\n"
-
-        code += appendTabs() + "int numOfArgs = %s;\n" %(self.numOfArgs + 1)
-        code +=\
-        """
-        for(i = R1-1 ; i >= numOfArgs ; --i)
-        {
-            PUSH(R0);
-            PUSH(FPARG(i));
-            CALL(MAKE_SOB_PAIR);
-            DROP(2);
-        }
-        /*PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);CALL(NEWLINE);*/
-        MOV(FPARG(numOfArgs),R0);
-        MOV(R2,numOfArgs);
-        DECR(R2);
-        MOV(FPARG(1),R2);
-
-        while(numOfArgs >= -2)
-        {
-            MOV(FPARG(R1),FPARG(numOfArgs));
-            DECR(R1);
-            numOfArgs-- ;
-        }
-        """
-
-        code += self.body.code_gen()
-        code += appendTabs() + "POP(FP);\n"
-        code += appendTabs() + "RETURN;\n"
-
-        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
         return code
 
     def codeGenLambdaVar(self):
         code = CodeGenVisitor.environmentExpansionCodeGen(self)
         # Label B of LambdaVar
+        code += CodeGenVisitor.stackFixForLambda(self)
 
         LabelGenerator.nextLabel()
-        return "codeGenLambdaVar"
+        return code
 
     @staticmethod
     def environmentExpansionCodeGen(lambdaExp):
@@ -1267,6 +1227,55 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += appendTabs() + "CALL(MAKE_SOB_CLOSURE);\n"
         code += appendTabs() + "DROP(2);\n"
         code += appendTabs() + "JUMP(L_CLOS_EXIT_%s);\n" %LabelGenerator.getLabel()
+
+        return code
+
+    @staticmethod
+    def stackFixForLambda(lambdaExp):
+        code = "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "PUSH(FP);\n"
+        code += appendTabs() + "MOV(FP,SP);\n"
+
+        # stack fix
+        code += appendTabs() + "MOV(R1,FPARG(1));\n"
+        code += appendTabs() + "ADD(R1,IMM(1));\n"         # holds the num of params in stack
+
+        code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
+        code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
+        code += appendTabs() + "CALL(MAKE_SOB_PAIR);\n"    # R0 holds the last pair
+        code += appendTabs() + "DROP(2);\n"
+
+        # code += appendTabs() + "PUSH(R0); CALL(WRITE_INTEGER); DROP(1);\n"
+        # code += appendTabs() + "PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);\n"
+
+        code += appendTabs() + "int numOfArgs = %s;\n" %(lambdaExp.numOfArgs + 1)
+        code += \
+        """
+        for(i = R1-1 ; i >= numOfArgs ; --i)
+        {
+            PUSH(R0);
+            PUSH(FPARG(i));
+            CALL(MAKE_SOB_PAIR);
+            DROP(2);
+        }
+        /*PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);CALL(NEWLINE);*/
+        MOV(FPARG(numOfArgs),R0);
+        MOV(R2,numOfArgs);
+        DECR(R2);
+        MOV(FPARG(1),R2);
+
+        while(numOfArgs >= -2)
+        {
+            MOV(FPARG(R1),FPARG(numOfArgs));
+            DECR(R1);
+            numOfArgs-- ;
+        }
+        """
+
+        code += lambdaExp.body.code_gen()
+        code += appendTabs() + "POP(FP);\n"
+        code += appendTabs() + "RETURN;\n"
+        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
 
         return code
 
