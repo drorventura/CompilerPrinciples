@@ -1134,10 +1134,11 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return appendTabs() + "codeGenVarFree\n"
 
     def codeGenVarParam(self):
-        return "MOV(R0,FPARG(1 + %s);\n" %self.minor
+        offset = self.minor + 2
+        return "MOV(R0,FPARG(%s));\n" %offset
 
     def codeGenVarBound(self):
-        code = "MOV(R0,FPARG(1))"
+        code = "MOV(R0,FPARG(0))" #env
         code += "MOV(R0,INDD(R0,%s)" %self.major
         code += "MOV(R0,INDD(R0,%s)" %self.minor
         return code
@@ -1372,16 +1373,25 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code = ""
         argsList = pairsToList(self.arguments)
         for arg in argsList[:-1]:
-            argi = arg.code_gen
+            argi = arg.code_gen()
             code += argi
             code += "CMP(R0, BOOL_FALSE);\n"
             code += "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
-        code += argsList[-1].code_gen
+        code += argsList[-1].code_gen()
         code += "L_EXIT_%s:\n" %LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
         return code
 
     def codeGenDef(self):
-
-        return "codeGenDef"
+        code = self.expr.code_gen()
+        code += "MOV(R1,R0);\n  \*Saving expression address*\ "
+        code += self.name.code_gen()
+        code += \
+        """
+        MOV(R0, INDD(R0,1));
+        MOV(R0, INDD(R0,2));
+        MOV(R0, R1);
+        MOV(R0, IMM(1));
+        """
+        return code
 
