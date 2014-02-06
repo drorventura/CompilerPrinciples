@@ -62,10 +62,18 @@ int main()
 
 def endCode():
     return """
-    L_error_not_a_closure:
-
+    L_exit:
     STOP_MACHINE;
     return 0;
+
+    /* exceptions */
+    L_error_not_a_closure:
+        printf("Error - Not a closure");
+        JUMP(L_exit);
+
+    L_error_not_enough_params_given:
+        printf("Error - Not enough parameters where given");
+        JUMP(L_exit);
 }
 """
 

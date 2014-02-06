@@ -1232,7 +1232,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     @staticmethod
     def stackFixForLambda(lambdaExp):
-        code = "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code = "\n\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
         code += appendTabs() + "PUSH(FP);\n"
         code += appendTabs() + "MOV(FP,SP);\n"
 
@@ -1240,15 +1240,27 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += appendTabs() + "MOV(R1,FPARG(1));\n"
         code += appendTabs() + "ADD(R1,IMM(1));\n"         # holds the num of params in stack
 
+        code += appendTabs() + "int numOfArgs = %s;\n" %(lambdaExp.numOfArgs + 1)
+
+        code += \
+        """
+        MOV(R2,numOfArgs);
+        SUB(R2,IMM(2));
+        MOV(R3,R1);
+        DECR(R3);
+        CMP(R2,R3);             /* compare between num of arg in lambda and num of params in stack */
+        """
+        code += "JUMP_EQ(L_Stack_Fix_Up_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP_LT(L_Stack_Fix_Down_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP(L_error_not_enough_params_given);\n"
+
+        code += "\n\tL_Stack_Fix_Down_%s:\n" %LabelGenerator.getLabel()
+
         code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
         code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
         code += appendTabs() + "CALL(MAKE_SOB_PAIR);\n"    # R0 holds the last pair
         code += appendTabs() + "DROP(2);\n"
 
-        # code += appendTabs() + "PUSH(R0); CALL(WRITE_INTEGER); DROP(1);\n"
-        # code += appendTabs() + "PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);\n"
-
-        code += appendTabs() + "int numOfArgs = %s;\n" %(lambdaExp.numOfArgs + 1)
         code += \
         """
         for(i = R1-1 ; i >= numOfArgs ; --i)
@@ -1258,20 +1270,49 @@ class CodeGenVisitor(AbstractSchemeExpr):
             CALL(MAKE_SOB_PAIR);
             DROP(2);
         }
-        /*PUSH(R0); CALL(WRITE_SOB_PAIR); DROP(1);CALL(NEWLINE);*/
-        MOV(FPARG(numOfArgs),R0);
-        MOV(R2,numOfArgs);
-        DECR(R2);
-        MOV(FPARG(1),R2);
 
+        MOV(FPARG(numOfArgs),R0);
+
+        INCR(R2);                       /* R2 contains number of params */
+        MOV(FPARG(1),R2);               /* update the number of parameters on stack */
+
+        /* drop the relevant elements to the buttom of the stack */
         while(numOfArgs >= -2)
         {
             MOV(FPARG(R1),FPARG(numOfArgs));
             DECR(R1);
             numOfArgs-- ;
         }
-        """
+        SUB(R3,R2);
+        SUB(SP,R3);						/* stack pointer needs to down as well */
 
+        """
+        code += "JUMP(L_After_Stack_Fix_%s);\n" %LabelGenerator.getLabel()
+
+        code += "\tL_Stack_Fix_Up_%s:\n" %LabelGenerator.getLabel()
+        code += \
+        """
+        INCR(R2);                       /* contains the num of args */
+        INCR(FPARG(1));                 /* increment the number of params in stack by 1 */
+        INCR(SP);						/* stack pointer needs to go up by 1 */
+
+		for(i = -2 , j = -3 ; i <= R1 ; i++,j++)
+        {
+			MOV(FPARG(j),FPARG(i));
+			PUSH(FPARG(j));
+			CALL(WRITE_INTEGER);
+			DROP(1);
+			CALL(NEWLINE);
+        }
+		MOV(FPARG(i),IMM(7109179));				/* magic number */
+		PUSH(FPARG(i));
+		CALL(WRITE_INTEGER);
+		DROP(1);
+		CALL(NEWLINE);
+
+"""
+
+        code += "\tL_After_Stack_Fix_%s:\n" %LabelGenerator.getLabel()
         code += lambdaExp.body.code_gen()
         code += appendTabs() + "POP(FP);\n"
         code += appendTabs() + "RETURN;\n"
@@ -1341,5 +1382,6 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return code
 
     def codeGenDef(self):
+
         return "codeGenDef"
 
