@@ -1384,7 +1384,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenDef(self):
         code = self.expr.code_gen()
-        code += "MOV(R1,R0);\n  \*Saving expression address*\ "
+        code += appendTabs() + "MOV(R1,R0);     /*Saving expression address*/\n"
         code += self.name.code_gen()
         code += \
         """
