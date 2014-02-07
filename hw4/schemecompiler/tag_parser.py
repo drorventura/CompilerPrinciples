@@ -1,4 +1,5 @@
 import sexprs
+import compiler
 
 __author__ = 'Dror & Eldar'
 
@@ -7,10 +8,6 @@ __author__ = 'Dror & Eldar'
 ##############################
 # matched strings for Constants
 Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
-
-# for now not in use
-Reserved_Words =  {"AND" ,"BEGIN", "COND" ,"DEFINE" ,"DO" ,"ELSE", "IF" ,
-                     "LAMBDA" ,"LET" ,"LET*" ,"LETREC" ,"OR" ,"QUOTE", "SET!"}
 
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
@@ -49,6 +46,47 @@ def gcd(a, b):
 ##############################
 memoryTable = { 'void':[1,['T_VOID']],'nil':[2,['T_NIL']] }
 mem0 = 7
+
+reservedWordsSymbolTable = {'+':'MOV(R0,LABEL(L_Plus_Applic))' ,        #variadic
+                            '-':'MOV(R0,LABEL(L_Minus_Applic))' ,       #variadic
+                            '*':'MOV(R0,LABEL(L_Multi_Applic))' ,       #variadic
+                            '/':'MOV(R0,LABEL(L_Divide_Applic))',       #variadic
+                            '>':'MOV(R0,LABEL(L_Lt_Applic))',           #variadic
+                            '<':'MOV(R0,LABEL(L_Gt_Applic))',           #variadic
+                            '=':'MOV(R0,LABEL(L_Equal_Applic))',        #variadic
+                            'vector':'MOV(R0,LABEL(L_Vector_Applic))',
+                            'list':'MOV(R0,LABEL(L_List_Applic))',
+                            'map':'MOV(R0,LABEL(L_Map_Applic))',
+                            'append':'MOV(R0,LABEL(L_Append_Applic))',
+                            'apply':'MOV(R0,LABEL(L_Apply_Applic))',
+                            'cons':'MOV(R0,LABEL(L_Cons_Applic))',
+                            'car':'MOV(R0,LABEL(L_Car_Applic))',
+                            'cdr':'MOV(R0,LABEL(L_Cdr_Applic))',
+                            'remainder':'MOV(R0,LABEL(L_Remainder_Applic))',
+                            'yag':'MOV(R0,LABEL(L_Yag_Applic))',
+                            'null?':'MOV(R0,LABEL(L_Is_Null_Applic))',
+                            'boolean?':'MOV(R0,LABEL(L_Is_Boolean_Applic))',
+                            'char?':'MOV(R0,LABEL(L_Is_Char_Applic))',
+                            'number?':'MOV(R0,LABEL(L_Is_Num_Applic))',
+                            'integer?':'MOV(R0,LABEL(L_Is_Int_Applic))',
+                            'zero?':'MOV(R0,LABEL(L_Is_Zero_Applic))',
+                            'pair?':'MOV(R0,LABEL(L_Is_Pair_Applic))',
+                            'vector?':'MOV(R0,LABEL(L_Is_Vector_Applic))',
+                            'procedure?':'MOV(R0,LABEL(L_Is_Procedure_Applic))',
+                            'string?':'MOV(R0,LABEL(L_Is_String_Applic))',
+                            'symbol?':'MOV(R0,LABEL(L_Is_Symbol_Applic))',
+                            'eq?':'MOV(R0,LABEL(L_Is_Eq_Applic))',
+                            'make-string':'MOV(R0,LABEL(L_Make_String_Applic))',
+                            'make-vector':'MOV(R0,LABEL(L_Make_Vector_Applic))',
+                            'string-length':'MOV(R0,LABEL(L_String_Length_Applic))',
+                            'string-ref':'MOV(R0,LABEL(L_String_Ref_Applic))',
+                            'vector-length':'MOV(R0,LABEL(L_Vector_Length_Applic))',
+                            'vector-ref':'MOV(R0,LABEL(L_Vector_Ref_Applic))',
+                            'char->integer':'MOV(R0,LABEL(L_Char_To_Int_Applic))',
+                            'integer->char':'MOV(R0,LABEL(L_Int_To_Char_Applic))',
+                            'string->symbol':'MOV(R0,LABEL(L_String_To_Symbol_Applic))',
+                            'symbol->string':'MOV(R0,LABEL(L_Symbol_To_String_Applic))',
+                            }
 
 def sortedConstantList():
     return sorted(memoryTable.items(), key = lambda x: x[1])
@@ -1035,13 +1073,16 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         elif type(self.constant) is sexprs.Pair:
             value = self.constant.sexpr2.sexpr1
-            if type(value) is sexprs.Vector: #Handle Vector
+            # Handle Vector
+            if type(value) is sexprs.Vector:
                 CodeGenVisitor.codeGenPair(value.sexpr)
                 pairPtr = mem0 - 3
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
+            # Handle Symbol
             elif type(value) is sexprs.Symbol:
                 result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
-            else: #it is a list
+            # Handle List
+            else:
                 CodeGenVisitor.codeGenPair(value)
                 pairPtr = mem0 - 3
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
@@ -1111,7 +1152,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             result += appendTabs() + "MOV(R0,IMM(%s));\n" %mem0
             mem0 += 2
         else:
-            result += appendTabs() + "MOV(R0,IMM(%s);\n" %memoryTable.get(symbol)[0]
+            result += appendTabs() + "MOV(R0,IMM(%s));\n" %memoryTable.get(symbol)[0]
 
         result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
         result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
@@ -1131,7 +1172,52 @@ class CodeGenVisitor(AbstractSchemeExpr):
             return [exp]
 
     def codeGenVarFree(self):
-        return appendTabs() + "codeGenVarFree\n"
+        symbol = "'%s" %self.variable.string
+        name = self.variable.string
+
+        # if freeVar was defined then R0<-closure
+        if not memoryTable.get(symbol) is None:
+            symbolPtr = memoryTable.get(symbol)[1][0]
+            code = appendTabs() + "MOV(R0,%s);\n" %symbolPtr
+            code += appendTabs() + "MOV(R0,INDD(R0,1));\n"
+            code += appendTabs() + "MOV(R0,INDD(R0,2));\n"
+
+        # if freeVar is a builtin procedure, create the closure and return result in R0
+        # (happens only once for each builtin procedure, after that it is in the constant table)
+        elif name in reservedWordsSymbolTable:
+            label = reservedWordsSymbolTable.get(name)
+            code = CodeGenVisitor.addCodeForBuiltInProcedures(name,label)
+
+        # if variable wasn't defined nor a builtin procedure
+        else:
+            raise compiler.CompilationError('Variable %s in not bound' %name)
+
+        return appendTabs() + code
+
+    @staticmethod
+    def addCodeForBuiltInProcedures(name,label):
+        code = CodeGenVisitor.codeGenSymbol(name,0)
+        code += \
+        """
+        /* R0 now holds the pointer to value of the symbol's bucket */
+        PUSH(R1);
+        /* backup R1 in order to use it */
+        MOV(R1,R0);
+        /* R1 now holds the pointer to value of the symbol's bucket */
+        PUSH(0); /* push the "empty" environment for free vars */
+        """
+        code += appendTabs() + "PUSH(LABEL(%s));\n" %label
+        code += \
+        """
+        CALL (MAKE_SOB_CLOSURE);
+        DROP(2);
+        /* R0 now holds the pointer to the closure */
+        MOV(R1,R0);
+        /* save the closure as the value in symbol's bucket */
+        POP(R1)
+        /* restore R1 to be what it was before */
+        """
+        return code
 
     def codeGenVarParam(self):
         offset = self.minor + 2
@@ -1178,18 +1264,16 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenLambdaOpt(self):
         # Environment expansion
         code = CodeGenVisitor.environmentExpansionCodeGen(self)
-
         # Label B of LambdaOPT
         code += CodeGenVisitor.stackFixForLambda(self)
-
         LabelGenerator.nextLabel()
         return code
 
     def codeGenLambdaVar(self):
+        # Environment expansion
         code = CodeGenVisitor.environmentExpansionCodeGen(self)
         # Label B of LambdaVar
         code += CodeGenVisitor.stackFixForLambda(self)
-
         LabelGenerator.nextLabel()
         return code
 
@@ -1385,12 +1469,13 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenDef(self):
         code = self.expr.code_gen()
         code += appendTabs() + "MOV(R1,R0);     /*Saving expression address*/\n"
-        code += self.name.code_gen()
+        code += CodeGenVisitor.codeGenSymbol(self.name.variable.string.lower(),0)
+        # R0 now contains the pointer to the value of the symbol's bucket
         code += \
         """
-        MOV(R0, INDD(R0,1));
-        MOV(R0, INDD(R0,2));
+        /* add the expression's value from R1 to the bucket */
         MOV(R0, R1);
+        /* return #void to user */
         MOV(R0, IMM(1));
         """
         return code

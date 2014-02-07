@@ -207,7 +207,5 @@ class TestSexprs(unittest.TestCase):
         sexpr.debruijn()
         # assert
 
-
-
 if __name__ == '__main__':
      unittest.main()
