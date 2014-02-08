@@ -1081,6 +1081,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             # Handle Symbol
             elif type(value) is sexprs.Symbol:
                 result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
+                result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
             # Handle List
             else:
                 CodeGenVisitor.codeGenPair(value)
@@ -1155,7 +1156,6 @@ class CodeGenVisitor(AbstractSchemeExpr):
             result += appendTabs() + "MOV(R0,IMM(%s));\n" %memoryTable.get(symbol)[0]
 
         result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
-        result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
         return result
 
     @staticmethod
@@ -1172,13 +1172,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
             return [exp]
 
     def codeGenVarFree(self):
-        symbol = "'%s" %self.variable.string
-        name = self.variable.string
-
+        symbol = "'%s" %self.variable.string.lower()
+        name = self.variable.string.lower()
         # if freeVar was defined then R0<-closure
         if not memoryTable.get(symbol) is None:
-            symbolPtr = memoryTable.get(symbol)[1][0]
-            code = appendTabs() + "MOV(R0,%s);\n" %symbolPtr
+            symbolPtr = memoryTable.get(symbol)[0]
+            code = appendTabs() + "MOV(R0,IMM(%s));\n" %symbolPtr
             code += appendTabs() + "MOV(R0,INDD(R0,1));\n"
             code += appendTabs() + "MOV(R0,INDD(R0,2));\n"
 
@@ -1190,20 +1189,20 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         # if variable wasn't defined nor a builtin procedure
         else:
-            raise compiler.CompilationError('Variable %s in not bound' %name)
+            raise compiler.CompilationError('- Variable %s in not bound' %name)
 
-        return appendTabs() + code
+        return appendTabs() + code + callWriteSob()
 
     @staticmethod
     def addCodeForBuiltInProcedures(name,label):
         code = CodeGenVisitor.codeGenSymbol(name,0)
         code += \
         """
-        /* R0 now holds the pointer to value of the symbol's bucket */
+        /* R0 now holds the pointer to the symbol's bucket */
         PUSH(R1);
         /* backup R1 in order to use it */
         MOV(R1,R0);
-        /* R1 now holds the pointer to value of the symbol's bucket */
+        /* R1 now holds the pointer to the symbol's bucket */
         PUSH(0); /* push the "empty" environment for free vars */
         """
         code += appendTabs() + "PUSH(LABEL(%s));\n" %label
@@ -1212,7 +1211,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         CALL (MAKE_SOB_CLOSURE);
         DROP(2);
         /* R0 now holds the pointer to the closure */
-        MOV(R1,R0);
+        MOV(INDD(R1,2),R0);
         /* save the closure as the value in symbol's bucket */
         POP(R1)
         /* restore R1 to be what it was before */
@@ -1468,15 +1467,29 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenDef(self):
         code = self.expr.code_gen()
+        # info = code.split('\n')
+        # print(info[-2])
+
         code += appendTabs() + "MOV(R1,R0);     /*Saving expression address*/\n"
         code += CodeGenVisitor.codeGenSymbol(self.name.variable.string.lower(),0)
+
         # R0 now contains the pointer to the value of the symbol's bucket
         code += \
         """
         /* add the expression's value from R1 to the bucket */
-        MOV(R0, R1);
+        MOV(INDD(R0,2), R1);
         /* return #void to user */
         MOV(R0, IMM(1));
         """
-        return code
+        return code + callWriteSob()
 
+def callWriteSob():
+    code = \
+"""
+        PUSH(R0);
+        CALL(WRITE_SOB);
+        DROP(1);
+        CALL(NEWLINE);
+
+"""
+    return code

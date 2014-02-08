@@ -47,6 +47,7 @@ class TestSexprs(unittest.TestCase):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(;sdfsdfsd\\ndefine foo '1)")
         self.assertEqual(str(sexpr) , '(DEFINE FOO 1)')
         self.assertEqual(str(remaining) , '')
+        sexpr.semantic_analysis()
 
     def test_define_pairExpression(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(define foo (if 'a b c))")
@@ -205,6 +206,12 @@ class TestSexprs(unittest.TestCase):
     def test_vector(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("#((lambda (x) (+ x y)))")
         sexpr.debruijn()
+        # assert
+
+    def test_abstract(self):
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("a")
+        sexpr.debruijn()
+        print(type(sexpr))
         # assert
 
 if __name__ == '__main__':

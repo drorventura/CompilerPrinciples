@@ -115,10 +115,10 @@ def initConstantTable():
 
         elif sobType is 'T_STRING':
             value = node[1][1][1]
-            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
             for i in range(value):
                 code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %node[1][1][i+2]
 
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_STRING);\n"
             code += tag_parser.appendTabs() + "DROP(1);\n"
 
@@ -144,8 +144,8 @@ def initConstantTable():
         elif sobType is 'T_BUCKET':
             symbolName = node[1][1][1]
             value = node[1][1][2]
-            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + 'PUSH(IMM("%s"));\n' %value
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
 
