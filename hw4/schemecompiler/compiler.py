@@ -112,7 +112,7 @@ def initConstantTable():
             denom = node[1][1][2]
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %denom
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %num
-            code += tag_parser.appendTabs() + "CALL(IS_SOB_FRACTION);\n"
+            code += tag_parser.appendTabs() + "CALL(MAKE_SOB_FRACTION);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
 
         elif sobType is 'T_STRING':
