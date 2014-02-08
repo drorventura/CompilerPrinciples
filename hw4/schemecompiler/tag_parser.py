@@ -47,45 +47,45 @@ def gcd(a, b):
 memoryTable = { 'void':[1,['T_VOID']],'nil':[2,['T_NIL']] }
 mem0 = 7
 
-reservedWordsSymbolTable = {'+':'MOV(R0,LABEL(L_Plus_Applic))' ,        #variadic
-                            '-':'MOV(R0,LABEL(L_Minus_Applic))' ,       #variadic
-                            '*':'MOV(R0,LABEL(L_Multi_Applic))' ,       #variadic
-                            '/':'MOV(R0,LABEL(L_Divide_Applic))',       #variadic
-                            '>':'MOV(R0,LABEL(L_Lt_Applic))',           #variadic
-                            '<':'MOV(R0,LABEL(L_Gt_Applic))',           #variadic
-                            '=':'MOV(R0,LABEL(L_Equal_Applic))',        #variadic
-                            'vector':'MOV(R0,LABEL(L_Vector_Applic))',
-                            'list':'MOV(R0,LABEL(L_List_Applic))',
-                            'map':'MOV(R0,LABEL(L_Map_Applic))',
-                            'append':'MOV(R0,LABEL(L_Append_Applic))',
-                            'apply':'MOV(R0,LABEL(L_Apply_Applic))',
-                            'cons':'MOV(R0,LABEL(L_Cons_Applic))',
-                            'car':'MOV(R0,LABEL(L_Car_Applic))',
-                            'cdr':'MOV(R0,LABEL(L_Cdr_Applic))',
-                            'remainder':'MOV(R0,LABEL(L_Remainder_Applic))',
-                            'yag':'MOV(R0,LABEL(L_Yag_Applic))',
-                            'null?':'MOV(R0,LABEL(L_Is_Null_Applic))',
-                            'boolean?':'MOV(R0,LABEL(L_Is_Boolean_Applic))',
-                            'char?':'MOV(R0,LABEL(L_Is_Char_Applic))',
-                            'number?':'MOV(R0,LABEL(L_Is_Num_Applic))',
-                            'integer?':'MOV(R0,LABEL(L_Is_Int_Applic))',
-                            'zero?':'MOV(R0,LABEL(L_Is_Zero_Applic))',
-                            'pair?':'MOV(R0,LABEL(L_Is_Pair_Applic))',
-                            'vector?':'MOV(R0,LABEL(L_Is_Vector_Applic))',
-                            'procedure?':'MOV(R0,LABEL(L_Is_Procedure_Applic))',
-                            'string?':'MOV(R0,LABEL(L_Is_String_Applic))',
-                            'symbol?':'MOV(R0,LABEL(L_Is_Symbol_Applic))',
-                            'eq?':'MOV(R0,LABEL(L_Is_Eq_Applic))',
-                            'make-string':'MOV(R0,LABEL(L_Make_String_Applic))',
-                            'make-vector':'MOV(R0,LABEL(L_Make_Vector_Applic))',
-                            'string-length':'MOV(R0,LABEL(L_String_Length_Applic))',
-                            'string-ref':'MOV(R0,LABEL(L_String_Ref_Applic))',
-                            'vector-length':'MOV(R0,LABEL(L_Vector_Length_Applic))',
-                            'vector-ref':'MOV(R0,LABEL(L_Vector_Ref_Applic))',
-                            'char->integer':'MOV(R0,LABEL(L_Char_To_Int_Applic))',
-                            'integer->char':'MOV(R0,LABEL(L_Int_To_Char_Applic))',
-                            'string->symbol':'MOV(R0,LABEL(L_String_To_Symbol_Applic))',
-                            'symbol->string':'MOV(R0,LABEL(L_Symbol_To_String_Applic))',
+reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
+                            '-':'L_Minus_Applic',        #variadic
+                            '*':'L_Multi_Applic',        #variadic
+                            '/':'L_Divide_Applic',       #variadic
+                            '>':'L_Lt_Applic',           #variadic
+                            '<':'L_Gt_Applic',           #variadic
+                            '=':'L_Equal_Applic',        #variadic
+                            'vector':'L_Vector_Applic',
+                            'list':'L_List_Applic',
+                            'map':'L_Map_Applic',
+                            'append':'L_Append_Applic',
+                            'apply':'L_Apply_Applic',
+                            'cons':'L_Cons_Applic',
+                            'car':'L_Car_Applic',
+                            'cdr':'L_Cdr_Applic',
+                            'remainder':'L_Remainder_Applic',
+                            'yag':'L_Yag_Applic',
+                            'null?':'L_Is_Null_Applic',
+                            'boolean?':'L_Is_Boolean_Applic',
+                            'char?':'L_Is_Char_Applic',
+                            'number?':'L_Is_Num_Applic',
+                            'integer?':'L_Is_Int_Applic',
+                            'zero?':'L_Is_Zero_Applic',
+                            'pair?':'L_Is_Pair_Applic',
+                            'vector?':'L_Is_Vector_Applic',
+                            'procedure?':'L_Is_Procedure_Applic',
+                            'string?':'L_Is_String_Applic',
+                            'symbol?':'L_Is_Symbol_Applic',
+                            'eq?':'L_Is_Eq_Applic',
+                            'make-string':'L_Make_String_Applic',
+                            'make-vector':'L_Make_Vector_Applic',
+                            'string-length':'L_String_Length_Applic',
+                            'string-ref':'L_String_Ref_Applic',
+                            'vector-length':'L_Vector_Length_Applic',
+                            'vector-ref':'L_Vector_Ref_Applic',
+                            'char->integer':'L_Char_To_Int_Applic',
+                            'integer->char':'L_Int_To_Char_Applic',
+                            'string->symbol':'L_String_To_Symbol_Applic',
+                            'symbol->string':'L_Symbol_To_String_Applic',
                             }
 
 def sortedConstantList():
@@ -542,7 +542,7 @@ def expandQQ(expr):
     elif isinstance(expr,sexprs.Vector):
         return sexprs.Pair(sum([[sexprs.Symbol('LIST->VECTOR',12)], ['.',sexprs.Pair([expandQQ(expr)])]],[])) # may be need last arg
 
-    elif isinstance(expr,sexprs.Nil) or\
+    elif isinstance(expr,sexprs.Nil) or \
             isinstance(expr,sexprs.Symbol):
             return sexprs.Pair(sum([[sexprs.Symbol('QUOTE_LAST',5)],
                 ['.',sexprs.Pair([expr])]],[]))
@@ -841,12 +841,13 @@ class Def(AbstractSchemeExpr):
 class AsStringVisitor(AbstractSchemeExpr):
 
     def visitConstant(self):
-        if isinstance(self.constant,sexprs.String):
-            return '"' + str(self.constant) + '"'
-        if not isinstance(self.constant , sexprs.Nil):
-            return str(self.constant)
-        else:
-            return ''
+        return str(self.constant)
+        # if isinstance(self.constant,sexprs.String):
+        #     return '"' + str(self.constant) + '"'
+        # if not isinstance(self.constant , sexprs.Nil):
+        #     return str(self.constant)
+        # else:
+        #     return ''
 
     def visitVariable(self):
         return str(self.variable)
@@ -899,12 +900,15 @@ class AsStringVisitor(AbstractSchemeExpr):
 
 ################################################################
 
-class ApplicTP:
+class ApplicTP(AbstractSchemeExpr):
     def __init__(self,expr):
         self.obj = expr
 
     def accept(self,visitor):
         return visitor.visitApplicTP(self)
+
+    def generate(self, visitor):
+        return visitor.codeGenApplicTP(self)
 
 # Visitor design pattern
 class AnnotateVisitor(AbstractSchemeExpr):
@@ -1189,9 +1193,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         # if variable wasn't defined nor a builtin procedure
         else:
-            raise compiler.CompilationError('- Variable %s in not bound' %name)
+            raise compiler.CompilationError("- Variable %s in not bound" %name)
 
-        return appendTabs() + code + callWriteSob()
+        return appendTabs() + code
 
     @staticmethod
     def addCodeForBuiltInProcedures(name,label):
@@ -1203,11 +1207,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
         /* backup R1 in order to use it */
         MOV(R1,R0);
         /* R1 now holds the pointer to the symbol's bucket */
-        PUSH(0); /* push the "empty" environment for free vars */
         """
         code += appendTabs() + "PUSH(LABEL(%s));\n" %label
         code += \
         """
+        /* push the "empty" environment for free vars */
+        PUSH(0);
         CALL (MAKE_SOB_CLOSURE);
         DROP(2);
         /* R0 now holds the pointer to the closure */
@@ -1252,7 +1257,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
         code += appendTabs() + "PUSH(FP);\n"
         code += appendTabs() + "MOV(FP,SP);\n"
+        code += appendTabs() + "PUSH(R1);\n"
+        code += appendTabs() + "MOV(R1,IMM(%s));\n" %self.numOfArgs
+        code += appendTabs() + "CMP(R1,FPARG(1));\n"
+        code += appendTabs() + "JUMP_EQ(L_error_not_enough_params_given);\n"
         code += self.body.code_gen()
+        code += appendTabs() + "POP(R1);\n"
         code += appendTabs() + "POP(FP);\n"
         code += appendTabs() + "RETURN;\n"
 
@@ -1383,16 +1393,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
 		for(i = -2 , j = -3 ; i <= R1 ; i++,j++)
         {
 			MOV(FPARG(j),FPARG(i));
-			PUSH(FPARG(j));
-			CALL(WRITE_INTEGER);
-			DROP(1);
-			CALL(NEWLINE);
         }
 		MOV(FPARG(i),IMM(7109179));				/* magic number */
-		PUSH(FPARG(i));
-		CALL(WRITE_INTEGER);
-		DROP(1);
-		CALL(NEWLINE);
 
 """
 
@@ -1428,7 +1430,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         return result
 
-    # def codeGenApplicTP(self):
+    def codeGenApplicTP(self):
+        code = self.obj.code_gen()
+        return code
     #     result = ""
     #     argsList = list(reversed(pairsToList(self.arguments)))
     #
@@ -1455,12 +1459,15 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenOr(self):
         code = ""
         argsList = pairsToList(self.arguments)
-        for arg in argsList[:-1]:
-            argi = arg.code_gen()
-            code += argi
-            code += "CMP(R0, BOOL_FALSE);\n"
-            code += "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
-        code += argsList[-1].code_gen()
+        if argsList:
+            for arg in argsList[:-1]:
+                argi = arg.code_gen()
+                code += argi
+                code += "CMP(R0, BOOL_FALSE);\n"
+                code += "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
+            code += argsList[-1].code_gen()
+        else:
+            code += appendTabs() + "MOV(R0,IMM(3));\n"
         code += "L_EXIT_%s:\n" %LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
         return code
@@ -1481,15 +1488,4 @@ class CodeGenVisitor(AbstractSchemeExpr):
         /* return #void to user */
         MOV(R0, IMM(1));
         """
-        return code + callWriteSob()
-
-def callWriteSob():
-    code = \
-"""
-        PUSH(R0);
-        CALL(WRITE_SOB);
-        DROP(1);
-        CALL(NEWLINE);
-
-"""
-    return code
+        return code

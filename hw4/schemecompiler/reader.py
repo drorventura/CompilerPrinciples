@@ -237,7 +237,7 @@ hexChar =   ps  .const(lambda x: x == '#')\
 # Named Chars
 namedChar =   ps   .const(lambda x: x == '#')\
                    .const(lambda x: x == '\\')\
-                   .parser(pc.pcWordCI("newline")).pack(lambda x: chr(10))\
+                   .parser(pc.pcWordCI("newline")).pack(lambda x: '\\n')\
                    .parser(pc.pcWordCI("return" )).pack(lambda x: chr(13))\
                    .parser(pc.pcWordCI("tab"    )).pack(lambda x: chr(9))\
                    .parser(pc.pcWordCI("page"   )).pack(lambda x: chr(12))\
@@ -250,9 +250,10 @@ namedChar =   ps   .const(lambda x: x == '#')\
 # visible Chars
 visibleChars =   ps   .const(lambda x: x == '#')\
                       .const(lambda x: x == '\\')\
-                      .const(lambda x: ord(x) >= 32 )\
+                      .const(lambda x: ord(x) >= 32)\
+                      .maybe()\
                       .catens(3)\
-                      .pack(lambda x: x[2])\
+                      .pack(lambda x: x[1] + (x[2][1] or ''))\
                       .done()
 
 # Char Parser -    (namedChar U hexChars U visibleChars)*

@@ -8,6 +8,11 @@ class TestSexprs(unittest.TestCase):
        self.assertEqual(str(sexpr) , '#t')
        self.assertEqual(str(remaining) , '')
 
+    def test_constant_empty_list(self):
+       sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("'()")
+       self.assertEqual(str(sexpr) , '()')
+       self.assertEqual(str(remaining) , '')
+
     def test_constant_quote(self):
        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("'1")
        self.assertEqual(str(sexpr) , '1')
@@ -117,7 +122,7 @@ class TestSexprs(unittest.TestCase):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(lambda a (+ (car a) (cdr  a)))")
         # self.assertEqual(str(sexpr) , '(LAMBDA A (+ A B C))')
         sexpr.semantic_analysis()
-        print(sexpr.numOfArgs)
+        # print(sexpr.numOfArgs)
     
     def test_let_2_arg(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse('(let ((x (+ 1 2)) (y 7)) (+ 1 2))')
@@ -209,9 +214,9 @@ class TestSexprs(unittest.TestCase):
         # assert
 
     def test_abstract(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("a")
-        sexpr.debruijn()
-        print(type(sexpr))
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("'(1 2 3)")
+        sexpr.semantic_analysis()
+        print(sexpr.code_gen())
         # assert
 
 if __name__ == '__main__':

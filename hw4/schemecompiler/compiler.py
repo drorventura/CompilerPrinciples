@@ -34,6 +34,7 @@ int main()
     #include "./arch/scheme.lib"
     #include "./arch/string.lib"
     #include "./arch/system.lib"
+    #include "./arch/builtin.lib"
 
     #define VOID IMM(1)
     #define NIL IMM(2)
@@ -89,9 +90,10 @@ def appendCodeGen(source):
                 code += "%s" %s.code_gen()
             else:
                 code += "%s" %s.code_gen()
+                code += callWriteSob()
                 s, r = tag_parser.AbstractSchemeExpr.parse(r)
                 s.semantic_analysis()
-        return code
+        return code + callWriteSob()
 
 def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
@@ -120,7 +122,7 @@ def initConstantTable():
 
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_STRING);\n"
-            code += tag_parser.appendTabs() + "DROP(1);\n"
+            code += tag_parser.appendTabs() + "DROP(%s);\n" %(value + 1)
 
         elif sobType is 'T_CHAR':
             value = node[1][1][1]
@@ -140,6 +142,7 @@ def initConstantTable():
             bucket = node[1][1][1]
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %bucket
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_SYMBOL);\n"
+            code += tag_parser.appendTabs() + "DROP(1);\n"
 
         elif sobType is 'T_BUCKET':
             symbolName = node[1][1][1]
@@ -162,6 +165,16 @@ def initConstantTable():
             print(sobType)
             print("need to implemet that")
     code += tag_parser.appendTabs() + "/* end of creating constant table */\n\n"
+    return code
+
+def callWriteSob():
+    code = \
+        """
+        PUSH(R0);
+        CALL(WRITE_SOB);
+        POP(R0);
+        CALL(NEWLINE);
+        """
     return code
 
 # def addCodePrintTo(key):
