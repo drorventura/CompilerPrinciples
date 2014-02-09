@@ -1311,7 +1311,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += appendTabs() + "CMP(R1,IMM(0));\n"
         code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %currentLabel
         code += \
-    """
+"""
         MOV(R3,R1);             /* remember envSize */
         ADD(R1,IMM(1));         /* increment env size by 1 */
         PUSH(R1);
@@ -1319,21 +1319,50 @@ class CodeGenVisitor(AbstractSchemeExpr):
         DROP(1);
         MOV(R1,R0);              /* move new env to R1 */
         MOV(R2,FPARG(0));        /* get old env from stack */
-        int i,j;
-        for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
-        {
-             MOV(INDD(R1,j),INDD(R2,i));
-        }
+        MOV(R4,IMM(0));          /* i = 0 */
+        MOV(R5,IMM(1));          /* j = 1 */
+"""
+        code += "\n\tL_Shallow_Copy_OldEnv_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R4,R3);\n"
+        code += appendTabs() + "JUMP_EQ(L_Shallow_Copy_OldEnv_Exit_%s);" %currentLabel
+        code += \
+        """
+        MOV(INDD(R1,R5),INDD(R2,R4));
+        INCR(R4);
+        INCR(R5);
+        """
+        # for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
+        # {
+        #     MOV(INDD(R1,j),INDD(R2,i));
+        # }
+        code += "JUMP(L_Shallow_Copy_OldEnv_%s);\n" %currentLabel
+        code += "\n\tL_Shallow_Copy_OldEnv_Exit_%s:" %currentLabel
+        code += \
+        """
         MOV(R3,FPARG(1));       /* get the number of parameters from stack */
-        PUSH(IMM(R3));
+        PUSH(R3);
         CALL(MALLOC);           /* malloc size for parameters to add new env */
         DROP(1);
-        for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
-        {
-             MOV(INDD(R0,i),FPARG(j));
-        }
-        MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
-    """
+        MOV(R4,IMM(0));          /* i = 0 */
+        MOV(R5,IMM(2));          /* j = 2 */
+        """
+        code += "\n\tL_Copy_Params_To_NewEnv_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R4,R3);\n"
+        code += appendTabs() + "JUMP_EQ(L_Copy_Params_To_NewEnv_Exit_%s);" %currentLabel
+        code += \
+        """
+        MOV(INDD(R0,R4),FPARG(R5));
+        INCR(R4);
+        INCR(R5);
+        """
+        # for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
+        # {
+        #       MOV(INDD(R0,i),FPARG(j));
+        # }
+        code += "JUMP(L_Copy_Params_To_NewEnv_%s);\n" %currentLabel
+        code += "\n\tL_Copy_Params_To_NewEnv_Exit_%s:" %currentLabel
+        code += appendTabs() + "/* move the params to new env before calling make_sob_closure */\n"
+        code += appendTabs() + "MOV(IND(R1),R0);\n"
         code += "\n\tL_After_Env_Expansion_%s:\n" %currentLabel
         code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %currentLabel #push the label of the lambda's body
         code += appendTabs() + "PUSH(R1);\n"                                  #push the new env
