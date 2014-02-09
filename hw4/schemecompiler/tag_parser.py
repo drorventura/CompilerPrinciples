@@ -103,6 +103,8 @@ def countNumParams(exp,result):
     return result
 
 def setEnvDepth(exp,depth):
+    if type(exp) is ApplicTP:
+        setEnvDepth(exp.obj,depth)
     if isinstance(exp,AbstractLambda):
         exp.depth = depth
         listParams = countNumParams(exp.arguments,[])
@@ -1234,12 +1236,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenVarParam(self):
         offset = self.minor + 2
-        return "MOV(R0,FPARG(%s));\n" %offset
+        return appendTabs() + "MOV(R0,FPARG(%s));\n" %offset
 
     def codeGenVarBound(self):
-        code = "MOV(R0,FPARG(0))" #env
-        code += "MOV(R0,INDD(R0,%s)" %self.major
-        code += "MOV(R0,INDD(R0,%s)" %self.minor
+        code = appendTabs() + "MOV(R0,FPARG(0));\n" #env
+        code += appendTabs() + "MOV(R0,INDD(R0,%s));\n" %self.major
+        code += appendTabs() + "MOV(R0,INDD(R0,%s));\n" %self.minor
         return code
 
     def codeGenIfThenElse(self):
@@ -1260,53 +1262,59 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return result
 
     def codeGenLambdaSimple(self):
-        code = CodeGenVisitor.environmentExpansionCodeGen(self)
+        currentLabel = LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+        code = CodeGenVisitor.environmentExpansionCodeGen(self,currentLabel)
 
         # Label B of LambdaSimple
-        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += "\tL_CLOS_CODE_%s:\n" %currentLabel
         code += appendTabs() + "PUSH(FP);\n"
         code += appendTabs() + "MOV(FP,SP);\n"
         code += appendTabs() + "PUSH(R1);\n"
+        code += appendTabs() + "/* %s */\n" %self
         code += appendTabs() + "MOV(R1,IMM(%s));\n" %self.numOfArgs
         code += appendTabs() + "CMP(R1,FPARG(1));\n"
-        code += appendTabs() + "JUMP_EQ(L_error_not_enough_params_given);\n"
-        print(self.body)
-        print(type(self.body))
+        code += appendTabs() + "JUMP_NE(L_error_not_enough_params_given);\n"
+        code += appendTabs() + "/* CodeGen Body Of Lambda */\n"
+        code += appendTabs() + "/* %s */\n" %self.body
         code += self.body.code_gen()
         code += appendTabs() + "POP(R1);\n"
         code += appendTabs() + "POP(FP);\n"
         code += appendTabs() + "RETURN;\n"
 
-        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
-        LabelGenerator.nextLabel()
+        code += "\tL_CLOS_EXIT_%s:\n" %currentLabel
         return code
 
     def codeGenLambdaOpt(self):
-        # Environment expansion
-        code = CodeGenVisitor.environmentExpansionCodeGen(self)
-        # Label B of LambdaOPT
-        code += CodeGenVisitor.stackFixForLambda(self)
+        currentLabel = LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
+        # Environment expansion
+        code = CodeGenVisitor.environmentExpansionCodeGen(self,currentLabel)
+        # Label B of LambdaOPT
+        code += CodeGenVisitor.stackFixForLambda(self,currentLabel)
+
         return code
 
     def codeGenLambdaVar(self):
-        # Environment expansion
-        code = CodeGenVisitor.environmentExpansionCodeGen(self)
-        # Label B of LambdaVar
-        code += CodeGenVisitor.stackFixForLambda(self)
+        currentLabel = LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
+        # Environment expansion
+        code = CodeGenVisitor.environmentExpansionCodeGen(self,currentLabel)
+        # Label B of LambdaVar
+        code += CodeGenVisitor.stackFixForLambda(self,currentLabel)
+
         return code
 
     @staticmethod
-    def environmentExpansionCodeGen(lambdaExp):
+    def environmentExpansionCodeGen(lambdaExp,currentLabel):
         code = appendTabs() + "MOV(R1,IMM(%s));\n" %lambdaExp.depth
         code += appendTabs() + "CMP(R1,IMM(0));\n"
-        code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %currentLabel
         code += \
     """
         MOV(R3,R1);             /* remember envSize */
         ADD(R1,IMM(1));         /* increment env size by 1 */
-        PUSH(IMM(R1));
+        PUSH(R1);
         CALL(MALLOC);           /* malloc space for new env */
         DROP(1);
         MOV(R1,R0);              /* move new env to R1 */
@@ -1326,18 +1334,18 @@ class CodeGenVisitor(AbstractSchemeExpr):
         }
         MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
     """
-        code += "\n\tL_After_Env_Expansion_%s:\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %LabelGenerator.getLabel() #push the label of the lambda's body
-        code += appendTabs() + "PUSH(R1);\n"                                               #push the new env
+        code += "\n\tL_After_Env_Expansion_%s:\n" %currentLabel
+        code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %currentLabel #push the label of the lambda's body
+        code += appendTabs() + "PUSH(R1);\n"                                  #push the new env
         code += appendTabs() + "CALL(MAKE_SOB_CLOSURE);\n"
         code += appendTabs() + "DROP(2);\n"
-        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s);\n" %currentLabel
 
         return code
 
     @staticmethod
-    def stackFixForLambda(lambdaExp):
-        code = "\n\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+    def stackFixForLambda(lambdaExp,currentLabel):
+        code = "\n\tL_CLOS_CODE_%s:\n" %currentLabel
         code += appendTabs() + "PUSH(FP);\n"
         code += appendTabs() + "MOV(FP,SP);\n"
 
@@ -1355,11 +1363,11 @@ class CodeGenVisitor(AbstractSchemeExpr):
         DECR(R3);
         CMP(R2,R3);             /* compare between num of arg in lambda and num of params in stack */
         """
-        code += "JUMP_EQ(L_Stack_Fix_Up_%s);\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "JUMP_LT(L_Stack_Fix_Down_%s);\n" %LabelGenerator.getLabel()
+        code += "JUMP_EQ(L_Stack_Fix_Up_%s);\n" %currentLabel
+        code += appendTabs() + "JUMP_LT(L_Stack_Fix_Down_%s);\n" %currentLabel
         code += appendTabs() + "JUMP(L_error_not_enough_params_given);\n"
 
-        code += "\n\tL_Stack_Fix_Down_%s:\n" %LabelGenerator.getLabel()
+        code += "\n\tL_Stack_Fix_Down_%s:\n" %currentLabel
 
         code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
         code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
@@ -1392,9 +1400,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
         SUB(SP,R3);						/* stack pointer needs to down as well */
 
         """
-        code += "JUMP(L_After_Stack_Fix_%s);\n" %LabelGenerator.getLabel()
+        code += "JUMP(L_After_Stack_Fix_%s);\n" %currentLabel
 
-        code += "\tL_Stack_Fix_Up_%s:\n" %LabelGenerator.getLabel()
+        code += "\tL_Stack_Fix_Up_%s:\n" %currentLabel
         code += \
         """
         INCR(R2);                       /* contains the num of args */
@@ -1408,12 +1416,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
 		MOV(FPARG(i),IMM(7109179));				/* magic number */
 
 """
-
-        code += "\tL_After_Stack_Fix_%s:\n" %LabelGenerator.getLabel()
+        code += "\tL_After_Stack_Fix_%s:\n" %currentLabel
+        code += appendTabs() + "/* CodeGen Body Of Lambda */\n"
         code += lambdaExp.body.code_gen()
         code += appendTabs() + "POP(FP);\n"
         code += appendTabs() + "RETURN;\n"
-        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
+        code += "\tL_CLOS_EXIT_%s:\n" %currentLabel
 
         return code
 
