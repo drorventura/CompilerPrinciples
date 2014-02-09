@@ -465,8 +465,8 @@ def tagLet(expr):
         tagged_list_args.append(parserRecursive(arg))
 
     if isinstance(expr.sexpr1,sexprs.Nil):
-        paramsPair = expr.sexpr1;
-        argsPair = expr.sexpr1;
+        paramsPair = expr.sexpr1
+        argsPair = expr.sexpr1
     else:
         paramsPair    = buildPairForParamsInLet(list_params)
         argsPair      = buildPairForParamsInLet(tagged_list_args)
