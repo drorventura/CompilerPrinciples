@@ -174,7 +174,7 @@ def callWriteSob():
         CALL(WRITE_SOB);
         POP(R0);
         CALL(NEWLINE);
-        """
+"""
     return code
 
 # def addCodePrintTo(key):

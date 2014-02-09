@@ -453,8 +453,8 @@ def tagAnd(expr):
 
 def tagLet(expr):
     body = expr.sexpr2.sexpr1
-    if isinstance(expr.sexpr1,sexprs.Nil):
-        raise SyntaxErrorException("In Let Parameters Bound Are Empty")
+    # if isinstance(expr.sexpr1,sexprs.Nil):
+    #     raise SyntaxErrorException("In Let Parameters Bound Are Empty")
 
     list_params , list_args = seperateParamsAndArgs(expr.sexpr1)
 
@@ -462,8 +462,12 @@ def tagLet(expr):
     for arg in list_args:
         tagged_list_args.append(parserRecursive(arg))
 
-    paramsPair    = buildPairForParamsInLet(list_params)
-    argsPair      = buildPairForParamsInLet(tagged_list_args)
+    if isinstance(expr.sexpr1,sexprs.Nil):
+        paramsPair = expr.sexpr1;
+        argsPair = expr.sexpr1;
+    else:
+        paramsPair    = buildPairForParamsInLet(list_params)
+        argsPair      = buildPairForParamsInLet(tagged_list_args)
     bodyPair      = ['.', sexprs.Pair([body])]
 
     pairForLambda = sexprs.Pair(sum([[paramsPair],bodyPair],[])) #warning!
@@ -472,7 +476,7 @@ def tagLet(expr):
     return  tagApplic(pairForApplic)
 
 def buildPairForParamsInLet(list_params):
-        return sexprs.Pair(list_params)
+    return sexprs.Pair(list_params)
 
 def tagLetStartRec(expr):
 
@@ -1091,6 +1095,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 CodeGenVisitor.codeGenPair(value)
                 pairPtr = mem0 - 3
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
+                LabelGenerator.nextLabel()
             return result
         else:
             raise SyntaxErrorException("no such constant %s" %self)      # for debug purpose
@@ -1109,23 +1114,27 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 if type(first) is sexprs.Nil:
                     car = "nil"
                 elif type(first) is sexprs.Symbol:
-                    car = "bucket_'%s" %first
+                    car = "'%s" %first
                 else:
                     car = "%s" %first
 
                 if type(second) is sexprs.Nil:
                     cdr = "nil"
                 elif type(second) is sexprs.Symbol:
-                    cdr = "bucket_'%s" %second
+                    cdr = "'%s" %second
                 else:
                     cdr = "%s" %second
 
-                nodeName = "%s" %node
+                nodeName = "%s_%s" %(node,LabelGenerator.getLabel())
 
-                memoryTable.update( { nodeName : [ mem0,
-                                                            ['T_PAIR',
-                                                             memoryTable.get(car)[0],
-                                                             memoryTable.get(cdr)[0]] ] } )
+                if '(' and ')' in car:
+                    car += "_%s" %LabelGenerator.getLabel()
+                if ')' and ')' in cdr:
+                    cdr += "_%s" %LabelGenerator.getLabel()
+
+                memoryTable.update( { nodeName : [ mem0, ['T_PAIR',
+                                                          memoryTable.get(car)[0],
+                                                          memoryTable.get(cdr)[0]] ] } )
                 mem0 += 3
 
                 constantList.remove(first)
@@ -1261,6 +1270,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += appendTabs() + "MOV(R1,IMM(%s));\n" %self.numOfArgs
         code += appendTabs() + "CMP(R1,FPARG(1));\n"
         code += appendTabs() + "JUMP_EQ(L_error_not_enough_params_given);\n"
+        print(self.body)
+        print(type(self.body))
         code += self.body.code_gen()
         code += appendTabs() + "POP(R1);\n"
         code += appendTabs() + "POP(FP);\n"

@@ -1,0 +1,1 @@
+(let ((f (lambda (x) (x x)))) (f f))

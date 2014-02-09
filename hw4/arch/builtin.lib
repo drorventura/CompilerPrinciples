@@ -1,0 +1,7 @@
+/* builtinproc/
+ * A loader file for built-in procedures in scheme
+ *
+ * Programmer: Dror Ventura, 2014
+ */
+
+#include "lib/builtinproc/plus_applic.asm"

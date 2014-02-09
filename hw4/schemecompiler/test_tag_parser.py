@@ -214,9 +214,9 @@ class TestSexprs(unittest.TestCase):
         # assert
 
     def test_abstract(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("'(1 2 3)")
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(((((lambda (x) ((x x) (x x))) (lambda (x) (lambda (y) (x (x y))))) (lambda (p) (p (lambda (x y) (lambda (p) (p y x)))))) (lambda (z) (z #t #f)))    (lambda (x y) x))")
         sexpr.semantic_analysis()
-        print(sexpr.code_gen())
+        print(sexpr)
         # assert
 
 if __name__ == '__main__':
