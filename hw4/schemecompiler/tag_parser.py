@@ -1379,82 +1379,143 @@ class CodeGenVisitor(AbstractSchemeExpr):
     @staticmethod
     def stackFixForLambda(lambdaExp,currentLabel):
         code = "\n\tL_CLOS_CODE_%s:\n" %currentLabel
-        code += appendTabs() + "PUSH(FP);\n"
-        code += appendTabs() + "MOV(FP,SP);\n"
-
-        # stack fix
-        code += appendTabs() + "MOV(R1,FPARG(1));\n"
-        code += appendTabs() + "ADD(R1,IMM(1));\n"         # holds the num of params in stack
-
-        code += appendTabs() + "int numOfArgs = %s;\n" %(lambdaExp.numOfArgs + 1)
-
         code += \
         """
-        MOV(R2,numOfArgs);
-        SUB(R2,IMM(2));
-        MOV(R3,R1);
+        PUSH(FP);
+        MOV(FP,SP);
+        PUSH(R1);
+        PUSH(R2);
+        PUSH(R3);
+        PUSH(R4);
+
+        /* R1 holds the num of params in stack */
+        MOV(R1,FPARG(1));
+        /* R2 holds the num of args the lambda takes */
+        """
+        code += "MOV(R2,IMM(%s));\n" %lambdaExp.numOfArgs
+        code += \
+        """
+        MOV(R3,R2);
         DECR(R3);
-        CMP(R2,R3);             /* compare between num of arg in lambda and num of params in stack */
+        /* compare between num of arg in lambda and num of params in stack */
+        CMP(R3,R1);
         """
         code += "JUMP_EQ(L_Stack_Fix_Up_%s);\n" %currentLabel
         code += appendTabs() + "JUMP_LT(L_Stack_Fix_Down_%s);\n" %currentLabel
         code += appendTabs() + "JUMP(L_error_not_enough_params_given);\n"
-
         code += "\n\tL_Stack_Fix_Down_%s:\n" %currentLabel
-
-        code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
-        code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
-        code += appendTabs() + "CALL(MAKE_SOB_PAIR);\n"    # R0 holds the last pair
-        code += appendTabs() + "DROP(2);\n"
-
         code += \
         """
-        for(i = R1-1 ; i >= numOfArgs ; --i)
-        {
-            PUSH(R0);
-            PUSH(FPARG(i));
-            CALL(MAKE_SOB_PAIR);
-            DROP(2);
-        }
+        /* R3 holds the displacement for the params in stack */
+        MOV(R3,R1);
+        INCR(R3);
 
-        MOV(FPARG(numOfArgs),R0);
+        /* pushing nil on stack */
+        PUSH(IMM(2));
+        /* pushing last param in stack */
+        PUSH(FPARG(R3));
+        /* R0 holds the last pair */
+        CALL(MAKE_SOB_PAIR);
+        DROP(2);
+        DECR(R3);
+        """
+        code += "\n\tL_Create_Pairs_Loop_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R3,R2);\n"
+        code += appendTabs() + "JUMP_EQ(L_Create_Pairs_Loop_Exit_%s);\n" %currentLabel
+        code += \
+        """
+        /* pushing previous pair */
+        PUSH(R0);
+        PUSH(FPARG(R3));
+        CALL(MAKE_SOB_PAIR);
+        DROP(2);
+        DECR(R3);
+        """
+        code += "JUMP(L_Create_Pairs_Loop_%s);\n" %currentLabel
+        code += "\n\tL_Create_Pairs_Loop_Exit_%s:\n" %currentLabel
+        code += \
+        """
+        /* R3 holds the displacement of the optional parameters of the lambda */
+        MOV(R3,R2);
+        INCR(R3);           /* numOfArgs + 1 */
+        MOV(FPARG(R3),R0);
 
-        INCR(R2);                       /* R2 contains number of params */
-        MOV(FPARG(1),R2);               /* update the number of parameters on stack */
+        /* update the number of parameters on stack */
+        MOV(FPARG(1),R2);
 
         /* drop the relevant elements to the buttom of the stack */
-        while(numOfArgs >= -2)
-        {
-            MOV(FPARG(R1),FPARG(numOfArgs));
-            DECR(R1);
-            numOfArgs-- ;
-        }
-        SUB(R3,R2);
-        SUB(SP,R3);						/* stack pointer needs to down as well */
-
+        MOV(R4,R1);
+        INCR(R4);
         """
-        code += "JUMP(L_After_Stack_Fix_%s);\n" %currentLabel
-
-        code += "\tL_Stack_Fix_Up_%s:\n" %currentLabel
+        code += "\n\tL_Move_Stack_Down_Loop_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R3,IMM(-6));\n"
+        code += appendTabs() + "JUMP_LT(L_Move_Stack_Down_Loop_Exit_%s);\n" %currentLabel
         code += \
         """
-        INCR(R2);                       /* contains the num of args */
-        INCR(FPARG(1));                 /* increment the number of params in stack by 1 */
-        INCR(SP);						/* stack pointer needs to go up by 1 */
+        MOV(FPARG(R4),FPARG(R3));
+        DECR(R4);
+        DECR(R3);
+        """
+        code += "JUMP(L_Move_Stack_Down_Loop_%s);\n" %currentLabel
 
-		for(i = -2 , j = -3 ; i <= R1 ; i++,j++)
-        {
-			MOV(FPARG(j),FPARG(i));
-        }
-		MOV(FPARG(i),IMM(7109179));				/* magic number */
+        code += "\n\tL_Move_Stack_Down_Loop_Exit_%s:\n" %currentLabel
 
-"""
+        code += \
+        """
+        /* frame pointer and stack pointers needs to be brought down as well */
+        SUB(R1,R2);
+        SUB(FP,R1);
+        DROP(R1);
+        """
+        code += "JUMP_LT(L_After_Stack_Fix_%s);\n" %currentLabel
+        code += "\n\tL_Stack_Fix_Up_%s:\n" %currentLabel
+        code += \
+        """
+        /* R4 contains the num of args of lambda
+        MOV(R4,R2);*/
+
+        /* increment the number of params in stack by 1 */
+        INCR(FPARG(1));
+
+        /* stack pointer needs to go up by 1 */
+        INCR(SP);
+
+        MOV(R3,IMM(-2));
+        MOV(R4,IMM(-3));
+        INCR(R1);
+        """
+        code += "\n\tL_Move_Stack_Up_Loop_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R3,R1);\n"
+        code += appendTabs() + "JUMP_GT(L_Move_Stack_Up_Loop_Exit_%s);\n" %currentLabel
+        code += \
+        """
+        MOV(FPARG(R4),FPARG(R3));
+        INCR(R3);
+        INCR(R4);
+		"""
+        code += "JUMP(L_Move_Stack_Up_Loop_%s);\n" %currentLabel
+        code += "\n\tL_Move_Stack_Up_Loop_Exit_%s:" %currentLabel
+        code += \
+        """
+        /* magic number */
+        MOV(FPARG(R3),IMM(7109179));
+        """
+
         code += "\tL_After_Stack_Fix_%s:\n" %currentLabel
         code += appendTabs() + "/* CodeGen Body Of Lambda */\n"
+        code += appendTabs() + "/* %s */\n" %lambdaExp.body
         code += lambdaExp.body.code_gen()
-        code += appendTabs() + "POP(FP);\n"
-        code += appendTabs() + "RETURN;\n"
-        code += "\tL_CLOS_EXIT_%s:\n" %currentLabel
+        code += \
+        """
+        /* restoring the registers that where used */
+        POP(R4);
+        POP(R3);
+        POP(R2);
+        POP(R1);
+        POP(FP);
+        RETURN;
+        """
+        code += "\n\tL_CLOS_EXIT_%s:\n" %currentLabel
 
         return code
 
