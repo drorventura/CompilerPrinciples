@@ -60,18 +60,18 @@ reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
                             'append':'L_Append_Applic',
                             'apply':'L_Apply_Applic',
                             'cons':'L_Cons_Applic',
-                            'car':'L_Car_Applic',
-                            'cdr':'L_Cdr_Applic',
+                            'car'       :'CAR', #-done
+                            'cdr'       :'CDR', #-done
                             'remainder':'L_Remainder_Applic',
                             'yag':'L_Yag_Applic',
-                            'null?':'IS_SOB_NIL',
-                            'boolean?':'L_Is_Boolean_Applic',
-                            'char?':'L_Is_Char_Applic',
+                            'null?'         :'IS_SOB_NIL', #-done
+                            'boolean?'      :'IS_SOB_BOOL',#-done
+                            'char?'         :'IS_SOB_CHAR',#-done (with warning)
                             'number?':'L_Is_Num_Applic',
-                            'integer?':'L_Is_Int_Applic',
-                            'zero?':'L_Is_Zero_Applic',
-                            'pair?':'L_Is_Pair_Applic',
-                            'vector?':'L_Is_Vector_Applic',
+                            'integer?'      :'IS_SOB_INTEGER', #-done
+                            'zero?'         :'IS_ZERO_APPLIC', #-done
+                            'pair?'         :'IS_SOB_PAIR', #-done
+                            'vector?'       :'IS_VECTOR',   #-done(untested)
                             'procedure?':'L_Is_Procedure_Applic',
                             'string?':'L_Is_String_Applic',
                             'symbol?':'L_Is_Symbol_Applic',

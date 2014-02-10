@@ -5,4 +5,8 @@
  */
 
 #include "lib/builtinproc/plus_applic.asm"
+#include "lib/builtinproc/car.asm"
+#include "lib/builtinproc/cdr.asm"
+#include "lib/builtinproc/is_zero.asm"
+#include "lib/builtinproc/is_vector.asm"
 
