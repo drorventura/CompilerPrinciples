@@ -415,6 +415,9 @@ def varsToList(expr):
     bound = expr
     list_params = []
 
+    if type(expr) is Variable:
+        list_params.append(expr)
+
     while isinstance(bound,sexprs.Pair):
         list_params.append(bound.sexpr1)
         if not isinstance(bound.sexpr2, (sexprs.Pair,sexprs.Nil)):
@@ -612,6 +615,7 @@ class AbstractSchemeExpr:
                             self.major = major
                             self.minor = minor
             if minor < 0:
+                print(self)
                 self.__class__ = VarFree
 
         elif className.__contains__("Lambda"):

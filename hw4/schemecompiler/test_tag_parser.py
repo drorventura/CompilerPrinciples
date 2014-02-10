@@ -221,9 +221,9 @@ class TestSexprs(unittest.TestCase):
     def test_empty_let(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(let () ((lambda s (let () ((lambda s s) s s s))) #t))")
         sexpr.semantic_analysis()
-        print(sexpr)
-        # sexpr.code_gen()
-        # assert
+        self.assertEqual(sexpr, "((lambda () ((lambda s ((lambda () ((lambda s s) s s s)))) #t)))")
+        # print(sexpr.code_gen())
+        # ((lambda () ((lambda s ((lambda () ((lambda s s) s s s)))) #t)))
 
 if __name__ == '__main__':
      unittest.main()
