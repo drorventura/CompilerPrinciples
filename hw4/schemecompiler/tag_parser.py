@@ -103,6 +103,8 @@ def countNumParams(exp,result):
     return result
 
 def setEnvDepth(exp,depth):
+    if type(exp) is ApplicTP:
+        setEnvDepth(exp.obj,depth)
     if isinstance(exp,AbstractLambda):
         exp.depth = depth
         listParams = countNumParams(exp.arguments,[])
@@ -413,6 +415,9 @@ def varsToList(expr):
     bound = expr
     list_params = []
 
+    if type(expr) is Variable:
+        list_params.append(expr)
+
     while isinstance(bound,sexprs.Pair):
         list_params.append(bound.sexpr1)
         if not isinstance(bound.sexpr2, (sexprs.Pair,sexprs.Nil)):
@@ -463,8 +468,8 @@ def tagLet(expr):
         tagged_list_args.append(parserRecursive(arg))
 
     if isinstance(expr.sexpr1,sexprs.Nil):
-        paramsPair = expr.sexpr1;
-        argsPair = expr.sexpr1;
+        paramsPair = expr.sexpr1
+        argsPair = expr.sexpr1
     else:
         paramsPair    = buildPairForParamsInLet(list_params)
         argsPair      = buildPairForParamsInLet(tagged_list_args)
@@ -610,6 +615,7 @@ class AbstractSchemeExpr:
                             self.major = major
                             self.minor = minor
             if minor < 0:
+                print(self)
                 self.__class__ = VarFree
 
         elif className.__contains__("Lambda"):
@@ -1234,12 +1240,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenVarParam(self):
         offset = self.minor + 2
-        return "MOV(R0,FPARG(%s));\n" %offset
+        return appendTabs() + "MOV(R0,FPARG(%s));\n" %offset
 
     def codeGenVarBound(self):
-        code = "MOV(R0,FPARG(0))" #env
-        code += "MOV(R0,INDD(R0,%s)" %self.major
-        code += "MOV(R0,INDD(R0,%s)" %self.minor
+        code = appendTabs() + "MOV(R0,FPARG(0));\n" #env
+        code += appendTabs() + "MOV(R0,INDD(R0,%s));\n" %self.major
+        code += appendTabs() + "MOV(R0,INDD(R0,%s));\n" %self.minor
         return code
 
     def codeGenIfThenElse(self):
@@ -1260,160 +1266,256 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return result
 
     def codeGenLambdaSimple(self):
-        code = CodeGenVisitor.environmentExpansionCodeGen(self)
+        currentLabel = LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+        code = CodeGenVisitor.environmentExpansionCodeGen(self,currentLabel)
 
         # Label B of LambdaSimple
-        code += "\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
+        code += "\tL_CLOS_CODE_%s:\n" %currentLabel
         code += appendTabs() + "PUSH(FP);\n"
         code += appendTabs() + "MOV(FP,SP);\n"
         code += appendTabs() + "PUSH(R1);\n"
+        code += appendTabs() + "/* %s */\n" %self
         code += appendTabs() + "MOV(R1,IMM(%s));\n" %self.numOfArgs
         code += appendTabs() + "CMP(R1,FPARG(1));\n"
-        code += appendTabs() + "JUMP_EQ(L_error_not_enough_params_given);\n"
-        print(self.body)
-        print(type(self.body))
+        code += appendTabs() + "JUMP_NE(L_error_not_enough_params_given);\n"
+        code += appendTabs() + "/* CodeGen Body Of Lambda */\n"
+        code += appendTabs() + "/* %s */\n" %self.body
         code += self.body.code_gen()
         code += appendTabs() + "POP(R1);\n"
         code += appendTabs() + "POP(FP);\n"
         code += appendTabs() + "RETURN;\n"
 
-        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
-        LabelGenerator.nextLabel()
+        code += "\tL_CLOS_EXIT_%s:\n" %currentLabel
         return code
 
     def codeGenLambdaOpt(self):
-        # Environment expansion
-        code = CodeGenVisitor.environmentExpansionCodeGen(self)
-        # Label B of LambdaOPT
-        code += CodeGenVisitor.stackFixForLambda(self)
+        currentLabel = LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
+        # Environment expansion
+        code = CodeGenVisitor.environmentExpansionCodeGen(self,currentLabel)
+        # Label B of LambdaOPT
+        code += CodeGenVisitor.stackFixForLambda(self,currentLabel)
+
         return code
 
     def codeGenLambdaVar(self):
-        # Environment expansion
-        code = CodeGenVisitor.environmentExpansionCodeGen(self)
-        # Label B of LambdaVar
-        code += CodeGenVisitor.stackFixForLambda(self)
+        currentLabel = LabelGenerator.getLabel()
         LabelGenerator.nextLabel()
+        # Environment expansion
+        code = CodeGenVisitor.environmentExpansionCodeGen(self,currentLabel)
+        # Label B of LambdaVar
+        code += CodeGenVisitor.stackFixForLambda(self,currentLabel)
+
         return code
 
     @staticmethod
-    def environmentExpansionCodeGen(lambdaExp):
+    def environmentExpansionCodeGen(lambdaExp,currentLabel):
         code = appendTabs() + "MOV(R1,IMM(%s));\n" %lambdaExp.depth
         code += appendTabs() + "CMP(R1,IMM(0));\n"
-        code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %currentLabel
         code += \
-    """
+"""
         MOV(R3,R1);             /* remember envSize */
         ADD(R1,IMM(1));         /* increment env size by 1 */
-        PUSH(IMM(R1));
+        PUSH(R1);
         CALL(MALLOC);           /* malloc space for new env */
         DROP(1);
         MOV(R1,R0);              /* move new env to R1 */
         MOV(R2,FPARG(0));        /* get old env from stack */
-        int i,j;
-        for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
-        {
-             MOV(INDD(R1,j),INDD(R2,i));
-        }
+        MOV(R4,IMM(0));          /* i = 0 */
+        MOV(R5,IMM(1));          /* j = 1 */
+"""
+        code += "\n\tL_Shallow_Copy_OldEnv_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R4,R3);\n"
+        code += appendTabs() + "JUMP_EQ(L_Shallow_Copy_OldEnv_Exit_%s);" %currentLabel
+        code += \
+        """
+        MOV(INDD(R1,R5),INDD(R2,R4));
+        INCR(R4);
+        INCR(R5);
+        """
+        # for(i=0,j=1 ; i < IMM(R3) ; ++i,++j)
+        # {
+        #     MOV(INDD(R1,j),INDD(R2,i));
+        # }
+        code += "JUMP(L_Shallow_Copy_OldEnv_%s);\n" %currentLabel
+        code += "\n\tL_Shallow_Copy_OldEnv_Exit_%s:" %currentLabel
+        code += \
+        """
         MOV(R3,FPARG(1));       /* get the number of parameters from stack */
-        PUSH(IMM(R3));
+        PUSH(R3);
         CALL(MALLOC);           /* malloc size for parameters to add new env */
         DROP(1);
-        for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
-        {
-             MOV(INDD(R0,i),FPARG(j));
-        }
-        MOV(IND(R1),R0);             /* move the params to new env before calling make_sob_closure */
-    """
-        code += "\n\tL_After_Env_Expansion_%s:\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %LabelGenerator.getLabel() #push the label of the lambda's body
-        code += appendTabs() + "PUSH(R1);\n"                                               #push the new env
+        MOV(R4,IMM(0));          /* i = 0 */
+        MOV(R5,IMM(2));          /* j = 2 */
+        """
+        code += "\n\tL_Copy_Params_To_NewEnv_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R4,R3);\n"
+        code += appendTabs() + "JUMP_EQ(L_Copy_Params_To_NewEnv_Exit_%s);" %currentLabel
+        code += \
+        """
+        MOV(INDD(R0,R4),FPARG(R5));
+        INCR(R4);
+        INCR(R5);
+        """
+        # for(i=0,j=2 ; i < IMM(R3) ; ++i,++j)
+        # {
+        #       MOV(INDD(R0,i),FPARG(j));
+        # }
+        code += "JUMP(L_Copy_Params_To_NewEnv_%s);\n" %currentLabel
+        code += "\n\tL_Copy_Params_To_NewEnv_Exit_%s:" %currentLabel
+        code += appendTabs() + "/* move the params to new env before calling make_sob_closure */\n"
+        code += appendTabs() + "MOV(IND(R1),R0);\n"
+        code += "\n\tL_After_Env_Expansion_%s:\n" %currentLabel
+        code += appendTabs() + "PUSH(LABEL(L_CLOS_CODE_%s));\n" %currentLabel #push the label of the lambda's body
+        code += appendTabs() + "PUSH(R1);\n"                                  #push the new env
         code += appendTabs() + "CALL(MAKE_SOB_CLOSURE);\n"
         code += appendTabs() + "DROP(2);\n"
-        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP(L_CLOS_EXIT_%s);\n" %currentLabel
 
         return code
 
     @staticmethod
-    def stackFixForLambda(lambdaExp):
-        code = "\n\tL_CLOS_CODE_%s:\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "PUSH(FP);\n"
-        code += appendTabs() + "MOV(FP,SP);\n"
-
-        # stack fix
-        code += appendTabs() + "MOV(R1,FPARG(1));\n"
-        code += appendTabs() + "ADD(R1,IMM(1));\n"         # holds the num of params in stack
-
-        code += appendTabs() + "int numOfArgs = %s;\n" %(lambdaExp.numOfArgs + 1)
-
+    def stackFixForLambda(lambdaExp,currentLabel):
+        code = "\n\tL_CLOS_CODE_%s:\n" %currentLabel
         code += \
         """
-        MOV(R2,numOfArgs);
-        SUB(R2,IMM(2));
-        MOV(R3,R1);
+        PUSH(FP);
+        MOV(FP,SP);
+        PUSH(R1);
+        PUSH(R2);
+        PUSH(R3);
+        PUSH(R4);
+
+        /* R1 holds the num of params in stack */
+        MOV(R1,FPARG(1));
+        /* R2 holds the num of args the lambda takes */
+        """
+        code += "MOV(R2,IMM(%s));\n" %lambdaExp.numOfArgs
+        code += \
+        """
+        MOV(R3,R2);
         DECR(R3);
-        CMP(R2,R3);             /* compare between num of arg in lambda and num of params in stack */
+        /* compare between num of arg in lambda and num of params in stack */
+        CMP(R3,R1);
         """
-        code += "JUMP_EQ(L_Stack_Fix_Up_%s);\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "JUMP_LT(L_Stack_Fix_Down_%s);\n" %LabelGenerator.getLabel()
+        code += "JUMP_EQ(L_Stack_Fix_Up_%s);\n" %currentLabel
+        code += appendTabs() + "JUMP_LT(L_Stack_Fix_Down_%s);\n" %currentLabel
         code += appendTabs() + "JUMP(L_error_not_enough_params_given);\n"
-
-        code += "\n\tL_Stack_Fix_Down_%s:\n" %LabelGenerator.getLabel()
-
-        code += appendTabs() + "PUSH(IMM(2));\n"           # pushing nil on stack
-        code += appendTabs() + "PUSH(FPARG(R1));\n"        # pushing last param in stack
-        code += appendTabs() + "CALL(MAKE_SOB_PAIR);\n"    # R0 holds the last pair
-        code += appendTabs() + "DROP(2);\n"
-
+        code += "\n\tL_Stack_Fix_Down_%s:\n" %currentLabel
         code += \
         """
-        for(i = R1-1 ; i >= numOfArgs ; --i)
-        {
-            PUSH(R0);
-            PUSH(FPARG(i));
-            CALL(MAKE_SOB_PAIR);
-            DROP(2);
-        }
+        /* R3 holds the displacement for the params in stack */
+        MOV(R3,R1);
+        INCR(R3);
 
-        MOV(FPARG(numOfArgs),R0);
+        /* pushing nil on stack */
+        PUSH(IMM(2));
+        /* pushing last param in stack */
+        PUSH(FPARG(R3));
+        /* R0 holds the last pair */
+        CALL(MAKE_SOB_PAIR);
+        DROP(2);
+        DECR(R3);
+        """
+        code += "\n\tL_Create_Pairs_Loop_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R3,R2);\n"
+        code += appendTabs() + "JUMP_EQ(L_Create_Pairs_Loop_Exit_%s);\n" %currentLabel
+        code += \
+        """
+        /* pushing previous pair */
+        PUSH(R0);
+        PUSH(FPARG(R3));
+        CALL(MAKE_SOB_PAIR);
+        DROP(2);
+        DECR(R3);
+        """
+        code += "JUMP(L_Create_Pairs_Loop_%s);\n" %currentLabel
+        code += "\n\tL_Create_Pairs_Loop_Exit_%s:\n" %currentLabel
+        code += \
+        """
+        /* R3 holds the displacement of the optional parameters of the lambda */
+        MOV(R3,R2);
+        INCR(R3);           /* numOfArgs + 1 */
+        MOV(FPARG(R3),R0);
 
-        INCR(R2);                       /* R2 contains number of params */
-        MOV(FPARG(1),R2);               /* update the number of parameters on stack */
+        /* update the number of parameters on stack */
+        MOV(FPARG(1),R2);
 
         /* drop the relevant elements to the buttom of the stack */
-        while(numOfArgs >= -2)
-        {
-            MOV(FPARG(R1),FPARG(numOfArgs));
-            DECR(R1);
-            numOfArgs-- ;
-        }
-        SUB(R3,R2);
-        SUB(SP,R3);						/* stack pointer needs to down as well */
-
+        MOV(R4,R1);
+        INCR(R4);
         """
-        code += "JUMP(L_After_Stack_Fix_%s);\n" %LabelGenerator.getLabel()
-
-        code += "\tL_Stack_Fix_Up_%s:\n" %LabelGenerator.getLabel()
+        code += "\n\tL_Move_Stack_Down_Loop_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R3,IMM(-6));\n"
+        code += appendTabs() + "JUMP_LT(L_Move_Stack_Down_Loop_Exit_%s);\n" %currentLabel
         code += \
         """
-        INCR(R2);                       /* contains the num of args */
-        INCR(FPARG(1));                 /* increment the number of params in stack by 1 */
-        INCR(SP);						/* stack pointer needs to go up by 1 */
+        MOV(FPARG(R4),FPARG(R3));
+        DECR(R4);
+        DECR(R3);
+        """
+        code += "JUMP(L_Move_Stack_Down_Loop_%s);\n" %currentLabel
 
-		for(i = -2 , j = -3 ; i <= R1 ; i++,j++)
-        {
-			MOV(FPARG(j),FPARG(i));
-        }
-		MOV(FPARG(i),IMM(7109179));				/* magic number */
+        code += "\n\tL_Move_Stack_Down_Loop_Exit_%s:\n" %currentLabel
 
-"""
+        code += \
+        """
+        /* frame pointer and stack pointers needs to be brought down as well */
+        SUB(R1,R2);
+        SUB(FP,R1);
+        DROP(R1);
+        """
+        code += "JUMP_LT(L_After_Stack_Fix_%s);\n" %currentLabel
+        code += "\n\tL_Stack_Fix_Up_%s:\n" %currentLabel
+        code += \
+        """
+        /* R4 contains the num of args of lambda
+        MOV(R4,R2);*/
 
-        code += "\tL_After_Stack_Fix_%s:\n" %LabelGenerator.getLabel()
+        /* increment the number of params in stack by 1 */
+        INCR(FPARG(1));
+
+        /* stack pointer needs to go up by 1 */
+        INCR(SP);
+
+        MOV(R3,IMM(-2));
+        MOV(R4,IMM(-3));
+        INCR(R1);
+        """
+        code += "\n\tL_Move_Stack_Up_Loop_%s:\n" %currentLabel
+        code += appendTabs() + "CMP(R3,R1);\n"
+        code += appendTabs() + "JUMP_GT(L_Move_Stack_Up_Loop_Exit_%s);\n" %currentLabel
+        code += \
+        """
+        MOV(FPARG(R4),FPARG(R3));
+        INCR(R3);
+        INCR(R4);
+		"""
+        code += "JUMP(L_Move_Stack_Up_Loop_%s);\n" %currentLabel
+        code += "\n\tL_Move_Stack_Up_Loop_Exit_%s:" %currentLabel
+        code += \
+        """
+        /* magic number */
+        MOV(FPARG(R3),IMM(7109179));
+        """
+
+        code += "\tL_After_Stack_Fix_%s:\n" %currentLabel
+        code += appendTabs() + "/* CodeGen Body Of Lambda */\n"
+        code += appendTabs() + "/* %s */\n" %lambdaExp.body
         code += lambdaExp.body.code_gen()
-        code += appendTabs() + "POP(FP);\n"
-        code += appendTabs() + "RETURN;\n"
-        code += "\tL_CLOS_EXIT_%s:\n" %LabelGenerator.getLabel()
+        code += \
+        """
+        /* restoring the registers that where used */
+        POP(R4);
+        POP(R3);
+        POP(R2);
+        POP(R1);
+        POP(FP);
+        RETURN;
+        """
+        code += "\n\tL_CLOS_EXIT_%s:\n" %currentLabel
 
         return code
 
