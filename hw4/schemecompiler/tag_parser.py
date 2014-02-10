@@ -64,7 +64,7 @@ reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
                             'cdr':'L_Cdr_Applic',
                             'remainder':'L_Remainder_Applic',
                             'yag':'L_Yag_Applic',
-                            'null?':'L_Is_Null_Applic',
+                            'null?':'IS_SOB_NIL',
                             'boolean?':'L_Is_Boolean_Applic',
                             'char?':'L_Is_Char_Applic',
                             'number?':'L_Is_Num_Applic',
@@ -615,7 +615,6 @@ class AbstractSchemeExpr:
                             self.major = major
                             self.minor = minor
             if minor < 0:
-                print(self)
                 self.__class__ = VarFree
 
         elif className.__contains__("Lambda"):
@@ -1233,9 +1232,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
         /* R0 now holds the pointer to the closure */
         MOV(INDD(R1,2),R0);
         /* save the closure as the value in symbol's bucket */
-        POP(R1)
+        POP(R1);
         /* restore R1 to be what it was before */
-        """
+"""
         return code
 
     def codeGenVarParam(self):
@@ -1544,6 +1543,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return result
 
     def codeGenApplicTP(self):
+
         code = self.obj.code_gen()
         return code
     #     result = ""
