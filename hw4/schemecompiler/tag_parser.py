@@ -59,31 +59,31 @@ reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
                             'map':'L_Map_Applic',
                             'append':'L_Append_Applic',
                             'apply':'L_Apply_Applic',
-                            'cons'      :'CONS',#-done
-                            'car'       :'CAR', #-done
-                            'cdr'       :'CDR', #-done
-                            'remainder':'L_Remainder_Applic',
+                            'cons'          :'CONS'         ,   #-done
+                            'car'           :'CAR'          ,   #-done
+                            'cdr'           :'CDR'          ,   #-done
+                            'remainder'     :'REMAINDER'    ,   #-done
                             'yag':'L_Yag_Applic',
-                            'null?'         :'IS_SOB_NIL',  #-done
-                            'boolean?'      :'IS_SOB_BOOL', #-done
-                            'char?'         :'IS_SOB_CHAR', #-done (with warning)
-                            'number?'       :'IS_NUMBER',       #-done
+                            'null?'         :'IS_SOB_NIL'   ,   #-done
+                            'boolean?'      :'IS_SOB_BOOL'  ,   #-done
+                            'char?'         :'IS_SOB_CHAR'  ,   #-done (with warning)
+                            'number?'       :'IS_NUMBER'    ,   #-done
                             'integer?'      :'IS_SOB_INTEGER',  #-done
                             'zero?'         :'IS_ZERO_APPLIC',  #-done
-                            'pair?'         :'IS_SOB_PAIR',     #-done
-                            'vector?'       :'IS_VECTOR',       #-done(untested)
+                            'pair?'         :'IS_SOB_PAIR'  ,   #-done
+                            'vector?'       :'IS_VECTOR'    ,   #-done(untested)
                             'procedure?'    :'IS_SOB_CLOSURE',  #-done
-                            'string?'       :'IS_STRING',       #-done(not working with 'ab - seg fault
+                            'string?'       :'IS_STRING'    ,   #-done(not working with 'ab - seg fault
                             'symbol?'       :'IS_SOB_SYMBOL',   #-dror fixed it - after merge
-                            'eq?'           :'IS_EQUAL',        #-done (eq? (+ 1 1) 2) not working 
-                            'make-string'   :'MAKE_STRING',     #-done throws warning about char
-                            'make-vector'   :'MAKE_VECTOR',     #-done untested
+                            'eq?'           :'IS_EQUAL'     ,   #-done (eq? (+ 1 1) 2) not working 
+                            'make-string'   :'MAKE_STRING'  ,   #-done throws warning about char
+                            'make-vector'   :'MAKE_VECTOR'  ,   #-done untested
                             'string-length' :'STRING_LENGTH',   #-done
-                            'string-ref'    :'STRING_REF',
-                            'vector-length':'L_Vector_Length_Applic',
-                            'vector-ref':'L_Vector_Ref_Applic',
-                            'char->integer':'L_Char_To_Int_Applic',
-                            'integer->char':'L_Int_To_Char_Applic',
+                            'string-ref'    :'STRING_REF'   ,   #-done wrong output (string-ref "Apple" 0) -> #\A (we get #\e)
+                            'vector-length' :'VECTOR_LENGTH',   #-vector not imlemented
+                            'vector-ref'    :'VECTOR_REF'   ,   #-vector not imlemented
+                            'char->integer':'CHAR_TO_DIGIT' ,
+                            'integer->char':'DIGIT_TO_CHAR' ,
                             'string->symbol':'L_String_To_Symbol_Applic',
                             'symbol->string':'L_Symbol_To_String_Applic',
                             }
