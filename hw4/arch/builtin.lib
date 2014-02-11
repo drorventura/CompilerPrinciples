@@ -5,4 +5,16 @@
  */
 
 #include "lib/builtinproc/plus_applic.asm"
+#include "lib/builtinproc/car.asm"
+#include "lib/builtinproc/cdr.asm"
+#include "lib/builtinproc/is_zero.asm"
+#include "lib/builtinproc/is_vector.asm"
+#include "lib/builtinproc/is_number.asm"
+#include "lib/builtinproc/cons.asm"
+#include "lib/builtinproc/is_string.asm"
+#include "lib/builtinproc/is_symbol.asm"
+#include "lib/builtinproc/is_equal.asm"
+#include "lib/builtinproc/make_string.asm"
+#include "lib/builtinproc/string_length.asm"
+#include "lib/builtinproc/string_ref.asm"
 
