@@ -9,7 +9,6 @@
   CMP(IND(R0), T_VECTOR);
   JUMP_EQ(L_IS_SOB_VECTOR_TRUE);
   MOV(R0, IMM(3));
-  printf("all is true\n");
   JUMP(L_IS_SOB_VECTOR_EXIT);
 
 L_IS_SOB_VECTOR_TRUE:

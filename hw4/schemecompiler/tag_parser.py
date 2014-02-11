@@ -59,27 +59,27 @@ reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
                             'map':'L_Map_Applic',
                             'append':'L_Append_Applic',
                             'apply':'L_Apply_Applic',
-                            'cons':'L_Cons_Applic',
+                            'cons'      :'CONS',#-done
                             'car'       :'CAR', #-done
                             'cdr'       :'CDR', #-done
                             'remainder':'L_Remainder_Applic',
                             'yag':'L_Yag_Applic',
-                            'null?'         :'IS_SOB_NIL', #-done
-                            'boolean?'      :'IS_SOB_BOOL',#-done
-                            'char?'         :'IS_SOB_CHAR',#-done (with warning)
-                            'number?':'L_Is_Num_Applic',
-                            'integer?'      :'IS_SOB_INTEGER', #-done
-                            'zero?'         :'IS_ZERO_APPLIC', #-done
-                            'pair?'         :'IS_SOB_PAIR', #-done
-                            'vector?'       :'IS_VECTOR',   #-done(untested)
-                            'procedure?':'L_Is_Procedure_Applic',
-                            'string?':'L_Is_String_Applic',
-                            'symbol?':'L_Is_Symbol_Applic',
-                            'eq?':'L_Is_Eq_Applic',
-                            'make-string':'L_Make_String_Applic',
-                            'make-vector':'L_Make_Vector_Applic',
-                            'string-length':'L_String_Length_Applic',
-                            'string-ref':'L_String_Ref_Applic',
+                            'null?'         :'IS_SOB_NIL',  #-done
+                            'boolean?'      :'IS_SOB_BOOL', #-done
+                            'char?'         :'IS_SOB_CHAR', #-done (with warning)
+                            'number?'       :'IS_NUMBER',       #-done
+                            'integer?'      :'IS_SOB_INTEGER',  #-done
+                            'zero?'         :'IS_ZERO_APPLIC',  #-done
+                            'pair?'         :'IS_SOB_PAIR',     #-done
+                            'vector?'       :'IS_VECTOR',       #-done(untested)
+                            'procedure?'    :'IS_SOB_CLOSURE',  #-done
+                            'string?'       :'IS_STRING',       #-done(not working with 'ab - seg fault
+                            'symbol?'       :'IS_SOB_SYMBOL',   #-dror fixed it - after merge
+                            'eq?'           :'IS_EQUAL',        #-done (eq? (+ 1 1) 2) not working 
+                            'make-string'   :'MAKE_STRING',     #-done throws warning about char
+                            'make-vector'   :'MAKE_VECTOR',     #-done untested
+                            'string-length' :'STRING_LENGTH',   #-done
+                            'string-ref'    :'STRING_REF',
                             'vector-length':'L_Vector_Length_Applic',
                             'vector-ref':'L_Vector_Ref_Applic',
                             'char->integer':'L_Char_To_Int_Applic',
