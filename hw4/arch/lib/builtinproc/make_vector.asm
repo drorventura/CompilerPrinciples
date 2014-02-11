@@ -1,0 +1,44 @@
+/* make_vector.asm
+ * 
+ * Returns a mutable vector with size slots, 
+ * where all slots are initialized to contain v.
+ */
+
+MAKE_VECTOR:
+
+	PUSH(FP);
+	MOV(FP,SP);
+	PUSH(R1);
+	PUSH(R2);
+	PUSH(R3);
+	MOV(R1,FPARG(1));
+	MOV(R2,INDD(FPARG(2), 1));
+	MOV(R3,FPARG(3));
+	CMP(R1,IMM(1));
+	JUMP_EQ(MAKE_VECTOR_LABEL);
+	MOV(R1,R2);
+	
+CREAT_VECTOR_LOOP:
+	CMP(R1,IMM(0));
+	JUMP_EQ(EXIT_VECTOR_LOOP);
+	PUSH(R3);
+	DECR(R1);
+	JUMP(CREAT_VECTOR_LOOP);
+	
+MAKE_VECTOR_LABEL:
+	MOV(R1,R2);
+	PUSH(IMM(0));
+	CALL(MAKE_SOB_INTEGER);
+	DROP(1);
+	MOV(R3,R0);
+	JUMP(CREAT_VECTOR_LOOP);
+	
+EXIT_VECTOR_LOOP:
+	PUSH(R2);
+	CALL(MAKE_SOB_VECTOR);
+	DROP(1+R2);
+	POP(R3);
+	POP(R2);
+	POP(R1);
+	POP(FP);
+	RETURN;
