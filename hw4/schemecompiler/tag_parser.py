@@ -1093,8 +1093,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
             # Handle Symbol
             elif type(value) is sexprs.Symbol:
-                result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"'%s" %value.string)
-                result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
+                result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"%s" %value.string.lower())
+                # result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
             # Handle List
             else:
                 CodeGenVisitor.codeGenPair(value)
@@ -1173,7 +1173,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         else:
             result += appendTabs() + "MOV(R0,IMM(%s));\n" %memoryTable.get(symbol)[0]
 
-        result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
+        # result += appendTabs() + "MOV(R0,INDD(R0,1));\n"
         return result
 
     @staticmethod
@@ -1216,6 +1216,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code = CodeGenVisitor.codeGenSymbol(name,0)
         code += \
         """
+        MOV(R0,INDD(R0,1));
         /* R0 now holds the pointer to the symbol's bucket */
         PUSH(R1);
         /* backup R1 in order to use it */
@@ -1648,9 +1649,11 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += appendTabs() + "MOV(R1,R0);     /*Saving expression address*/\n"
         code += CodeGenVisitor.codeGenSymbol(self.name.variable.string.lower(),0)
 
-        # R0 now contains the pointer to the value of the symbol's bucket
         code += \
         """
+        MOV(R0,INDD(R0,1));
+        /* R0 now contains the pointer to the value of the symbol's bucket */
+
         /* add the expression's value from R1 to the bucket */
         MOV(INDD(R0,2), R1);
         /* return #void to user */

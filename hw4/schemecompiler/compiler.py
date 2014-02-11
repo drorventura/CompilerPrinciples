@@ -147,7 +147,7 @@ def initConstantTable():
         elif sobType is 'T_BUCKET':
             symbolName = node[1][1][1]
             value = node[1][1][2]
-            code += tag_parser.appendTabs() + 'PUSH(IMM("%s"));\n' %value
+            code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
