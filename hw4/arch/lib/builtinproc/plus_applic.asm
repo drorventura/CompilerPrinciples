@@ -5,10 +5,11 @@
  */
 
 L_Plus_Applic:
+
 	PUSH(FP);
 	MOV(FP, SP);
 	PUSH(R1);
-	PUSH(R2);
+	PUSH(R2);	
 	/* accumulator */
 	MOV(R0, IMM(0));
 	/* num of arguments on stack */

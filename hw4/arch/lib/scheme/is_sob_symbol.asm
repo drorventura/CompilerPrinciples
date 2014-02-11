@@ -7,16 +7,15 @@
  */
 
  IS_SOB_SYMBOL:
- printf("hello");
   PUSH(FP);
   MOV(FP, SP);
   MOV(R0, FPARG(0));
   CMP(IND(R0), T_SYMBOL);
   JUMP_EQ(L_IS_SOB_SYMBOL_TRUE);
-  MOV(R0, IMM(0));
+  MOV(R0, IMM(3));
   JUMP(L_IS_SOB_SYMBOL_EXIT);
  L_IS_SOB_SYMBOL_TRUE:
-  MOV(R0, IMM(1));
+  MOV(R0, IMM(5));
  L_IS_SOB_SYMBOL_EXIT:
   POP(FP);
   RETURN;

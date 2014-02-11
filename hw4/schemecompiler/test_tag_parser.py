@@ -214,14 +214,19 @@ class TestSexprs(unittest.TestCase):
         # assert
 
     def test_abstract(self):
-        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(((((lambda (x) ((x x) (x x))) (lambda (x) (lambda (y) (x (x y))))) (lambda (p) (p (lambda (x y) (lambda (p) (p y x)))))) (lambda (z) (z #t #f)))    (lambda (x y) x))")
+        sexpr , remaining = tag_parser.AbstractSchemeExpr.parse(
+        """
+        1
+        """
+        )
         sexpr.semantic_analysis()
         print(sexpr)
+        print("r: " + remaining)
 
     def test_empty_let(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse("(let () ((lambda s (let () ((lambda s s) s s s))) #t))")
         sexpr.semantic_analysis()
-        self.assertEqual(sexpr, "((lambda () ((lambda s ((lambda () ((lambda s s) s s s)))) #t)))")
+        self.assertEqual(str(sexpr), "((LAMBDA () ((LAMBDA S ((LAMBDA () ((LAMBDA S S) S S S)))) #t)))")
         # print(sexpr.code_gen())
         # ((lambda () ((lambda s ((lambda () ((lambda s s) s s s)))) #t)))
 

@@ -1626,6 +1626,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return code,len(argsList)
 
     def codeGenOr(self):
+        currLabel = LabelGenerator.getLabel()
         code = ""
         argsList = pairsToList(self.arguments)
         if argsList:
@@ -1633,12 +1634,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 argi = arg.code_gen()
                 code += argi
                 code += appendTabs() + "CMP(R0, BOOL_FALSE);\n"
-                code += appendTabs() + "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
+                code += appendTabs() + "JUMP_NE(L_Exit_Or_%s);\n" %currLabel
             code += argsList[-1].code_gen()
         else:
             code += appendTabs() + "MOV(R0,IMM(3));\n"
-        code += "\n\tL_EXIT_%s:\n" %LabelGenerator.getLabel()
-
+        code += "\n\tL_Exit_Or_%s:\n" %currLabel
+        LabelGenerator.nextLabel()
         return code
 
     def codeGenDef(self):
