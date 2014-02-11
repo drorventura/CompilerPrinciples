@@ -1273,7 +1273,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += "\tL_CLOS_CODE_%s:\n" %currentLabel
         code += appendTabs() + "PUSH(FP);\n"
         code += appendTabs() + "MOV(FP,SP);\n"
-        code += appendTabs() + "PUSH(R1);\n"
+        # code += appendTabs() + "PUSH(R1);\n"
         code += appendTabs() + "/* %s */\n" %self
         code += appendTabs() + "MOV(R1,IMM(%s));\n" %self.numOfArgs
         code += appendTabs() + "CMP(R1,FPARG(1));\n"
@@ -1281,7 +1281,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += appendTabs() + "/* CodeGen Body Of Lambda */\n"
         code += appendTabs() + "/* %s */\n" %self.body
         code += self.body.code_gen()
-        code += appendTabs() + "POP(R1);\n"
+        # code += appendTabs() + "POP(R1);\n"
         code += appendTabs() + "POP(FP);\n"
         code += appendTabs() + "RETURN;\n"
 
@@ -1310,6 +1310,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     @staticmethod
     def environmentExpansionCodeGen(lambdaExp,currentLabel):
+        code = appendTabs() + "/* checking the lambda depth*/\n"
         code = appendTabs() + "MOV(R1,IMM(%s));\n" %lambdaExp.depth
         code += appendTabs() + "CMP(R1,IMM(0));\n"
         code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %currentLabel
@@ -1328,6 +1329,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += "\n\tL_Shallow_Copy_OldEnv_%s:\n" %currentLabel
         code += appendTabs() + "CMP(R4,R3);\n"
         code += appendTabs() + "JUMP_EQ(L_Shallow_Copy_OldEnv_Exit_%s);" %currentLabel
+        code += appendTabs() + "CMP(R2,IMM(0));\n"
+        code += appendTabs() + "JUMP_EQ(L_Expansion_Of_Empty_Env_%s);\n" %currentLabel
         code += \
         """
         MOV(INDD(R1,R5),INDD(R2,R4));
@@ -1338,6 +1341,14 @@ class CodeGenVisitor(AbstractSchemeExpr):
         # {
         #     MOV(INDD(R1,j),INDD(R2,i));
         # }
+        code += "JUMP(L_Shallow_Copy_OldEnv_%s);\n" %currentLabel
+        code += "\tL_Expansion_Of_Empty_Env_%s:" %currentLabel
+        code += \
+        """
+        MOV(INDD(R1,R5),IMM(0));
+        INCR(R4);
+        INCR(R5);
+        """
         code += "JUMP(L_Shallow_Copy_OldEnv_%s);\n" %currentLabel
         code += "\n\tL_Shallow_Copy_OldEnv_Exit_%s:" %currentLabel
         code += \
@@ -1363,7 +1374,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         #       MOV(INDD(R0,i),FPARG(j));
         # }
         code += "JUMP(L_Copy_Params_To_NewEnv_%s);\n" %currentLabel
-        code += "\n\tL_Copy_Params_To_NewEnv_Exit_%s:" %currentLabel
+        code += "\n\tL_Copy_Params_To_NewEnv_Exit_%s:\n" %currentLabel
         code += appendTabs() + "/* move the params to new env before calling make_sob_closure */\n"
         code += appendTabs() + "MOV(IND(R1),R0);\n"
         code += "\n\tL_After_Env_Expansion_%s:\n" %currentLabel
@@ -1382,10 +1393,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
         """
         PUSH(FP);
         MOV(FP,SP);
-        PUSH(R1);
+        /*PUSH(R1);
         PUSH(R2);
         PUSH(R3);
-        PUSH(R4);
+        PUSH(R4);*/
 
         /* R1 holds the num of params in stack */
         MOV(R1,FPARG(1));
@@ -1507,10 +1518,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += \
         """
         /* restoring the registers that where used */
-        POP(R4);
+        /* POP(R4);
         POP(R3);
         POP(R2);
-        POP(R1);
+        POP(R1); */
         POP(FP);
         RETURN;
         """
@@ -1519,55 +1530,99 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return code
 
     def codeGenApplic(self):
-        result = ""
-        argsList = list(reversed(pairsToList(self.arguments)))
+        code,newNumOfArgs = CodeGenVisitor.prepareStackForApplic(self)
+        code += \
+        """
+        /* jumps to closure's code and returns here */
+        CALLA(INDD(R0,2));
+
+        /* not in tail position so after closure code returns here */
+        DROP(1);
+        /* drops the env from stack */
+        POP(R1);
+        /* get the number of params from stack to R1 */
+        DROP(R1);
+        /* clear the stack */
+        """
+        LabelGenerator.nextLabel()
+        return code
+
+    def codeGenApplicTP(self):
+        code,newNumOfArgs = CodeGenVisitor.prepareStackForApplic(self.obj)
+        code += \
+        """
+        /* this applic is in tail position therefore the return address from here is to previous return address */
+        PUSH(FPARG(-1));
+        /* R1 <- oldfp */
+        MOV(R1,FPARG(-2));
+
+        /* R2 will hold the position of last LOCAL on stack */
+        MOV(R2,SP);
+        DECR(R2);
+        SUB(R2,FP);
+
+        /* R3 will hold the position of first LOCAL on stack */
+        MOV(R3,IMM(0));
+
+        /* R4 will hold the position of first arg in the previous frame */
+        MOV(R4,FPARG(1));
+        INCR(R4);
+
+        /* R5 will hold the old num of arguments */
+        MOV(R5,FPARG(1));
+        """
+        code += "\n\tL_Override_Previous_Frame_Loop_%s:\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "CMP(R3,R2);\n"
+        code += appendTabs() + "JUMP_GT(L_Override_Previous_Frame_Loop_Exit_%s);\n" %LabelGenerator.getLabel()
+        code += \
+        """
+        MOV(FPARG(R4),LOCAL(R3));
+        DECR(R4);
+        INCR(R3);
+        """
+        code += appendTabs() + "JUMP(L_Override_Previous_Frame_Loop_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "\n\tL_Override_Previous_Frame_Loop_Exit_%s:\n" %LabelGenerator.getLabel()
+
+        code += "MOV(R4,FP);\n"
+        code += "SUB(R4,R5);\n"
+        code += "SUB(R4,IMM(1));\n"
+        code += "ADD(R4,IMM(%s));\n" %newNumOfArgs
+
+        code += \
+        """
+        MOV(SP,R4);
+
+        MOV(FP,R1);
+
+        /* finally code jumps to closure code */
+        JUMPA(INDD(R0,2));
+"""
+        LabelGenerator.nextLabel()
+        return code
+
+    @staticmethod
+    def prepareStackForApplic(applicExpr):
+        code = ""
+        argsList = list(reversed(pairsToList(applicExpr.arguments)))
 
         for arg in argsList:
             argi = arg.code_gen()
-            result += argi
-            result += appendTabs() + "PUSH(R0);\n"
+            code += argi
+            code += "\n" + appendTabs() + "/* push on stack the codegen of the parameter: %s */\n" %arg
+            code += appendTabs() + "PUSH(R0);\n"
 
-        result += appendTabs() + "PUSH(IMM(%s));\n" %len(argsList) # num of parameters
+        code += "\n" + appendTabs() + "/* push to stack the number of parameters */\n"
+        code += appendTabs() + "PUSH(IMM(%s));\n" %len(argsList)
 
-        proc = self.applic.code_gen()
-        result += proc
-        result += appendTabs() + "CMP (IND(R0), T_CLOSURE);\n"
-        result += appendTabs() + "JUMP_NE(L_error_not_a_closure);\n"
+        # get the codegen for the procedure
+        proc = applicExpr.applic.code_gen()
+        code += proc
 
-        result += appendTabs() + "PUSH (INDD(R0,1));\n"  # env
-        result += appendTabs() + "CALLA(INDD(R0,2));\n"  # jumps to closure's code and returns here
-        result += appendTabs() + "DROP(1);\n"  # drops the env from stack
-        result += appendTabs() + "POP(R1);\n"  # get the number of params from stack to R1
-        result += appendTabs() + "DROP(R1);\n" # clear the stack
+        code += appendTabs() + "CMP (IND(R0), T_CLOSURE);\n"
+        code += appendTabs() + "JUMP_NE(L_error_not_a_closure);\n"
 
-        return result
-
-    def codeGenApplicTP(self):
-
-        code = self.obj.code_gen()
-        return code
-    #     result = ""
-    #     argsList = list(reversed(pairsToList(self.arguments)))
-    #
-    #     for arg in argsList:
-    #         argi = arg.code_gen()
-    #         result += argi
-    #         result += appendTabs() + "PUSH(R0);\n"
-    #
-    #     result += appendTabs() + "PUSH(IMM(%s))" %len(argsList)
-    #
-    #     proc = self.applic.code_gen()
-    #     result += proc
-    #     result += appendTabs() + "CMP (IND(R0), T_CLOSURE);\n"
-    #     result += appendTabs() + "JUMP_NE(L_error_not_a_closure);\n"
-    #     result += appendTabs() + "PUSH (INDD(R0,1));\n"  # env
-    #     result += appendTabs() + "PUSH (FPARG(0));\n"
-    #     result += appendTabs() + "MOV (R1, FP);\n" # R1 <- old fp
-    #     # for(){...} override old frame
-    #     result += appendTabs() + "MOV FP, R1);\n"
-    #     result += appendTabs() + "JUMP(INND(R0,2));\n"
-    #
-    #     return result
+        code += appendTabs() + "PUSH (INDD(R0,1));\n"  # push env on stack
+        return code,len(argsList)
 
     def codeGenOr(self):
         code = ""
@@ -1576,13 +1631,13 @@ class CodeGenVisitor(AbstractSchemeExpr):
             for arg in argsList[:-1]:
                 argi = arg.code_gen()
                 code += argi
-                code += "CMP(R0, BOOL_FALSE);\n"
-                code += "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
+                code += appendTabs() + "CMP(R0, BOOL_FALSE);\n"
+                code += appendTabs() + "JUMP_NE(L_EXIT_%s);\n" %LabelGenerator.getLabel()
             code += argsList[-1].code_gen()
         else:
             code += appendTabs() + "MOV(R0,IMM(3));\n"
-        code += "L_EXIT_%s:\n" %LabelGenerator.getLabel()
-        LabelGenerator.nextLabel()
+        code += "\n\tL_EXIT_%s:\n" %LabelGenerator.getLabel()
+
         return code
 
     def codeGenDef(self):
