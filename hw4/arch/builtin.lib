@@ -1,10 +1,10 @@
 /* builtinproc/
  * A loader file for built-in procedures in scheme
- *
- * Programmer: Dror Ventura, 2014
  */
 
-#include "lib/builtinproc/plus_applic.asm"
+#include "lib/builtinproc/plus.asm"
+#include "lib/builtinproc/minus.asm"
+#include "lib/builtinproc/multi.asm"
 #include "lib/builtinproc/car.asm"
 #include "lib/builtinproc/cdr.asm"
 #include "lib/builtinproc/is_zero.asm"
@@ -16,6 +16,17 @@
 #include "lib/builtinproc/make_string.asm"
 #include "lib/builtinproc/string_length.asm"
 #include "lib/builtinproc/string_ref.asm"
+#include "lib/builtinproc/vector_length.asm"
+#include "lib/builtinproc/remainder.asm"
+#include "lib/builtinproc/symbol_to_string.asm"
+#include "lib/builtinproc/string_to_symbol.asm"
+#include "lib/builtinproc/char_to_integer.asm"
+#include "lib/builtinproc/integer_to_char.asm"
+#include "lib/builtinproc/apply.asm"
+#include "lib/builtinproc/make_vector.asm"
+#include "lib/builtinproc/greaterThan_applic.asm"
+#include "lib/builtinproc/lessThan_applic.asm"
+#include "lib/builtinproc/eqaul_applic.asm"
+#include "lib/builtinproc/divide_applic.asm"
 #include "lib/builtinproc/vector_applic.asm"
 #include "lib/builtinproc/list_applic.asm"
-

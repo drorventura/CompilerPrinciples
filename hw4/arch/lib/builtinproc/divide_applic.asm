@@ -1,7 +1,6 @@
 /* builtinproc/plus_applic.asm
  * Compute Variadic plus
  *
- * Programmer: Eldar Damari, 2014
  */
 
 L_Divide_Applic:
@@ -10,26 +9,26 @@ L_Divide_Applic:
 	PUSH(R1);
 	PUSH(R2);
 	/* accumulator */
-	MOV(R0, IMM(0));
+	MOV(R1, IMM(0));
 	/* num of arguments on stack */
-	MOV(R1, FPARG(1));
-	ADD(R1, IMM(1));
+	MOV(R2, IMM(2)); /*first arg*/
+
+    ##################TODO
+	MOV(R1, INDD(FPARG(R2),1));
+    DIV(R1, INDD(FPARG(R2+1),1));
+    printf("number %f\n",R1);
+    ADD(R1,IMM(2));
 
 L_Divide_Applic_Loop:
-	CMP(R1, IMM(1));
+	CMP(R1, FPARG(1)+2);
 	JUMP_EQ(L_Divide_Applic_Exit);			
-	MOV(R2, FPARG(R1));
-	DIV(R0, INDD(R2,1));
-	DECR(R1);
+    DIV(R0, INDD(FPARG(R1),1));
+	INCR(R1);
 	JUMP(L_Divide_Applic_Loop);
 
 L_Divide_Applic_Exit:
 	POP(R2);
 	POP(R1);
 	POP(FP);
-	
-	PUSH(R0);
-	CALL(WRITE_INTEGER);
-	DROP(1);
 	
 	RETURN;

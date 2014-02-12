@@ -47,45 +47,45 @@ def gcd(a, b):
 memoryTable = { 'void':[1,['T_VOID']] , 'nil':[2,['T_NIL']] , '#f':[3,['T_BOOL',0]] , '#t':[5,['T_BOOL',1]] }
 mem0 = 7
 
-reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
-                            '-':'L_Minus_Applic',        #variadic
-                            '*':'L_Multi_Applic',        #variadic
-                            '/':'L_Divide_Applic',       #variadic
-                            '>':'L_Lt_Applic',           #variadic
-                            '<':'L_Gt_Applic',           #variadic
-                            '=':'L_Equal_Applic',        #variadic
-                            'vector'        :'L_Vector_Applic', #-done
-                            'list':'L_List_Applic',
+reservedWordsSymbolTable = {'+'             :'L_Plus_Applic'    ,       #-done variadic
+                            '-'             :'L_Minus_Applic'   ,       #-done variadic
+                            '*'             :'L_Multi_Applic'   ,       #-done variadic
+                            '/'             :'L_Divide_Applic'  ,       #variadic
+                            '>'             :'L_Gt_Applic'      ,       #-done
+                            '<'             :'L_Lt_Applic'      ,       #-done
+                            '='             :'L_Equal_Applic'   ,       #-done variadic
+                            'vector'        :'L_Vector_Applic'  ,       #-done
+                            'list'          :'L_List_Applic'    ,       #-done
                             'map':'L_Map_Applic',
                             'append':'L_Append_Applic',
-                            'apply':'L_Apply_Applic',
-                            'cons'          :'CONS'         ,   #-done
-                            'car'           :'CAR'          ,   #-done
-                            'cdr'           :'CDR'          ,   #-done
-                            'remainder'     :'REMAINDER'    ,   #-done
+                            'apply'         :'L_APPLY'          ,       #-nichet good
+                            'cons'          :'CONS'             ,       #-done
+                            'car'           :'CAR'              ,       #-done
+                            'cdr'           :'CDR'              ,       #-done
+                            'remainder'     :'REMAINDER'        ,       #-done
                             'yag':'L_Yag_Applic',
-                            'null?'         :'IS_SOB_NIL'   ,   #-done
-                            'boolean?'      :'IS_SOB_BOOL'  ,   #-done
-                            'char?'         :'IS_SOB_CHAR'  ,   #-done (with warning)
-                            'number?'       :'IS_NUMBER'    ,   #-done
-                            'integer?'      :'IS_SOB_INTEGER',  #-done
-                            'zero?'         :'IS_ZERO_APPLIC',  #-done
-                            'pair?'         :'IS_SOB_PAIR'  ,   #-done
-                            'vector?'       :'IS_VECTOR'    ,   #-done(untested)
-                            'procedure?'    :'IS_SOB_CLOSURE',  #-done
-                            'string?'       :'IS_STRING'    ,   #-done(not working with 'ab - seg fault
-                            'symbol?'       :'IS_SOB_SYMBOL',   #-dror fixed it - after merge
-                            'eq?'           :'IS_EQUAL'     ,   #-done (eq? (+ 1 1) 2) not working
-                            'make-string'   :'MAKE_STRING'  ,   #-done throws warning about char
-                            'make-vector'   :'MAKE_VECTOR'  ,   #-done untested
-                            'string-length' :'STRING_LENGTH',   #-done
-                            'string-ref'    :'STRING_REF'   ,   #-done wrong output (string-ref "Apple" 0) -> #\A (we get #\e)
-                            'vector-length' :'VECTOR_LENGTH',   #-vector not imlemented
-                            'vector-ref'    :'VECTOR_REF'   ,   #-vector not imlemented
-                            'char->integer':'CHAR_TO_DIGIT' ,
-                            'integer->char':'DIGIT_TO_CHAR' ,
-                            'string->symbol':'L_String_To_Symbol_Applic',
-                            'symbol->string':'L_Symbol_To_String_Applic',
+                            'null?'         :'IS_SOB_NIL'       ,       #-done
+                            'boolean?'      :'IS_SOB_BOOL'      ,       #-done
+                            'char?'         :'IS_SOB_CHAR'      ,       #-done (with warning)
+                            'number?'       :'IS_NUMBER'        ,       #-done
+                            'integer?'      :'IS_SOB_INTEGER'   ,       #-done
+                            'zero?'         :'IS_ZERO_APPLIC'   ,       #-done
+                            'pair?'         :'IS_SOB_PAIR'      ,       #-done
+                            'vector?'       :'IS_VECTOR'        ,       #-done(untested)
+                            'procedure?'    :'IS_SOB_CLOSURE'   ,       #-done
+                            'string?'       :'IS_STRING'        ,       #-done(not working with 'ab - seg fault
+                            'symbol?'       :'IS_SOB_SYMBOL'    ,       #-dror fixed it - after merge
+                            'eq?'           :'IS_EQUAL'         ,       #-done (eq? (+ 1 1) 2) not working
+                            'make-string'   :'MAKE_STRING'      ,       #-done throws warning about char
+                            'make-vector'   :'MAKE_VECTOR'      ,       #-done untested
+                            'string-length' :'STRING_LENGTH'    ,       #-done
+                            'string-ref'    :'STRING_REF'       ,       #-done wrong output (string-ref "Apple" 0) -> #\A (we get #\e)
+                            'vector-length' :'VECTOR_LENGTH'    ,       #-vector not imlemented
+                            'vector-ref'    :'VECTOR_REF'       ,       #-vector not imlemented
+                            'char->integer' :'CHAR_TO_INTEGER'  ,       #-done with warning
+                            'integer->char' :'INTEGER_TO_CHAR'  ,       #-done
+                            'string->symbol':'SYMBOL_TO_STRING' ,
+                            'symbol->string':'SYMBOL_TO_STRING' ,       #-vector need to be implemented
                             }
 
 def sortedConstantList():

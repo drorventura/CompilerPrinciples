@@ -1,7 +1,6 @@
 /* string_ref.asm
  * Returns the character at position k 
  * in str. The first position in the string corresponds to 0, so the position k must be less than the length of the string, otherwise the exn:fail:contract exception is raised 
- * Programmer: Keren Fruchter
  */
 
 STRING_REF:

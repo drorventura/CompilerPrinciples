@@ -19,8 +19,7 @@ L_Plus_Applic:
 L_Plus_Applic_Loop:
 	CMP(R1, IMM(1));
 	JUMP_EQ(L_Plus_Applic_Exit);			
-	MOV(R2, FPARG(R1));
-	ADD(R0, INDD(R2,1));
+	ADD(R0, INDD(FPARG(R1),1));
 	DECR(R1);
 	JUMP(L_Plus_Applic_Loop);
 

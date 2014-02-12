@@ -1,11 +1,13 @@
 /* scheme/make_sob_vector.asm
- * Takes V1, ..., Vn, n, on the stack. Places in R0 the address
- * of a newly-allocated pointer to a Scheme vector.
+ * Takes V1, ..., Vn, n, on the stack. Places in R0 the 
+ * address of a newly-allocated pointer to a Scheme 
+ * vector.
  * 
  * Programmer: Mayer Goldberg, 2010
  */
 
  MAKE_SOB_VECTOR:
+ printf("welcome\n");
   PUSH(FP);
   MOV(FP, SP);
   PUSH(R1);

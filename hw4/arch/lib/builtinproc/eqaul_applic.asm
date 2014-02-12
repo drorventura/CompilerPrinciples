@@ -1,7 +1,6 @@
 /* builtinproc/eqaul_applic.asm
  * Compute Variadic Eqaul
  *
- * Programmer: Eldar Damari, 2014
  */
 
 L_Equal_Applic:
@@ -12,36 +11,30 @@ L_Equal_Applic:
 	/* accumulator */
 	MOV(R0, IMM(0));
 	/* num of arguments on stack */
-	MOV(R1, FPARG(1));
-	ADD(R1, IMM(1));
-/* initial test if a > b out, else jump to leesLoop */
-L_Equal_Applic_Loop:
-	CMP(R1, IMM(1));
-	JUMP_EQ(L_Equal_Applic_Exit);			
-	MOV(R2, FPARG(R1));
-	MOV(R3, FPARG(R1-1));
-	CMP(INDD(R2,1),INDD(R3,1));  /*comparing 2 args*/
-    JUMP_NE(L_Equal_Applic_Exit);   /* jump if greater than*/
-    JUMP_EQ(L_Equal_eqLoop);
 
-/*if a < b than R2 <- a and R1 <- R1-1
- * keep with leesLoop until out of arguments*/
-L_Equal_eqLoop:
-    DECR(R1);
-	CMP(R1, IMM(1));
-	JUMP_EQ(L_Equal_Applic_Exit);			
-	MOV(R3, FPARG(R1-1));
-	CMP(INDD(R2,1),INDD(R3,1));  /*comparing 2 args*/
-    JUMP_NE(L_Equal_Applic_Exit);   /* jump if greater than*/
-    JUMP_EQ(L_Equal_lessLoop);
+	MOV(R1, IMM(2)); /*first arg*/
+
+	MOV(R0, INDD(FPARG(R1),1));
+    CMP(R0, INDD(FPARG(R1+1),1));
+    ADD(R1,IMM(2));
+    JUMP_EQ(L_Equal_TRUE_Loop);
+    /* not equal - exit */
+    MOV(R0,IMM(3));
+    JUMP(L_Equal_Applic_Exit);
+    
+L_Equal_TRUE_Loop:
+	CMP(R1, FPARG(1)+2);
+	JUMP_EQ(L_Equal_TRUE_Exit);			
+    CMP(R0, INDD(FPARG(R1),1));
+	INCR(R1);
+	JUMP(L_Equal_TRUE_Loop);
+
+L_Equal_TRUE_Exit:
+    MOV(R0,IMM(5));
 
 L_Equal_Applic_Exit:
 	POP(R2);
 	POP(R1);
 	POP(FP);
-	
-	PUSH(R0);
-	CALL(WRITE_INTEGER);
-	DROP(1);
-	
+
 	RETURN;

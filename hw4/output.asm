@@ -36,3 +36,30 @@ int main()
         PUSH(IMM(1));
         CALL(MAKE_SOB_BOOL);
         DROP(1);
+		/* make constant table*/
+		PUSH(IMM(5));
+		CALL(MAKE_SOB_INTEGER);
+		DROP(1);
+		/* end of creating constant table */
+
+
+		MOV(R0,IMM(7));
+
+        PUSH(R0);
+        CALL(WRITE_SOB);
+        POP(R0);
+        CALL(NEWLINE);
+
+    L_exit:
+    STOP_MACHINE;
+    return 0;
+
+    /* exceptions */
+    L_error_not_a_closure:
+        printf("Error - Not a closure");
+        JUMP(L_exit);
+
+    L_error_not_enough_params_given:
+        printf("Error - Not enough parameters where given");
+        JUMP(L_exit);
+}
