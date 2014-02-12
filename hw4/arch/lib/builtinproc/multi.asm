@@ -1,4 +1,4 @@
-/* builtinproc/multi_applic.asm
+/* builtinproc/multi.asm
  * Compute Variadic Multiplier
  *
  */
@@ -80,7 +80,7 @@ L_Multi_1nd_is_INT_FRACTION:
     MOV(R4,INDD(R0,1));
     MOV(R5,INDD(R2,1));
     MUL(R4,R5);         /* R4 is now numerator  */
-    MOV(R5, INDD(R0,2));/* R5 is now denominator */
+    MOV(R5, INDD(R2,2));/* R5 is now denominator */
     PUSH(R5);
     PUSH(R4);
     CALL(MAKE_SOB_FRACTION);
