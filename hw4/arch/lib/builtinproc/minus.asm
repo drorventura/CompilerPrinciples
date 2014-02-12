@@ -1,7 +1,6 @@
 /* builtinproc/minus_applic.asm
  * Compute Variadic minus
  *
- * Programmer: Dror Ventura, 2014
  */
 
 L_Minus_Applic:

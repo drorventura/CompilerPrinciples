@@ -37,31 +37,32 @@ int main()
         CALL(MAKE_SOB_BOOL);
         DROP(1);
 		/* make constant table*/
-		PUSH(IMM(77));
-		CALL(MAKE_SOB_INTEGER);
-		DROP(1);
-		PUSH(IMM(6));
-		CALL(MAKE_SOB_INTEGER);
-		DROP(1);
+		PUSH(IMM(7));
 		PUSH(IMM(5));
+		CALL(MAKE_SOB_FRACTION);
+		DROP(2);
+		PUSH(IMM(3));
+		PUSH(IMM(2));
+		CALL(MAKE_SOB_FRACTION);
+		DROP(2);
+		PUSH(IMM(3));
 		CALL(MAKE_SOB_INTEGER);
 		DROP(1);
 		PUSH(IMM(2));
-		PUSH(IMM(3));
-		CALL(MAKE_SOB_FRACTION);
-		DROP(2);
+		CALL(MAKE_SOB_INTEGER);
+		DROP(1);
 		PUSH(IMM(4));
 		CALL(MAKE_SOB_INTEGER);
 		DROP(1);
-		PUSH(IMM('+'));
+		PUSH(IMM('*'));
 		PUSH(IMM(1));
 		CALL(MAKE_SOB_STRING);
 		DROP(2);
 		PUSH(IMM('0'));
-		PUSH(IMM(18));
+		PUSH(IMM(19));
 		CALL(MAKE_SOB_BUCKET);
 		DROP(2);
-		PUSH(IMM(21));
+		PUSH(IMM(22));
 		CALL(MAKE_SOB_SYMBOL);
 		DROP(1);
 		/* end of creating constant table */
@@ -69,21 +70,21 @@ int main()
 
 		MOV(R0,IMM(7));
 
-		/* push on stack the codegen of the parameter: 77 */
+		/* push on stack the codegen of the parameter: 5/7 */
 		PUSH(R0);
-		MOV(R0,IMM(9));
+		MOV(R0,IMM(10));
 
-		/* push on stack the codegen of the parameter: 6 */
-		PUSH(R0);
-		MOV(R0,IMM(11));
-
-		/* push on stack the codegen of the parameter: 5 */
+		/* push on stack the codegen of the parameter: 2/3 */
 		PUSH(R0);
 		MOV(R0,IMM(13));
 
-		/* push on stack the codegen of the parameter: 3/2 */
+		/* push on stack the codegen of the parameter: 3 */
 		PUSH(R0);
-		MOV(R0,IMM(16));
+		MOV(R0,IMM(15));
+
+		/* push on stack the codegen of the parameter: 2 */
+		PUSH(R0);
+		MOV(R0,IMM(17));
 
 		/* push on stack the codegen of the parameter: 4 */
 		PUSH(R0);
@@ -92,7 +93,7 @@ int main()
 		PUSH(IMM(5));
 
 		/* get the symbol from memory for the procedure */
-		MOV(R0,IMM(24));
+		MOV(R0,IMM(25));
 
         MOV(R0,INDD(R0,1));
         /* R0 now holds the pointer to the symbol's bucket */
@@ -100,7 +101,7 @@ int main()
         /* backup R1 in order to use it */
         MOV(R1,R0);
         /* R1 now holds the pointer to the symbol's bucket */
-        PUSH(LABEL(L_Plus_Applic));
+        PUSH(LABEL(L_Multi_Applic));
 
         /* push the "empty" environment for free vars */
         PUSH(0);

@@ -1,7 +1,5 @@
 /* builtinproc/plus_applic.asm
  * Compute Variadic plus
- *
- * Programmer: Dror Ventura, 2014
  */
 
 L_Plus_Applic:
