@@ -1,4 +1,4 @@
-/* builtinproc/minus_applic.asm
+/* builtinproc/minus.asm
  * Compute Variadic minus
  *
  */

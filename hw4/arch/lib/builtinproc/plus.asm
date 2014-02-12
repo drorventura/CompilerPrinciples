@@ -1,4 +1,4 @@
-/* builtinproc/plus_applic.asm
+/* builtinproc/plus.asm
  * Compute Variadic plus
  */
 

@@ -7,7 +7,6 @@
  */
 
  MAKE_SOB_VECTOR:
- printf("welcome\n");
   PUSH(FP);
   MOV(FP, SP);
   PUSH(R1);

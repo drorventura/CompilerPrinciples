@@ -1088,8 +1088,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             value = self.constant.sexpr2.sexpr1
             # Handle Symbol
             if type(value) is sexprs.Symbol:
-                result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"%s" %value.string.lower())
-                # result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
+                result += CodeGenVisitor.codeGenSymbol(value.string.lower(),value.string)
             # Handle List
             else:
                 CodeGenVisitor.codeGenPair(value)
@@ -1111,18 +1110,19 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenVector(value):
         global memoryTable
         global mem0
-
         constantList = CodeGenVisitor.topologicalSort(value.sexpr)
         vectorList = []
-        for constant in constantList:
+        for constant in constantList[1:]:
             if type(constant) is sexprs.Pair:
                 continue
             elif type(constant) is sexprs.Nil:
+                vectorList.append(2)
                 continue
+
             if type(constant) is sexprs.Symbol:
                 if not constant.string.__eq__("QUOTE"):
                     symbol = "'%s" %constant.string.lower()
-                    CodeGenVisitor.codeGenSymbol(constant.string.lower(),"%s" %constant.string.lower())
+                    CodeGenVisitor.codeGenSymbol(constant.string.lower(),constant.string)
                     vectorList.append(memoryTable.get(symbol)[0])
             else:
                 name = "%s" %constant
@@ -1171,9 +1171,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 if ')' and ')' in cdr:
                     cdr += "_%s" %LabelGenerator.getLabel()
 
-                memoryTable.update( { nodeName : [ mem0, ['T_PAIR',
-                                                          memoryTable.get(car)[0],
-                                                          memoryTable.get(cdr)[0]] ] } )
+                memoryTable.update( { nodeName.lower() : [ mem0, ['T_PAIR',
+                                                          memoryTable.get(car.lower())[0],
+                                                          memoryTable.get(cdr.lower())[0]] ] } )
                 mem0 += 3
 
                 constantList.remove(first)
@@ -1182,7 +1182,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             elif type(node) is sexprs.Symbol:
                 index += 1
-                CodeGenVisitor.codeGenSymbol(node.string,"'%s" %node.string)
+                CodeGenVisitor.codeGenSymbol(node.string.lower(),node.string)
             else:
                 index += 1
                 Constant(node).code_gen()
@@ -1248,7 +1248,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
     @staticmethod
     def addCodeForBuiltInProcedures(name,label):
         code = "\n" + appendTabs() + "/* get the symbol from memory for the procedure */\n"
-        code += CodeGenVisitor.codeGenSymbol(name,0)
+        code += CodeGenVisitor.codeGenSymbol(name.lower(),0)
         code += \
         """
         MOV(R0,INDD(R0,1));

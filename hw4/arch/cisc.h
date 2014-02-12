@@ -126,11 +126,11 @@ extern Machine *machine;
 
 #define OUT(x, y) {				\
   switch (x) {					\
-    case 2: putchar((char)(y & 255)); break;	\
+    case 2: putchar((y) >> 8); putchar((y) & 255); break;	\
     default: break;				\
   }						\
 }
-
+/* case 2: putchar((char)(y & 255)) */
 #define START_MACHINE 				\
   Machine *machine = 				\
     (Machine *)malloc(sizeof(Machine)); 	\
