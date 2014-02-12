@@ -216,11 +216,11 @@ class TestSexprs(unittest.TestCase):
     def test_abstract(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse(
         """
-        1
+        #(1 2 3 #t #f a)
         """
         )
         sexpr.semantic_analysis()
-        print(sexpr)
+        print(sexpr.code_gen())
         print("r: " + remaining)
 
     def test_empty_let(self):

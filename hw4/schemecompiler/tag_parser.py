@@ -7,7 +7,7 @@ __author__ = 'Dror & Eldar'
 #           Macros           #
 ##############################
 # matched strings for Constants
-Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil"}
+Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil", "Vector"}
 
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
@@ -44,7 +44,7 @@ def gcd(a, b):
 ##############################
 #        Constant List       #
 ##############################
-memoryTable = { 'void':[1,['T_VOID']],'nil':[2,['T_NIL']] }
+memoryTable = { 'void':[1,['T_VOID']] , 'nil':[2,['T_NIL']] , '#f':[3,['T_BOOL',0]] , '#t':[5,['T_BOOL',1]] }
 mem0 = 7
 
 reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
@@ -54,42 +54,48 @@ reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
                             '>':'L_Lt_Applic',           #variadic
                             '<':'L_Gt_Applic',           #variadic
                             '=':'L_Equal_Applic',        #variadic
-                            'vector':'L_Vector_Applic',
+                            'vector'        :'L_Vector_Applic', #-done
                             'list':'L_List_Applic',
                             'map':'L_Map_Applic',
                             'append':'L_Append_Applic',
                             'apply':'L_Apply_Applic',
-                            'cons':'L_Cons_Applic',
-                            'car':'L_Car_Applic',
-                            'cdr':'L_Cdr_Applic',
-                            'remainder':'L_Remainder_Applic',
+                            'cons'          :'CONS'         ,   #-done
+                            'car'           :'CAR'          ,   #-done
+                            'cdr'           :'CDR'          ,   #-done
+                            'remainder'     :'REMAINDER'    ,   #-done
                             'yag':'L_Yag_Applic',
-                            'null?':'IS_SOB_NIL',
-                            'boolean?':'L_Is_Boolean_Applic',
-                            'char?':'L_Is_Char_Applic',
-                            'number?':'L_Is_Num_Applic',
-                            'integer?':'L_Is_Int_Applic',
-                            'zero?':'L_Is_Zero_Applic',
-                            'pair?':'L_Is_Pair_Applic',
-                            'vector?':'L_Is_Vector_Applic',
-                            'procedure?':'L_Is_Procedure_Applic',
-                            'string?':'L_Is_String_Applic',
-                            'symbol?':'L_Is_Symbol_Applic',
-                            'eq?':'L_Is_Eq_Applic',
-                            'make-string':'L_Make_String_Applic',
-                            'make-vector':'L_Make_Vector_Applic',
-                            'string-length':'L_String_Length_Applic',
-                            'string-ref':'L_String_Ref_Applic',
-                            'vector-length':'L_Vector_Length_Applic',
-                            'vector-ref':'L_Vector_Ref_Applic',
-                            'char->integer':'L_Char_To_Int_Applic',
-                            'integer->char':'L_Int_To_Char_Applic',
+                            'null?'         :'IS_SOB_NIL'   ,   #-done
+                            'boolean?'      :'IS_SOB_BOOL'  ,   #-done
+                            'char?'         :'IS_SOB_CHAR'  ,   #-done (with warning)
+                            'number?'       :'IS_NUMBER'    ,   #-done
+                            'integer?'      :'IS_SOB_INTEGER',  #-done
+                            'zero?'         :'IS_ZERO_APPLIC',  #-done
+                            'pair?'         :'IS_SOB_PAIR'  ,   #-done
+                            'vector?'       :'IS_VECTOR'    ,   #-done(untested)
+                            'procedure?'    :'IS_SOB_CLOSURE',  #-done
+                            'string?'       :'IS_STRING'    ,   #-done(not working with 'ab - seg fault
+                            'symbol?'       :'IS_SOB_SYMBOL',   #-dror fixed it - after merge
+                            'eq?'           :'IS_EQUAL'     ,   #-done (eq? (+ 1 1) 2) not working
+                            'make-string'   :'MAKE_STRING'  ,   #-done throws warning about char
+                            'make-vector'   :'MAKE_VECTOR'  ,   #-done untested
+                            'string-length' :'STRING_LENGTH',   #-done
+                            'string-ref'    :'STRING_REF'   ,   #-done wrong output (string-ref "Apple" 0) -> #\A (we get #\e)
+                            'vector-length' :'VECTOR_LENGTH',   #-vector not imlemented
+                            'vector-ref'    :'VECTOR_REF'   ,   #-vector not imlemented
+                            'char->integer':'CHAR_TO_DIGIT' ,
+                            'integer->char':'DIGIT_TO_CHAR' ,
                             'string->symbol':'L_String_To_Symbol_Applic',
                             'symbol->string':'L_Symbol_To_String_Applic',
                             }
 
 def sortedConstantList():
     return sorted(memoryTable.items(), key = lambda x: x[1])
+
+def resetConstantList():
+    global mem0
+    remove = [k for k in memoryTable.keys() if not (k == 'void' or k == 'nil' or k == '#f' or k == '#t')]
+    for k in remove: del memoryTable[k]
+    mem0 = 7
 
 def appendTabs():
     return "\t\t"
@@ -128,9 +134,6 @@ def parserRecursive(expr):
 
         elif className == "Symbol":
             return Variable(expr)
-
-        elif className == "Vector":
-            return parserRecursive(expr.sexpr)
 
         elif className in Constants_Strings:
             return tagConstant(expr)
@@ -236,9 +239,6 @@ def tagPairLambda(expr):
 
 def tagVariable(expr):
     return Variable(expr)
-
-# def tagVector(expr):
-#     return str(sexprs.Vector(expr))
 
 def tagConstant(expr):
     return Constant(expr)
@@ -1086,13 +1086,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         elif type(self.constant) is sexprs.Pair:
             value = self.constant.sexpr2.sexpr1
-            # Handle Vector
-            if type(value) is sexprs.Vector:
-                CodeGenVisitor.codeGenPair(value.sexpr)
-                pairPtr = mem0 - 3
-                result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
             # Handle Symbol
-            elif type(value) is sexprs.Symbol:
+            if type(value) is sexprs.Symbol:
                 result += CodeGenVisitor.codeGenSymbol(value.string.lower(),"%s" %value.string.lower())
                 # result += appendTabs() + "MOV(R0,INDD(R0,2));\n"
             # Handle List
@@ -1102,8 +1097,47 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
                 LabelGenerator.nextLabel()
             return result
+
+        elif type(self.constant) is sexprs.Vector:
+        # Handle Vector
+            value = self.constant
+            code = CodeGenVisitor.codeGenVector(value)
+
+            return code
         else:
             raise SyntaxErrorException("no such constant %s" %self)      # for debug purpose
+
+    @staticmethod
+    def codeGenVector(value):
+        global memoryTable
+        global mem0
+
+        constantList = CodeGenVisitor.topologicalSort(value.sexpr)
+        vectorList = []
+        for constant in constantList:
+            if type(constant) is sexprs.Pair:
+                continue
+            elif type(constant) is sexprs.Nil:
+                continue
+            if type(constant) is sexprs.Symbol:
+                if not constant.string.__eq__("QUOTE"):
+                    symbol = "'%s" %constant.string.lower()
+                    CodeGenVisitor.codeGenSymbol(constant.string.lower(),"%s" %constant.string.lower())
+                    vectorList.append(memoryTable.get(symbol)[0])
+            else:
+                name = "%s" %constant
+                Constant(constant).code_gen()
+                vectorList.append(memoryTable.get(name)[0])
+        vectorName = "%s" %value
+        numOfParams = len(vectorList)
+
+        memoryTable.update( { vectorName : [ mem0 , ['T_VECTOR', numOfParams , vectorList] ] })
+
+        code = appendTabs() + "MOV(R0,IMM(%s));\n" %mem0
+        mem0 += 2 + numOfParams
+
+        return code
+
 
     @staticmethod
     def codeGenPair(value):
@@ -1209,11 +1243,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
         else:
             raise compiler.CompilationError("- Variable %s in not bound" %name)
 
-        return appendTabs() + code
+        return code
 
     @staticmethod
     def addCodeForBuiltInProcedures(name,label):
-        code = CodeGenVisitor.codeGenSymbol(name,0)
+        code = "\n" + appendTabs() + "/* get the symbol from memory for the procedure */\n"
+        code += CodeGenVisitor.codeGenSymbol(name,0)
         code += \
         """
         MOV(R0,INDD(R0,1));
@@ -1223,7 +1258,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         MOV(R1,R0);
         /* R1 now holds the pointer to the symbol's bucket */
         """
-        code += appendTabs() + "PUSH(LABEL(%s));\n" %label
+        code += "PUSH(LABEL(%s));\n" %label
         code += \
         """
         /* push the "empty" environment for free vars */
