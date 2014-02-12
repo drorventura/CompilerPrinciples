@@ -18,13 +18,14 @@
   CALL(WRITE_INTEGER);
   DROP(1);
   
-  PUSH(IMM('\\'));
+  PUSH(IMM('/'));
   CALL(PUTCHAR);
   DROP(1);
   
   PUSH(R2);
   CALL(WRITE_INTEGER);
   DROP(1);
+  
   POP(R2);
   POP(R1);
   POP(FP);
