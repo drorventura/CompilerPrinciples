@@ -98,7 +98,10 @@ def appendCodeGen(source):
 
 def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
-    print(sortedDic)
+
+    for item in sortedDic:
+        print(item)
+
     code = tag_parser.appendTabs() + "/* make constant table*/\n"
     for node in sortedDic[4:]:
         sobType = node[1][1][0]

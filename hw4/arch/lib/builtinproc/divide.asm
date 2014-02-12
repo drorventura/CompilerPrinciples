@@ -1,4 +1,4 @@
-/* builtinproc/divide_applic.asm
+/* builtinproc/divide.asm
  * Compute Variadic Multiplier
  *
  */

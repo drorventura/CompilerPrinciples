@@ -50,15 +50,15 @@ mem0 = 7
 reservedWordsSymbolTable = {'+'             :'L_Plus_Applic'    ,       #-done variadic
                             '-'             :'L_Minus_Applic'   ,       #-done variadic
                             '*'             :'L_Multi_Applic'   ,       #-done variadic
-                            '/'             :'L_Divide_Applic'  ,       #variadic
+                            '/'             :'L_Divide_Applic'  ,       #-done variadic
                             '>'             :'L_Gt_Applic'      ,       #-done
                             '<'             :'L_Lt_Applic'      ,       #-done
                             '='             :'L_Equal_Applic'   ,       #-done variadic
                             'vector'        :'L_Vector_Applic'  ,       #-done
                             'list'          :'L_List_Applic'    ,       #-done
                             'map':'L_Map_Applic',
-                            'append':'L_Append_Applic',
-                            'apply'         :'L_APPLY'          ,       #-nichet good
+                            'append'        :'L_APPEND_Applic'  ,       #-done
+                            'apply'         :'L_APPLY_APPLIC'   ,       #-done
                             'cons'          :'CONS'             ,       #-done
                             'car'           :'CAR'              ,       #-done
                             'cdr'           :'CDR'              ,       #-done
@@ -84,8 +84,8 @@ reservedWordsSymbolTable = {'+'             :'L_Plus_Applic'    ,       #-done v
                             'vector-ref'    :'VECTOR_REF'       ,       #-vector not imlemented
                             'char->integer' :'CHAR_TO_INTEGER'  ,       #-done with warning
                             'integer->char' :'INTEGER_TO_CHAR'  ,       #-done
-                            'string->symbol':'SYMBOL_TO_STRING' ,
-                            'symbol->string':'SYMBOL_TO_STRING' ,       #-vector need to be implemented
+                            'string->symbol':'L_STRING_TO_SYMBOL'   ,   #print backwards :| 
+                            'symbol->string':'L_SYMBOL_TO_STRING'   ,   #-done with warnings
                             }
 
 def sortedConstantList():

@@ -18,7 +18,7 @@
   CALL(WRITE_INTEGER);
   DROP(1);
   
-  PUSH(IMM('\\'));
+  PUSH(IMM('/'));
   CALL(PUTCHAR);
   DROP(1);
   

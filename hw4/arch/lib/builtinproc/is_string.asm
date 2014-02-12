@@ -9,7 +9,6 @@ printf("start is_string\n");
   PUSH(FP);
   MOV(FP, SP);
   MOV(R0, FPARG(2));
-printf("in R0 's\n");
 
 /* fails with (string? 's) the quote 
  * get seg fault in IND(R0), working without IND())
