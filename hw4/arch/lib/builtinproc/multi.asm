@@ -94,8 +94,4 @@ L_Multi_Applic_Exit:
 	POP(R1);
 	POP(FP);
 	
-/*	PUSH(R0);
-	CALL(WRITE_INTEGER);
-	DROP(1); */
-	
 	RETURN;

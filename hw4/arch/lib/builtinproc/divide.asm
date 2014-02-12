@@ -50,6 +50,7 @@ L_Divide_1nd_is_INT_FRACTION:
     PUSH(R5);           /* R4 is now numerator*/
     CALL(MAKE_SOB_FRACTION);
     DROP(2);
+	
     /* in R0 pointer to FRACTION object */
     INCR(R1);
     JUMP(L_Divide_Applic_Loop);
@@ -108,10 +109,6 @@ L_Divide_1nd_is_FRACTION_INT:
 L_Divide_Applic_Exit:
 	POP(R2);
 	POP(R1);
-	POP(FP);
-	
-/*	PUSH(R0);
-	CALL(WRITE_INTEGER);
-	DROP(1); */
+	POP(FP);	
 	
 	RETURN;

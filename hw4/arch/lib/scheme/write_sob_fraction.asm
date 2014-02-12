@@ -25,6 +25,7 @@
   PUSH(R2);
   CALL(WRITE_INTEGER);
   DROP(1);
+  
   POP(R2);
   POP(R1);
   POP(FP);

@@ -1,4 +1,8 @@
-
+/* builtinproc/make_vector.asm
+ * Returns a newly allocated vector whose elements are the given arguments.
+ * 
+ */
+ 
 L_Vector_Applic:
 	PUSH(FP);
 	MOV(FP, SP);
