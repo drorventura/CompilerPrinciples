@@ -47,18 +47,18 @@ def gcd(a, b):
 memoryTable = { 'void':[1,['T_VOID']],'nil':[2,['T_NIL']] }
 mem0 = 7
 
-reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
-                            '-':'L_Minus_Applic',        #variadic
-                            '*':'L_Multi_Applic',        #variadic
-                            '/':'L_Divide_Applic',       #variadic
-                            '>':'L_Lt_Applic',           #variadic
-                            '<':'L_Gt_Applic',           #variadic
-                            '=':'L_Equal_Applic',        #variadic
-                            'vector':'L_Vector_Applic',
+reservedWordsSymbolTable = {'+'             :'L_Plus_Applic'    ,       #-done variadic
+                            '-'             :'L_Minus_Applic'   ,       #-done variadic
+                            '*'             :'L_Multi_Applic'   ,       #-done variadic
+                            '/'             :'L_Divide_Applic'  ,       #variadic
+                            '>'             :'L_Gt_Applic'      ,       #-done
+                            '<'             :'L_Lt_Applic'      ,       #-done
+                            '='             :'L_Equal_Applic'   ,       #-done variadic
+                            'vector'        :'MAKE_SOB_VECTORY' ,
                             'list':'L_List_Applic',
                             'map':'L_Map_Applic',
                             'append':'L_Append_Applic',
-                            'apply':'L_Apply_Applic',
+                            'apply'         :'L_APPLY'      ,   #-nichet good
                             'cons'          :'CONS'         ,   #-done
                             'car'           :'CAR'          ,   #-done
                             'cdr'           :'CDR'          ,   #-done
@@ -82,10 +82,10 @@ reservedWordsSymbolTable = {'+':'L_Plus_Applic',         #variadic
                             'string-ref'    :'STRING_REF'   ,   #-done wrong output (string-ref "Apple" 0) -> #\A (we get #\e)
                             'vector-length' :'VECTOR_LENGTH',   #-vector not imlemented
                             'vector-ref'    :'VECTOR_REF'   ,   #-vector not imlemented
-                            'char->integer':'CHAR_TO_DIGIT' ,
-                            'integer->char':'DIGIT_TO_CHAR' ,
-                            'string->symbol':'L_String_To_Symbol_Applic',
-                            'symbol->string':'L_Symbol_To_String_Applic',
+                            'char->integer' :'CHAR_TO_INTEGER', #-done with waring
+                            'integer->char' :'INTEGER_TO_CHAR', #-done
+                            'string->symbol':'SYMBOL_TO_STRING',
+                            'symbol->string':'SYMBOL_TO_STRING',#-vector need to be implemented
                             }
 
 def sortedConstantList():

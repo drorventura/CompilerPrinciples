@@ -1,8 +1,3 @@
-/* builtinproc/plus_applic.asm
- * Compute Variadic plus
- *
- * Programmer: Eldar Damari, 2014
- */
 
 L_Minus_Applic:
 	PUSH(FP);
@@ -12,15 +7,17 @@ L_Minus_Applic:
 	/* accumulator */
 	MOV(R0, IMM(0));
 	/* num of arguments on stack */
-	MOV(R1, FPARG(1));
-	ADD(R1, IMM(1));
+	MOV(R1, IMM(2)); /*first arg*/
+
+	MOV(R0, INDD(FPARG(R1),1));
+    SUB(R0, INDD(FPARG(R1+1),1));
+    ADD(R1,IMM(2));
 
 L_Minus_Applic_Loop:
-	CMP(R1, IMM(1));
+	CMP(R1, FPARG(1)+2);
 	JUMP_EQ(L_Minus_Applic_Exit);			
-	MOV(R2, FPARG(R1));
-	SUB(R0, INDD(R2,1));
-	DECR(R1);
+    SUB(R0, INDD(FPARG(R1),1));
+	INCR(R1);
 	JUMP(L_Minus_Applic_Loop);
 
 L_Minus_Applic_Exit:

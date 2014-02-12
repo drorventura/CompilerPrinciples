@@ -10,7 +10,7 @@ L_Multi_Applic:
 	PUSH(R1);
 	PUSH(R2);
 	/* accumulator */
-	MOV(R0, IMM(0));
+	MOV(R0, IMM(1));
 	/* num of arguments on stack */
 	MOV(R1, FPARG(1));
 	ADD(R1, IMM(1));
