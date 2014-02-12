@@ -1,3 +1,7 @@
+/* builtinproc/plus_applic.asm
+ * Compute Variadic plus
+ *
+ */
 
 L_Divide_Applic:
 	PUSH(FP);
@@ -9,7 +13,7 @@ L_Divide_Applic:
 	/* num of arguments on stack */
 	MOV(R2, IMM(2)); /*first arg*/
 
-    ##################
+    ##################TODO
 	MOV(R1, INDD(FPARG(R2),1));
     DIV(R1, INDD(FPARG(R2+1),1));
     printf("number %f\n",R1);

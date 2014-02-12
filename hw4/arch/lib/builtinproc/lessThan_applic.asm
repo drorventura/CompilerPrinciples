@@ -1,3 +1,7 @@
+/* builtinproc/lessThan_applic.asm
+ * Compute Variadic less Than
+ *
+ */
 
 L_Lt_Applic:
 	PUSH(FP);
@@ -22,4 +26,5 @@ L_Lt_Applic_Exit:
 	POP(R2);
 	POP(R1);
 	POP(FP);
+
 	RETURN;

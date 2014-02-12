@@ -285,10 +285,19 @@ quoteLikeFormsParser = ps   .parser(pc.pcChar("'")).pack(lambda x: sexprs.Symbol
                             .delayed_parser(lambda: sexpression) \
                             .caten() \
                             .pack(lambda x: sexprs.Pair(x)) \
-                            .done() \
+                            .done()
+
+sexpressioncomment = ps .parser(pc.pcChar('#')) \
+                        .parser(pc.pcChar(';')) \
+                        .delayed_parser(lambda: sexpression) \
+                        .catens(3) \
+                        .done()
+
 
 # Sexpression parser - Main parsing function
 sexpression = ps   .parser(commentParser) \
+                   .maybe() \
+                   .parser(sexpressioncomment) \
                    .maybe() \
                    .parser(fractionParser) \
                    .parser(hexNumberParser) \
@@ -304,7 +313,9 @@ sexpression = ps   .parser(commentParser) \
                    .disjs(11) \
                    .parser(commentParser) \
                    .maybe() \
-                   .catens(3).pack(lambda x: x[1]) \
+                   .parser(sexpressioncomment) \
+                   .maybe() \
+                   .catens(5).pack(lambda x: x[2]) \
                    .done()
 
 def show(x):

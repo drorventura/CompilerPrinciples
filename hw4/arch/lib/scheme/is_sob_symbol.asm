@@ -7,7 +7,6 @@
  */
 
  IS_SOB_SYMBOL:
- printf("hello");
   PUSH(FP);
   MOV(FP, SP);
   MOV(R0, FPARG(0));

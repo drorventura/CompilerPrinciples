@@ -3,6 +3,7 @@ import tag_parser
 __author__ = 'Dror Ventura & Eldar Damari'
 
 def compile_scheme_file(source, target):
+    tag_parser.resetConstantList()
     with open(target,'w') as targetFile:
         targetFile.write(startCode())
         with open(source,'r') as sourceFile:
@@ -99,7 +100,7 @@ def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
     print(sortedDic)
     code = tag_parser.appendTabs() + "/* make constant table*/\n"
-    for node in sortedDic[2:]:
+    for node in sortedDic[4:]:
         sobType = node[1][1][0]
         if sobType is 'T_INT':
             num = node[1][1][1]
@@ -147,19 +148,21 @@ def initConstantTable():
         elif sobType is 'T_BUCKET':
             symbolName = node[1][1][1]
             value = node[1][1][2]
-            code += tag_parser.appendTabs() + 'PUSH(IMM("%s"));\n' %value
+            code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
 
         elif sobType is 'T_VECTOR':
-            # value = node[1][1][1]
-            # code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
-            # for i in range(value):
-            #     code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %node[1][1][i+2]
-            # code += tag_parser.appendTabs() + "CALL(MAKE_SOB_VECTOR);\n"
-            # code += tag_parser.appendTabs() + "DROP(1);\n"
-            print("##############MAKE_SOB_VECTOR##################")
+            vectorList = node[1][1][2]
+            numOfparams = node[1][1][1]
+            for i in reversed(vectorList):
+                code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %i
+
+            code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %numOfparams
+
+            code += tag_parser.appendTabs() + "CALL(MAKE_SOB_VECTOR);\n"
+            code += tag_parser.appendTabs() + "DROP(%s);\n" %(numOfparams + 1)
 
         else:
             print(sobType)
