@@ -5,7 +5,6 @@ __author__ = 'Dror Ventura & Eldar Damari'
 def compile_scheme_file(source, target):
     tag_parser.resetConstantList()
 
-    print("Please Wait...")
     builtInProceduresCode = initBuiltInFunctions()
 
     with open(target,'w') as targetFile:
@@ -74,11 +73,11 @@ def endCode():
 
     /* exceptions */
     L_error_not_a_closure:
-        printf("Error - Not a closure");
+        /*printf("Error - Not a closure");*/
         JUMP(L_exit);
 
     L_error_not_enough_params_given:
-        printf("Error - Not enough parameters where given");
+        /*printf("Error - Not enough parameters where given");*/
         JUMP(L_exit);
 }
 """
@@ -105,8 +104,8 @@ def appendCodeGen(source):
 def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
 
-    # for item in sortedDic:
-    #     print(item)
+    #for item in sortedDic:
+    #    print(item)
 
     code = tag_parser.appendTabs() + "/* make constant table*/\n"
     for node in sortedDic[4:]:

@@ -426,6 +426,14 @@ def pairsToList(expr):
 
     return list_params
 
+def varsToList2(expr,resultList):
+    if type(expr) is Variable:
+        resultList.append(expr)
+    elif type(expr) is sexprs.Pair:
+        varsToList2(expr.sexpr1,resultList)
+        varsToList2(expr.sexpr2,resultList)
+    return resultList
+
 def varsToList(expr):
     bound = expr
     list_params = []
@@ -630,15 +638,16 @@ class AbstractSchemeExpr:
                             self.major = major
                             self.minor = minor
             if minor < 0:
+                # print(self)
                 self.__class__ = VarFree
 
         elif className.__contains__("Lambda"):
             if className == "LambdaSimple":
-                self.arguments, self.body.debruijn_helper([param] + bound, varsToList(self.arguments))
+                self.arguments, self.body.debruijn_helper([param] + bound, varsToList2(self.arguments,[]))
             if className == "LambdaVar":
-                return self.arguments, self.body.debruijn_helper([param] + bound, varsToList(self.arguments))
+                return self.arguments, self.body.debruijn_helper([param] + bound, varsToList2(self.arguments,[]))
             if className == "LambdaOpt":
-                return self.arguments, self.body.debruijn_helper([param] + bound, varsToList(self.arguments))
+                return self.arguments, self.body.debruijn_helper([param] + bound, varsToList2(self.arguments,[]))
 
         else:
             if className == "Applic":

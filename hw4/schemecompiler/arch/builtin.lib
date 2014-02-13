@@ -24,6 +24,7 @@
 #include "lib/builtinproc/char_to_integer.asm"
 #include "lib/builtinproc/integer_to_char.asm"
 #include "lib/builtinproc/apply.asm"
+#include "lib/builtinproc/list_to_apply.asm"
 #include "lib/builtinproc/make_vector.asm"
 #include "lib/builtinproc/greaterThan_applic.asm"
 #include "lib/builtinproc/lessThan_applic.asm"
