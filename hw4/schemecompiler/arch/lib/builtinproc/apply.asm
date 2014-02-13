@@ -1,0 +1,57 @@
+
+L_APPLY_APPLIC:
+
+	PUSH(FP);
+	MOV(FP,SP);
+	
+	PUSH(R1);
+	PUSH(R2);
+	PUSH(R3);
+	
+    MOV(R0,FPARG(3));
+
+L_APPLY_PARAMS_LOOP:
+    CMP(R0,IMM(2));
+    JUMP_EQ(L_APPLY_END_PARAMS);
+
+    PUSH(INDD(R0,IMM(1)));
+    MOV(R0,INDD(R0,IMM(2)));
+    JUMP(L_APPLY_PARAMS_LOOP);
+
+L_APPLY_END_PARAMS:
+    
+    MOV(R1,(IMM(-1)));
+    MOV(R2,SP);
+    SUB(R2,FP);
+    DECR(R2);
+
+L_APPLY_REVERSE_LOOP:
+    CMP(R1,R2);
+    JUMP_LT(L_APPLY_END_REVERSE)
+    JUMP_EQ(L_APPLY_END_REVERSE)
+    MOV(R3,STARG(R1));
+    MOV(STARG(R1),STARG(R2));
+    MOV(STARG(R2),R3);
+    DECR(R1);
+    INCR(R2);
+    JUMP(L_APPLY_REVERSE_LOOP);
+
+L_APPLY_END_REVERSE:
+
+    MOV(R1,SP);
+    SUB(R1,FP);
+    SUB(R1,IMM(3));
+    PUSH(R1);
+    MOV(R2,FPARG(IMM(2)));
+    PUSH(INDD(R2,IMM(1)));
+    CALLA(INDD(R2,IMM(2)));
+
+    DROP(IMM(2));
+    DROP(R1);
+
+    POP(R3);
+    POP(R2);
+    POP(R1);
+    POP(FP);
+
+    RETURN;
