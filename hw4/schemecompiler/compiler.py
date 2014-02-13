@@ -5,6 +5,7 @@ __author__ = 'Dror Ventura & Eldar Damari'
 def compile_scheme_file(source, target):
     tag_parser.resetConstantList()
 
+    print("Please Wait...")
     builtInProceduresCode = initBuiltInFunctions()
 
     with open(target,'w') as targetFile:
@@ -103,8 +104,10 @@ def appendCodeGen(source):
 
 def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
-    for item in sortedDic:
-        print(item)
+
+    # for item in sortedDic:
+    #     print(item)
+
     code = tag_parser.appendTabs() + "/* make constant table*/\n"
     for node in sortedDic[4:]:
         sobType = node[1][1][0]
@@ -242,10 +245,6 @@ def initBuiltInFunctions():
         (map-helper proc x)))
     """
 
-    # s,r = tag_parser.AbstractSchemeExpr.parse(yag)
-    # s.semantic_analysis()
-    # code = s.code_gen()
-
     s,r = tag_parser.AbstractSchemeExpr.parse(first)
     s.semantic_analysis()
     # print(s)
@@ -261,6 +260,10 @@ def initBuiltInFunctions():
     s,r = tag_parser.AbstractSchemeExpr.parse(mapProc)
     s.semantic_analysis()
     # print(s.expr.numOfArgs)
+    code += s.code_gen()
+
+    s,r = tag_parser.AbstractSchemeExpr.parse(yag)
+    s.semantic_analysis()
     code += s.code_gen()
 
     return code

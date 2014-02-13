@@ -29,4 +29,5 @@
 #include "lib/builtinproc/lessThan_applic.asm"
 #include "lib/builtinproc/eqaul_applic.asm"
 #include "lib/builtinproc/vector_applic.asm"
-#include "lib/builtinproc/list_applic.asm"
+#include "lib/builtinproc/list_applic.asm" 
+#include "lib/builtinproc/append.asm"
