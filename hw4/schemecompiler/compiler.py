@@ -4,6 +4,9 @@ __author__ = 'Dror Ventura & Eldar Damari'
 
 def compile_scheme_file(source, target):
     tag_parser.resetConstantList()
+
+    builtInProceduresCode = initBuiltInFunctions()
+
     with open(target,'w') as targetFile:
         targetFile.write(startCode())
         with open(source,'r') as sourceFile:
@@ -11,6 +14,8 @@ def compile_scheme_file(source, target):
             generatedContent = appendCodeGen(sourceFileContent)
 
         targetFile.write(initConstantTable())
+
+        targetFile.write(builtInProceduresCode)
 
         targetFile.write(generatedContent)
 
@@ -149,7 +154,10 @@ def initConstantTable():
         elif sobType is 'T_BUCKET':
             symbolName = node[1][1][1]
             value = node[1][1][2]
-            code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
+            if not type(value) is str:
+                code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
+            else:
+                code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
@@ -165,10 +173,96 @@ def initConstantTable():
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_VECTOR);\n"
             code += tag_parser.appendTabs() + "DROP(%s);\n" %(numOfparams + 1)
 
+        elif sobType is 'T_CLOSURE':
+            env = node[1][1][1]
+            label = node[1][1][2]
+
+            code += tag_parser.appendTabs() + "PUSH(LABEL(%s));\n" %label
+            code += tag_parser.appendTabs() + '/* push the "empty" environment for free vars */\n'
+            code += tag_parser.appendTabs() + "PUSH(0);\n"
+            code += tag_parser.appendTabs() + "CALL(MAKE_SOB_CLOSURE);\n"
+            code += tag_parser.appendTabs() + "DROP(2);\n"
+
         else:
             print(sobType)
             print("need to implemet that")
     code += tag_parser.appendTabs() + "/* end of creating constant table */\n\n"
+    return code
+
+def initBuiltInFunctions():
+    yag = \
+    """
+    (define Yag
+        (lambda fs
+            (let ((ms (map
+                        (lambda (fi)
+                          (lambda ms
+                            (apply fi (map (lambda (mi)
+                                             (lambda args
+                                                (apply (apply mi ms) args))) ms))))
+                        fs)))
+             (apply (car ms) ms))))
+    """
+
+    first = \
+    """
+    (define first
+      (lambda (lists)
+        (if (null? lists)
+          '()
+          (cons (car (car lists))
+            (first (cdr lists))))))
+    """
+    rest = \
+    """
+    (define rest
+      (lambda (lists)
+        (if (null? lists)
+          '()
+          (cons (cdr (car lists))
+            (rest (cdr lists))))))
+    """
+
+    mapHelper = \
+    """
+    (define map-helper
+      (lambda (proc x)
+        (if (null? (car x))
+          '()
+          (let ((args (first x))
+            (rest (rest x)))
+         (cons (apply proc args)
+            (map-helper proc rest))))))
+    """
+
+    mapProc = \
+    """
+    (define map
+      (lambda (proc . x)
+        (map-helper proc x)))
+    """
+
+    # s,r = tag_parser.AbstractSchemeExpr.parse(yag)
+    # s.semantic_analysis()
+    # code = s.code_gen()
+
+    s,r = tag_parser.AbstractSchemeExpr.parse(first)
+    s.semantic_analysis()
+    # print(s)
+    code = s.code_gen()
+    s,r = tag_parser.AbstractSchemeExpr.parse(rest)
+    s.semantic_analysis()
+    # print(s)
+    code += s.code_gen()
+    s,r = tag_parser.AbstractSchemeExpr.parse(mapHelper)
+    s.semantic_analysis()
+    # print(s)
+    code += s.code_gen()
+    s,r = tag_parser.AbstractSchemeExpr.parse(mapProc)
+    s.semantic_analysis()
+    # print(s.expr.numOfArgs)
+    code += s.code_gen()
+
     return code
 
 def callWriteSob():

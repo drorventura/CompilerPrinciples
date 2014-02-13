@@ -1,7 +1,8 @@
-/* cdr.asm
- * Returns senconde value in a pair
+/* car.asm
+ * Returns first value in a pair
  */
-CDR:
+ 
+CAR:
 	PUSH(FP);
 	MOV(FP,SP);
 	PUSH(R1);

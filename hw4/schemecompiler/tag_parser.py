@@ -122,6 +122,21 @@ def setEnvDepth(exp,depth):
         while type(arg) is sexprs.Pair:
             setEnvDepth(arg.sexpr1,depth)
             arg = arg.sexpr2
+    elif isinstance(exp,ApplicTP):
+        setEnvDepth(exp.obj,depth)
+    elif isinstance(exp,Def):
+        setEnvDepth(exp.expr,depth)
+    elif isinstance(exp,IfThenElse):
+        setEnvDepth(exp.pair.sexpr1,depth)
+        setEnvDepth(exp.pair.sexpr2.sexpr1,depth)
+        setEnvDepth(exp.pair.sexpr2.sexpr2.sexpr1,depth)
+
+    # else:
+    #     print("####################################")
+    #     print(type(exp))
+    #     print("wasn't implemented yet in setEnvDepth")
+    #     print("####################################")
+
 
 ##############################
 #           Parser           #
@@ -1094,7 +1109,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 CodeGenVisitor.codeGenPair(value)
                 pairPtr = mem0 - 3
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %pairPtr
-                LabelGenerator.nextLabel()
+
             return result
 
         elif type(self.constant) is sexprs.Vector:
@@ -1143,6 +1158,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenPair(value):
         global memoryTable
         global mem0
+        currLabel = LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
         constantList = CodeGenVisitor.topologicalSort(value)
         index = 0
         while len(constantList) > 1:
@@ -1164,12 +1181,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 else:
                     cdr = "%s" %second
 
-                nodeName = "%s_%s" %(node,LabelGenerator.getLabel())
+                nodeName = "%s_%s" %(node,currLabel)
 
                 if '(' and ')' in car:
-                    car += "_%s" %LabelGenerator.getLabel()
+                    car += "_%s" %currLabel
                 if ')' and ')' in cdr:
-                    cdr += "_%s" %LabelGenerator.getLabel()
+                    cdr += "_%s" %currLabel
 
                 memoryTable.update( { nodeName.lower() : [ mem0, ['T_PAIR',
                                                           memoryTable.get(car.lower())[0],
@@ -1224,6 +1241,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
             return [exp]
 
     def codeGenVarFree(self):
+        global memoryTable
+        global mem0
         symbol = "'%s" %self.variable.string.lower()
         name = self.variable.string.lower()
         # if freeVar was defined then R0<-closure
@@ -1237,40 +1256,18 @@ class CodeGenVisitor(AbstractSchemeExpr):
         # (happens only once for each builtin procedure, after that it is in the constant table)
         elif name in reservedWordsSymbolTable:
             label = reservedWordsSymbolTable.get(name)
-            code = CodeGenVisitor.addCodeForBuiltInProcedures(name,label)
+            memoryTable.update( { "Closure_%s" %label : [ mem0 , ['T_CLOSURE', 0 , label] ] } )
+            closurePtr = mem0
+            mem0 += 3
+            code = CodeGenVisitor.codeGenSymbol(name.lower(),closurePtr)
+            code += appendTabs() + "MOV(R0,INDD(R0,1));\n"
+            code += appendTabs() + "MOV(R0,INDD(R0,2));\n"
 
         # if variable wasn't defined nor a builtin procedure
         else:
             raise compiler.CompilationError("- Variable %s in not bound" %name)
 
-        return code
-
-    @staticmethod
-    def addCodeForBuiltInProcedures(name,label):
-        code = "\n" + appendTabs() + "/* get the symbol from memory for the procedure */\n"
-        code += CodeGenVisitor.codeGenSymbol(name.lower(),0)
-        code += \
-        """
-        MOV(R0,INDD(R0,1));
-        /* R0 now holds the pointer to the symbol's bucket */
-        PUSH(R1);
-        /* backup R1 in order to use it */
-        MOV(R1,R0);
-        /* R1 now holds the pointer to the symbol's bucket */
-        """
-        code += "PUSH(LABEL(%s));\n" %label
-        code += \
-        """
-        /* push the "empty" environment for free vars */
-        PUSH(0);
-        CALL (MAKE_SOB_CLOSURE);
-        DROP(2);
-        /* R0 now holds the pointer to the closure */
-        MOV(INDD(R1,2),R0);
-        /* save the closure as the value in symbol's bucket */
-        POP(R1);
-        /* restore R1 to be what it was before */
-"""
+        code += appendTabs() + "/* R0 now holds the pointer to the closure */\n"
         return code
 
     def codeGenVarParam(self):
@@ -1284,20 +1281,22 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return code
 
     def codeGenIfThenElse(self):
+        currLabel = LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
+
         result = ""
         test = self.pair.sexpr1.code_gen()
         result += test
         result += appendTabs() + "CMP(R0, BOOL_FALSE);\n"
-        result += appendTabs() + "JUMP_EQ(L_DIF_%s);\n" %LabelGenerator.getLabel()
+        result += appendTabs() + "JUMP_EQ(L_DIF_%s);\n" %currLabel
         dit = self.pair.sexpr2.sexpr1.code_gen()
         result += dit
-        result += appendTabs() + "JUMP(L_END_IF_%s);\n" %LabelGenerator.getLabel()
-        result += appendTabs() + "L_DIF_%s:\n" %LabelGenerator.getLabel()
+        result += appendTabs() + "JUMP(L_END_IF_%s);\n" %currLabel
+        result += appendTabs() + "L_DIF_%s:\n" %currLabel
         dif = self.pair.sexpr2.sexpr2.sexpr1.code_gen()
         result+= dif
-        result += appendTabs() + "L_END_IF_%s:\n" %LabelGenerator.getLabel()
+        result += appendTabs() + "L_END_IF_%s:\n" %currLabel
 
-        LabelGenerator.nextLabel()
         return result
 
     def codeGenLambdaSimple(self):
@@ -1347,7 +1346,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
     @staticmethod
     def environmentExpansionCodeGen(lambdaExp,currentLabel):
         code = appendTabs() + "/* checking the lambda depth*/\n"
-        code = appendTabs() + "MOV(R1,IMM(%s));\n" %lambdaExp.depth
+        code += appendTabs() + "MOV(R1,IMM(%s));\n" %lambdaExp.depth
         code += appendTabs() + "CMP(R1,IMM(0));\n"
         code += appendTabs() + "JUMP_EQ(L_After_Env_Expansion_%s);\n" %currentLabel
         code += \
@@ -1491,16 +1490,22 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         /* drop the relevant elements to the buttom of the stack */
         MOV(R4,R1);
-        INCR(R4);
+        SUB(R4,R2);
+        /* R4 holds the how much spaces the element need's to be dropped down */
+        MOV(R5,R2);
+        ADD(R5,3);
+        /* R5 hold the amount of times we drom elements down */
         """
         code += "\n\tL_Move_Stack_Down_Loop_%s:\n" %currentLabel
-        code += appendTabs() + "CMP(R3,IMM(-6));\n"
-        code += appendTabs() + "JUMP_LT(L_Move_Stack_Down_Loop_Exit_%s);\n" %currentLabel
+        code += appendTabs() + "CMP(R5,IMM(0));\n"
+        code += appendTabs() + "JUMP_EQ(L_Move_Stack_Down_Loop_Exit_%s);\n" %currentLabel
         code += \
         """
-        MOV(FPARG(R4),FPARG(R3));
-        DECR(R4);
+        MOV(R6,R3);
+        ADD(R6,R4);
+        MOV(FPARG(R6),FPARG(R3));
         DECR(R3);
+        DECR(R5);
         """
         code += "JUMP(L_Move_Stack_Down_Loop_%s);\n" %currentLabel
 
@@ -1509,11 +1514,11 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += \
         """
         /* frame pointer and stack pointers needs to be brought down as well */
-        SUB(R1,R2);
-        SUB(FP,R1);
-        DROP(R1);
+        SUB(FP,R4);
+        DROP(R4);
         """
-        code += "JUMP_LT(L_After_Stack_Fix_%s);\n" %currentLabel
+        code += "JUMP(L_After_Stack_Fix_%s);\n" %currentLabel
+
         code += "\n\tL_Stack_Fix_Up_%s:\n" %currentLabel
         code += \
         """
@@ -1544,7 +1549,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         code += \
         """
         /* magic number */
-        MOV(FPARG(R3),IMM(7109179));
+        MOV(FPARG(R4),IMM(7109179));
         """
 
         code += "\tL_After_Stack_Fix_%s:\n" %currentLabel
@@ -1580,10 +1585,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
         DROP(R1);
         /* clear the stack */
         """
-        LabelGenerator.nextLabel()
+        # LabelGenerator.nextLabel()
         return code
 
     def codeGenApplicTP(self):
+        currLabel = LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
         code,newNumOfArgs = CodeGenVisitor.prepareStackForApplic(self.obj)
         code += \
         """
@@ -1607,17 +1614,17 @@ class CodeGenVisitor(AbstractSchemeExpr):
         /* R5 will hold the old num of arguments */
         MOV(R5,FPARG(1));
         """
-        code += "\n\tL_Override_Previous_Frame_Loop_%s:\n" %LabelGenerator.getLabel()
+        code += "\n\tL_Override_Previous_Frame_Loop_%s:\n" %currLabel
         code += appendTabs() + "CMP(R3,R2);\n"
-        code += appendTabs() + "JUMP_GT(L_Override_Previous_Frame_Loop_Exit_%s);\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP_GT(L_Override_Previous_Frame_Loop_Exit_%s);\n" %currLabel
         code += \
         """
         MOV(FPARG(R4),LOCAL(R3));
         DECR(R4);
         INCR(R3);
         """
-        code += appendTabs() + "JUMP(L_Override_Previous_Frame_Loop_%s);\n" %LabelGenerator.getLabel()
-        code += appendTabs() + "\n\tL_Override_Previous_Frame_Loop_Exit_%s:\n" %LabelGenerator.getLabel()
+        code += appendTabs() + "JUMP(L_Override_Previous_Frame_Loop_%s);\n" %currLabel
+        code += appendTabs() + "\n\tL_Override_Previous_Frame_Loop_Exit_%s:\n" %currLabel
 
         code += "MOV(R4,FP);\n"
         code += "SUB(R4,R5);\n"
@@ -1633,7 +1640,6 @@ class CodeGenVisitor(AbstractSchemeExpr):
         /* finally code jumps to closure code */
         JUMPA(INDD(R0,2));
 """
-        LabelGenerator.nextLabel()
         return code
 
     @staticmethod
@@ -1662,6 +1668,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
     def codeGenOr(self):
         currLabel = LabelGenerator.getLabel()
+        LabelGenerator.nextLabel()
         code = ""
         argsList = pairsToList(self.arguments)
         if argsList:
@@ -1674,24 +1681,20 @@ class CodeGenVisitor(AbstractSchemeExpr):
         else:
             code += appendTabs() + "MOV(R0,IMM(3));\n"
         code += "\n\tL_Exit_Or_%s:\n" %currLabel
-        LabelGenerator.nextLabel()
         return code
 
     def codeGenDef(self):
-        code = self.expr.code_gen()
-        # info = code.split('\n')
-        # print(info[-2])
+        code = CodeGenVisitor.codeGenSymbol(self.name.variable.string.lower(),0)
 
-        code += appendTabs() + "MOV(R1,R0);     /*Saving expression address*/\n"
-        code += CodeGenVisitor.codeGenSymbol(self.name.variable.string.lower(),0)
+        code += appendTabs() + "MOV(R15,R0);     /*Saving symbol's address*/\n"
+        code += appendTabs() + "MOV(R15,INDD(R15,1));     /* R15 now contains the pointer to the value of the symbol's bucket */\n"
+
+        code += self.expr.code_gen()
 
         code += \
         """
-        MOV(R0,INDD(R0,1));
-        /* R0 now contains the pointer to the value of the symbol's bucket */
-
-        /* add the expression's value from R1 to the bucket */
-        MOV(INDD(R0,2), R1);
+        /* add the expression's value from R0 to the bucket */
+        MOV(INDD(R15,2), R0);
         /* return #void to user */
         MOV(R0, IMM(1));
         """

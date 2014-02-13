@@ -216,11 +216,21 @@ class TestSexprs(unittest.TestCase):
     def test_abstract(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse(
         """
-        #(1 2 3 #t #f a)
+        (lambda (proc x)
+        (if (null? (car x))
+          '()
+          (let ((args (first x))
+            (rest (rest x)))
+         (cons (apply proc args)
+            (map-helper proc rest))))))
         """
         )
         sexpr.semantic_analysis()
-        print(sexpr.code_gen())
+        # print(type(sexpr.body.pair.sexpr2.sexpr2.sexpr1.obj.applic))
+        # print(type(sexpr.body.pair.sexpr2.sexpr1))
+        # print(sexpr.body.pair.sexpr2.sexpr2.sexpr1.obj.applic.numOfArgs)
+        # print(sexpr.body.pair.sexpr2.sexpr1)
+        print(sexpr)
         print("r: " + remaining)
 
     def test_empty_let(self):
