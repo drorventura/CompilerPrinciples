@@ -370,7 +370,7 @@ def tagLetrec(expressions):
         listLetrecExpr.append(tagLambda(letrecExp))
         args = args[1:]
 
-    yag = sexprs.Symbol('Yag', 3)
+    yag = sexprs.Symbol('YAG', 3)
 
     pairForApplic = sexprs.Pair(sum([[yag], [tagLambda(firstLetrecExp)], listLetrecExpr],[]))
 
@@ -1280,7 +1280,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         # if variable wasn't defined nor a builtin procedure
         else:
-            raise compiler.CompilationError("- Variable %s in not bound" %name)
+            raise compiler.CompilationError("- Variable %s is not bound" %name)
 
         code += appendTabs() + "/* R0 now holds the pointer to the closure */\n"
         return code

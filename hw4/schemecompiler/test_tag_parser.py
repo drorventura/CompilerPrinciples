@@ -216,12 +216,20 @@ class TestSexprs(unittest.TestCase):
     def test_abstract(self):
         sexpr , remaining = tag_parser.AbstractSchemeExpr.parse(
         """
-        (list 5 6)
+(define test
+  (let ((p1 (lambda (x1 x2 x3 x4 x5 x6 x7 x8 x9 x10)
+        (lambda (z)
+    (z x2 x3 x4 x5 x6 x7 x8 x9 x10 x1))))
+  (s '(a b c d e f g h i j)))
+    (lambda ()
+      (eq? (((((((((((apply p1 s) p1) p1) p1) p1) p1) p1) p1) p1) p1)
+         list)
+        s))))
 		"""
         )
         sexpr.semantic_analysis()
         print(sexpr)
-        print(sexpr.code_gen())
+        # print(sexpr.code_gen())
         print("r: " + remaining)
 
     def test_empty_let(self):
