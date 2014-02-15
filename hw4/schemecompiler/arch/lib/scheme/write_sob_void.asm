@@ -7,7 +7,7 @@
  */
 
  WRITE_SOB_VOID:
-  PUSH(IMM('#'));
+/*  PUSH(IMM('#'));
   CALL(PUTCHAR);
   PUSH(IMM('<'));
   CALL(PUTCHAR);
@@ -21,5 +21,5 @@
   CALL(PUTCHAR);
   PUSH(IMM('>'));
   CALL(PUTCHAR);
-  DROP(7);
+  DROP(7);*/
   RETURN;

@@ -36,3 +36,4 @@
 #include "lib/builtinproc/apply.asm"
 #include "lib/builtinproc/append.asm"
 #include "lib/builtinproc/map_applic.asm"
+#include "lib/builtinproc/map_helper.asm"

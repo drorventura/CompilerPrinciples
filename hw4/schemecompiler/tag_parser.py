@@ -676,7 +676,7 @@ class AbstractSchemeExpr:
     # part 3
     def semantic_analysis(self):
             self.debruijn()
-            self.annotateTC(True)
+            self.annotateTC(False)
             setEnvDepth(self,0)
             return self
 
@@ -1030,6 +1030,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
         elif type(self.constant) is sexprs.Nil:
             return appendTabs() + "MOV(R0,IMM(2));\n"
 
+        elif type(self.constant) is sexprs.Void:
+            return appendTabs() + "MOV(R0,IMM(1));\n"
+
         elif type(self.constant) is sexprs.Int:
             if self.constant.sign:
                 if self.constant.sign.__eq__('-'):
@@ -1051,8 +1054,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         elif type(self.constant) is sexprs.Fraction:
             sign = self.constant.num.sign
-            int1 = self.constant.num.number
-            int2 = self.constant.denom.number
+            int1 = int(self.constant.num.number)
+            int2 = int(self.constant.denom.number)
             divider = gcd(int1,int2)
 
             if divider > 1:

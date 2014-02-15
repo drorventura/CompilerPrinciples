@@ -10,7 +10,10 @@ L_List_Applic:
 	PUSH(R1);
 	PUSH(R2);
 	
-	MOV(R1,FPARG(1));	/* number of parameters to push */
+	MOV(R1,FPARG(1));		/* number of parameters to push */
+	CMP(R1,0);
+	JUMP_EQ(L_List_Applic_Empty);
+
 	/*MOV(R2,R1);*/		  
 	INCR(R1);			/* displacement in stack to first argument */
 	
@@ -31,6 +34,9 @@ L_List_Applic_Loop:
 	
 	DECR(R1);
 	JUMP(L_List_Applic_Loop);
+
+L_List_Applic_Empty:
+	MOV(R0,IMM(2));
 	
 L_List_Applic_Loop_Exit:
 	POP(R2);

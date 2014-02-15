@@ -192,16 +192,7 @@ def initConstantTable():
 def initBuiltInFunctions():
     yag = \
     """
-    (define Yag
-        (lambda fs
-            (let ((ms (map
-                        (lambda (fi)
-                          (lambda ms
-                            (apply fi (map (lambda (mi)
-                                             (lambda args
-                                                (apply (apply mi ms) args))) ms))))
-                        fs)))
-             (apply (car ms) ms))))
+    (DEFINE YAG (LAMBDA FS ((LAMBDA (MS) (APPLY (CAR MS) MS)) (MAP (LAMBDA (FI) (LAMBDA MS (APPLY FI (MAP (LAMBDA (MI) (LAMBDA ARGS (APPLY (APPLY MI MS) ARGS))) MS)))) FS))))
     """
 
     first = \
@@ -269,9 +260,8 @@ def callWriteSob():
     code = \
         """
         PUSH(R0);
-        CALL(WRITE_SOB);
+        CALL(L_CHECK_MAGIC);
         POP(R0);
-        CALL(NEWLINE);
 """
     return code
 

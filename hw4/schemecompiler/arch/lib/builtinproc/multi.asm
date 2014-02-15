@@ -14,6 +14,10 @@ L_Multi_Applic:
 	PUSH(R5);
 	PUSH(R6);
     
+	CMP(FPARG(1),1);
+	JUMP_LT(L_Multi_Applic_Zero_Arg);
+	JUMP_EQ(L_Multi_Applic_One_Arg);
+	
     /* save first 1 arguments */
     MOV(R0, FPARG(2));
 
@@ -93,6 +97,16 @@ L_Multi_1nd_is_INT_FRACTION:
     INCR(R1);
     JUMP(L_Multi_Applic_Loop);
 
+L_Multi_Applic_Zero_Arg:
+	PUSH(IMM(1));
+	CALL(MAKE_SOB_INTEGER);
+    DROP(1);
+	JUMP(L_Multi_Applic_Exit);
+	
+L_Multi_Applic_One_Arg:
+	MOV(R0,FPARG(2));
+	JUMP(L_Multi_Applic_Exit);
+	
 L_Multi_Applic_Exit:
 	POP(R6);
 	POP(R5);

@@ -139,6 +139,9 @@ tests = []
 #tests.append(('ApplicTP - will cause an infinite loop that doesn\'t crash',))
 #tests.append(("((lambda (x) (x x)) (lambda (x) (x x)))", 'infinite loop', 'ApplicTP frame replacement'))
 
+
+tests.append(('check we turn the currect int for #\\lambda',))
+tests.append((r"(char->integer #\lambda)", "955", 'check the int of lambda'))
 ### append
 tests.append(('append',))
 tests.append(("(append)", "()", 'append with no args'))
@@ -362,7 +365,7 @@ tests.append(("(+ 2 -10)", '-8', '+ for 2 constant args (integers)'))
 tests.append(("(+ 4/16)", ['1/4','4/16'], '+ for 1 constant args (fractions) (with minimization)'))
 tests.append(("(+ 1/2 1/4)", ['3/4','6/8'], '+ for 2 constant args (fractions)'))
 tests.append(("(+ 1/2 -1/4)", ['1/4','2/8'], '+ for 2 constant args (fractions)'))
-tests.append(("(+ 1/2 -2 3/2 5 10)", ['15', '15/1','60/4'] , '+ for 5 constant args (mixed)'))
+tests.append(("(+ 1/2 -2 3/2 5 10)", ['15', '15/1', '30/2' ,'60/4'] , '+ for 5 constant args (mixed)'))
 tests.append(("(= 2/3 (+ 1/3 1/3))", '#t', '= and + on fractions'))
 tests.append(('*',))
 tests.append(("(*)", '1', '* for no args'))
