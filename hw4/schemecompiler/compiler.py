@@ -19,8 +19,6 @@ def compile_scheme_file(source, target):
 
         targetFile.write(generatedContent)
 
-        # targetFile.write(addCodePrintTo("1"))
-
         targetFile.write(endCode())
 
 def startCode():
@@ -73,11 +71,11 @@ def endCode():
 
     /* exceptions */
     L_error_not_a_closure:
-        /*printf("Error - Not a closure");*/
+        printf("Error - Not a closure");
         JUMP(L_exit);
 
     L_error_not_enough_params_given:
-        /*printf("Error - Not enough parameters where given");*/
+        printf("Error - Not enough parameters where given");
         JUMP(L_exit);
 }
 """
@@ -104,7 +102,7 @@ def appendCodeGen(source):
 def initConstantTable():
     sortedDic = tag_parser.sortedConstantList()
 
-    #for item in sortedDic:
+    # for item in sortedDic:
     #    print(item)
 
     code = tag_parser.appendTabs() + "/* make constant table*/\n"
@@ -159,7 +157,7 @@ def initConstantTable():
             if not type(value) is str:
                 code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %value
             else:
-                code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
+                code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + "PUSH(IMM(%s));\n" %symbolName
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_BUCKET);\n"
             code += tag_parser.appendTabs() + "DROP(2);\n"
@@ -244,26 +242,26 @@ def initBuiltInFunctions():
         (map-helper proc x)))
     """
 
-    s,r = tag_parser.AbstractSchemeExpr.parse(first)
-    s.semantic_analysis()
-    # print(s)
-    code = s.code_gen()
-    s,r = tag_parser.AbstractSchemeExpr.parse(rest)
-    s.semantic_analysis()
-    # print(s)
-    code += s.code_gen()
-    s,r = tag_parser.AbstractSchemeExpr.parse(mapHelper)
-    s.semantic_analysis()
-    # print(s)
-    code += s.code_gen()
-    s,r = tag_parser.AbstractSchemeExpr.parse(mapProc)
-    s.semantic_analysis()
-    # print(s.expr.numOfArgs)
-    code += s.code_gen()
+    # s,r = tag_parser.AbstractSchemeExpr.parse(first)
+    # s.semantic_analysis()
+    # # print(s)
+    # code = s.code_gen()
+    # s,r = tag_parser.AbstractSchemeExpr.parse(rest)
+    # s.semantic_analysis()
+    # # print(s)
+    # code += s.code_gen()
+    # s,r = tag_parser.AbstractSchemeExpr.parse(mapHelper)
+    # s.semantic_analysis()
+    # # print(s)
+    # code += s.code_gen()
+    # s,r = tag_parser.AbstractSchemeExpr.parse(mapProc)
+    # s.semantic_analysis()
+    # # print(s.expr.numOfArgs)
+    # code += s.code_gen()
 
     s,r = tag_parser.AbstractSchemeExpr.parse(yag)
     s.semantic_analysis()
-    code += s.code_gen()
+    code = s.code_gen()
 
     return code
 
@@ -276,17 +274,6 @@ def callWriteSob():
         CALL(NEWLINE);
 """
     return code
-
-# def addCodePrintTo(key):
-#     x = tag_parser.memoryTable.get(key)
-#     code = ""
-#     if x[1][0] is 'T_INT':
-#         code += tag_parser.appendTabs() + "PUSH (%s);\n" %x[1][1]
-#         code += tag_parser.appendTabs() + "CALL (WRITE_INTEGER);\n"
-#     else:
-#         code += tag_parser.appendTabs() + "CALL (WRITE);\n"
-#
-#     return code
 
 class CompilationError(Exception):
     def __init__(self,message):

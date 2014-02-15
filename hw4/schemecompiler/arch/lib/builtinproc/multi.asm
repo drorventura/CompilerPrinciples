@@ -9,6 +9,10 @@ L_Multi_Applic:
 	MOV(FP,SP);
 	PUSH(R1);
 	PUSH(R2);
+	PUSH(R3);
+	PUSH(R4);
+	PUSH(R5);
+	PUSH(R6);
     
     /* save first 1 arguments */
     MOV(R0, FPARG(2));
@@ -90,6 +94,10 @@ L_Multi_1nd_is_INT_FRACTION:
     JUMP(L_Multi_Applic_Loop);
 
 L_Multi_Applic_Exit:
+	POP(R6);
+	POP(R5);
+	POP(R4);
+	POP(R3);
 	POP(R2);
 	POP(R1);
 	POP(FP);

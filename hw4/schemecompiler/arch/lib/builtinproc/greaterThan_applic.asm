@@ -1,49 +1,132 @@
-/* builtinproc/lessThan_applic.asm
- * Compute Greater Than
+/* builtinproc/Greater.asm
  *
  */
 
 L_Gt_Applic:
+
 	PUSH(FP);
-	MOV(FP, SP);
+	MOV(FP,SP);
 	PUSH(R1);
 	PUSH(R2);
-    PUSH(R3);
-    PUSH(R5);
+	PUSH(R4);
+	PUSH(R5);
+	PUSH(R6);
+	PUSH(R7);
+    
+    /* save first 1 arguments */
+    MOV(R0, FPARG(2));
 
-    MOV(R3,FPARG(1));
-    CMP(R3,1);
-    JUMP_EQ(L_Gt_TRUE_Applic);
+    /* index variable*/
+    MOV(R1,IMM(3)); 
 
-    INCR(R3);
-	MOV(R0, FPARG(2));
-    MOV(R5,2);
-
+/* Main Loop */
 L_Gt_Applic_Loop:
-    CMP(R5,R3);
-    JUMP_EQ(L_Gt_TRUE_Applic);
+	CMP(R1, FPARG(1)+2);
+    /* need to build obj? */
+	JUMP_EQ(L_Gt_Applic_TRUE);			
 
-	MOV(R1, FPARG(R5));
-	CMP(INDD(R0,1),INDD(R1,1));  /*comparing 2 args*/
-    JUMP_GT(L_Gt_TRUE_LOOP);   /* jump if greater than*/
-    JUMP(L_Gt_FALSE_Applic);
-
-L_Gt_TRUE_LOOP:
-    INCR(R5);
+	MOV(R2, FPARG(R1));
+    /* check for type */
+    CMP(IND(R2), T_INTEGER);
+    JUMP_EQ(L_Gt_2nd_is_INT);
+    
+    CMP(IND(R2), T_FRACTION);
+    JUMP_EQ(L_Gt_2nd_is_FRACTION);
+    /* back to main loop */ 
     JUMP(L_Gt_Applic_Loop);
 
-L_Gt_FALSE_Applic:
-    MOV(R0, IMM(3));
+/*************/
+L_Gt_2nd_is_FRACTION:
+    CMP(IND(R0), T_INTEGER);
+    JUMP_EQ(L_Gt_1nd_is_INT_FRACTION_NEW);
+    
+    CMP(IND(R0), T_FRACTION);
+    JUMP_EQ(L_Gt_1nd_is_FRACTION_FRACTION);
+
+L_Gt_1nd_is_INT_FRACTION_NEW:
+    MOV(R4,INDD(R0,1)); 
+    MOV(R5,INDD(R2,2)); 
+    MUL(R4,R5);         /* cb R4 is now numerator  */
+
+    CMP(R4,INDD(R2,1));
+    JUMP_LT(L_Gt_Applic_FALSE);
+    JUMP_EQ(L_Gt_Applic_FALSE);
+    
+    MOV(R0,R2);
+
+    /* in R0 pointer to INT object */
+    INCR(R1);
+    JUMP(L_Gt_Applic_Loop);
+
+L_Gt_1nd_is_FRACTION_FRACTION:
+    MOV(R4,INDD(R0,1));
+    MOV(R5,INDD(R2,2));
+    MUL(R4,R5);         /* R4 is now numerator  */
+    
+    MOV(R6,INDD(R0,2));
+    MOV(R7,INDD(R2,1));
+    MUL(R6,R7);         /* R6 is now denominator  */
+
+    CMP(R4,R6);
+    JUMP_LT(L_Gt_Applic_FALSE);
+    JUMP_EQ(L_Gt_Applic_FALSE);
+    
+    MOV(R0,R2);
+
+    /* in R0 pointer to INT object */
+    INCR(R1);
+    JUMP(L_Gt_Applic_Loop);
+
+/*************/
+L_Gt_2nd_is_INT:
+    CMP(IND(R0), T_INTEGER);
+    JUMP_EQ(L_Gt_1nd_is_INT_INT);
+    
+    CMP(IND(R0), T_FRACTION);
+    JUMP_EQ(L_Gt_1nd_is_INT_FRACTION);
+
+L_Gt_1nd_is_INT_INT:
+
+    CMP(INDD(R0,1),INDD(R2,1));
+    JUMP_LT(L_Gt_Applic_FALSE);
+    JUMP_EQ(L_Gt_Applic_FALSE);
+    
+    MOV(R0,R2);
+
+    /* in R0 pointer to INT object */
+    INCR(R1);
+    JUMP(L_Gt_Applic_Loop);
+
+/* call from L_Gt_2nd_is_INT */
+L_Gt_1nd_is_INT_FRACTION:
+    MOV(R4,INDD(R2,1)); 
+    MOV(R5,INDD(R0,2)); 
+    MUL(R4,R5);         /* cb R4 is now numerator  */
+
+    CMP(INDD(R0,1),R4);
+    JUMP_LT(L_Gt_Applic_FALSE);
+    JUMP_EQ(L_Gt_Applic_FALSE);
+    
+    MOV(R0,R2);
+
+    /* in R0 pointer to INT object */
+    INCR(R1);
+    JUMP(L_Gt_Applic_Loop);
+
+L_Gt_Applic_TRUE:
+    MOV(R0,IMM(5));
     JUMP(L_Gt_Applic_Exit);
 
-L_Gt_TRUE_Applic:
-  MOV(R0, IMM(5));
+L_Gt_Applic_FALSE:
+    MOV(R0,IMM(3));
 
 L_Gt_Applic_Exit:
+	POP(R7);
+	POP(R6);
 	POP(R5);
-    POP(R3);
-    POP(R2);
-    POP(R1);
+	POP(R4);
+	POP(R2);
+	POP(R1);
 	POP(FP);
-
+	
 	RETURN;

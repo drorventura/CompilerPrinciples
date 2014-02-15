@@ -56,7 +56,7 @@ reservedWordsSymbolTable = {'+'             :'L_Plus_Applic'    ,       #-done v
                             '='             :'L_Equal_Applic'   ,       #-done variadic
                             'vector'        :'L_Vector_Applic'  ,       #-done
                             'list'          :'L_List_Applic'    ,       #-done
-                            'map'           :'L_Map_Applic',
+                            'map'           :'L_Map_Applic'     ,
                             'append'        :'L_APPEND_Applic'  ,       #-done
                             'apply'         :'L_APPLY_APPLIC'   ,       #-done
                             'cons'          :'CONS'             ,       #-done
@@ -1088,7 +1088,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             string = self.constant.string
             if memoryTable.get(string) is None:
                 value = ['T_STRING',len(string)]
-                value.extend(reversed(list(string)))
+                value.extend(list(string))
                 memoryTable.update( { string : [ mem0 , value ] } )
                 result += appendTabs() + 'MOV(R0,IMM(%s));\n' %mem0
                 mem0 += (2 + len(string))
@@ -1112,7 +1112,10 @@ class CodeGenVisitor(AbstractSchemeExpr):
             value = self.constant.sexpr2.sexpr1
             # Handle Symbol
             if type(value) is sexprs.Symbol:
-                result += CodeGenVisitor.codeGenSymbol(value.string.lower(),value.string)
+                # Constant(value.string).code_gen()
+                print(value.string)
+                # valuePtr = memoryTable.get(value.string)[0]
+                result += CodeGenVisitor.codeGenSymbol(value.string,value.string)
             # Handle List
             else:
                 CodeGenVisitor.codeGenPair(value)
@@ -1145,8 +1148,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             if type(constant) is sexprs.Symbol:
                 if not constant.string.__eq__("QUOTE"):
-                    symbol = "'%s" %constant.string.lower()
-                    CodeGenVisitor.codeGenSymbol(constant.string.lower(),constant.string)
+                    symbol = "'%s" %constant.string
+                    CodeGenVisitor.codeGenSymbol(constant.string,constant.string)
                     vectorList.append(memoryTable.get(symbol)[0])
             else:
                 name = "%s" %constant
@@ -1197,9 +1200,9 @@ class CodeGenVisitor(AbstractSchemeExpr):
                 if ')' and ')' in cdr:
                     cdr += "_%s" %currLabel
 
-                memoryTable.update( { nodeName.lower() : [ mem0, ['T_PAIR',
-                                                          memoryTable.get(car.lower())[0],
-                                                          memoryTable.get(cdr.lower())[0]] ] } )
+                memoryTable.update( { nodeName : [ mem0, ['T_PAIR',
+                                                          memoryTable.get(car)[0],
+                                                          memoryTable.get(cdr)[0]] ] } )
                 mem0 += 3
 
                 constantList.remove(first)
@@ -1208,7 +1211,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
             elif type(node) is sexprs.Symbol:
                 index += 1
-                CodeGenVisitor.codeGenSymbol(node.string.lower(),node.string)
+                CodeGenVisitor.codeGenSymbol(node.string,node.string)
             else:
                 index += 1
                 Constant(node).code_gen()
@@ -1252,7 +1255,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
     def codeGenVarFree(self):
         global memoryTable
         global mem0
-        symbol = "'%s" %self.variable.string.lower()
+        symbol = "'%s" %self.variable.string
         name = self.variable.string.lower()
         # if freeVar was defined then R0<-closure
         if not memoryTable.get(symbol) is None:
@@ -1268,7 +1271,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
             memoryTable.update( { "Closure_%s" %label : [ mem0 , ['T_CLOSURE', 0 , label] ] } )
             closurePtr = mem0
             mem0 += 3
-            code = CodeGenVisitor.codeGenSymbol(name.lower(),closurePtr)
+            code = CodeGenVisitor.codeGenSymbol(name.upper(),closurePtr)
             code += appendTabs() + "MOV(R0,INDD(R0,1));\n"
             code += appendTabs() + "MOV(R0,INDD(R0,2));\n"
 
@@ -1538,7 +1541,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
         INCR(FPARG(1));
 
         /* stack pointer needs to go up by 1 */
-        INCR(SP);
+        /*INCR(SP);*/
+        PUSH(IMM(0));
 
         MOV(R3,IMM(-2));
         MOV(R4,IMM(-3));
@@ -1559,6 +1563,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         """
         /* magic number */
         MOV(FPARG(R4),IMM(7109179));
+        INCR(FP);
         """
 
         code += "\tL_After_Stack_Fix_%s:\n" %currentLabel
@@ -1693,7 +1698,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         return code
 
     def codeGenDef(self):
-        code = CodeGenVisitor.codeGenSymbol(self.name.variable.string.lower(),0)
+        code = CodeGenVisitor.codeGenSymbol(self.name.variable.string,0)
 
         code += appendTabs() + "MOV(R15,R0);     /*Saving symbol's address*/\n"
         code += appendTabs() + "MOV(R15,INDD(R15,1));     /* R15 now contains the pointer to the value of the symbol's bucket */\n"
