@@ -1508,7 +1508,7 @@ class CodeGenVisitor(AbstractSchemeExpr):
         SUB(R4,R2);
         /* R4 holds the how much spaces the element need's to be dropped down */
         MOV(R5,R2);
-        ADD(R5,3);
+        ADD(R5,4);
         /* R5 hold the amount of times we drom elements down */
         """
         code += "\n\tL_Move_Stack_Down_Loop_%s:\n" %currentLabel
