@@ -133,7 +133,11 @@ def initConstantTable():
 
         elif sobType is 'T_CHAR':
             value = node[1][1][1]
-            code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
+            if len(value) == 1 or (value[1] in {'n','t','f','r',' ','\\','\\\\','"'}):
+                code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value
+            else:
+
+                code += tag_parser.appendTabs() + "PUSH(IMM('%s'));\n" %value[1]
             code += tag_parser.appendTabs() + "CALL(MAKE_SOB_CHAR);\n"
             code += tag_parser.appendTabs() + "DROP(1);\n"
 
@@ -192,64 +196,9 @@ def initConstantTable():
 def initBuiltInFunctions():
     yag = \
     """
-    (DEFINE YAG (LAMBDA FS ((LAMBDA (MS) (APPLY (CAR MS) MS)) (MAP (LAMBDA (FI) (LAMBDA MS (APPLY FI (MAP (LAMBDA (MI) (LAMBDA ARGS (APPLY (APPLY MI MS) ARGS))) MS)))) FS))))
+    (DEFINE YAG (LAMBDA fs ((LAMBDA (ms) (apply (car ms) ms)) (map (LAMBDA (fi) (LAMBDA ms (apply fi (map (LAMBDA (mi) (LAMBDA args (apply (apply mi ms) args))) ms)))) fs))))
     """
-
-    first = \
-    """
-    (define first
-      (lambda (lists)
-        (if (null? lists)
-          '()
-          (cons (car (car lists))
-            (first (cdr lists))))))
-    """
-    rest = \
-    """
-    (define rest
-      (lambda (lists)
-        (if (null? lists)
-          '()
-          (cons (cdr (car lists))
-            (rest (cdr lists))))))
-    """
-
-    mapHelper = \
-    """
-    (define map-helper
-      (lambda (proc x)
-        (if (null? (car x))
-          '()
-          (let ((args (first x))
-            (rest (rest x)))
-         (cons (apply proc args)
-            (map-helper proc rest))))))
-    """
-
-    mapProc = \
-    """
-    (define map
-      (lambda (proc . x)
-        (map-helper proc x)))
-    """
-
-    # s,r = tag_parser.AbstractSchemeExpr.parse(first)
-    # s.semantic_analysis()
-    # # print(s)
-    # code = s.code_gen()
-    # s,r = tag_parser.AbstractSchemeExpr.parse(rest)
-    # s.semantic_analysis()
-    # # print(s)
-    # code += s.code_gen()
-    # s,r = tag_parser.AbstractSchemeExpr.parse(mapHelper)
-    # s.semantic_analysis()
-    # # print(s)
-    # code += s.code_gen()
-    # s,r = tag_parser.AbstractSchemeExpr.parse(mapProc)
-    # s.semantic_analysis()
-    # # print(s.expr.numOfArgs)
-    # code += s.code_gen()
-
+    #(DEFINE YAG (LAMBDA FS ((LAMBDA (MS) (APPLY (CAR MS) MS)) (MAP (LAMBDA (FI) (LAMBDA MS (APPLY FI (MAP (LAMBDA (MI) (LAMBDA ARGS (APPLY (APPLY MI MS) ARGS))) MS)))) FS))))
     s,r = tag_parser.AbstractSchemeExpr.parse(yag)
     s.semantic_analysis()
     code = s.code_gen()

@@ -11,6 +11,7 @@
   PUSH(R1);
   PUSH(R2);
   PUSH(R3);
+  
   MOV(R0, FPARG(0));
   ADD(R0, IMM(2));
   PUSH(R0);
@@ -33,7 +34,8 @@
   INCR(R2);
   DECR(R3);
   JUMP(L_MSS_LOOP);
- L_MSS_EXIT:
+  
+ L_MSS_EXIT: 
   POP(R3);
   POP(R2);
   POP(R1);

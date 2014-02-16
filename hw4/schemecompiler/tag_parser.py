@@ -7,7 +7,7 @@ __author__ = 'Dror & Eldar'
 #           Macros           #
 ##############################
 # matched strings for Constants
-Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil", "Vector"}
+Constants_Strings = {"Boolean" , "Int" , "Char" , "Fraction", "String", "Nil", "Vector", "Void"}
 
 QuotedLike_Strings = {"QUOTE" , "QUASIQUOTE" , "UNQUOTE-SPLICING" , "UNQUOTE"}
 
@@ -131,7 +131,7 @@ def setEnvDepth(exp,depth):
         setEnvDepth(exp.pair.sexpr2.sexpr1,depth)
         setEnvDepth(exp.pair.sexpr2.sexpr2.sexpr1,depth)
 
-    # else:
+    # elif not isinstance(exp,(Constant,Variable,Or)):
     #     print("####################################")
     #     print(type(exp))
     #     print("wasn't implemented yet in setEnvDepth")
@@ -158,50 +158,51 @@ def parserRecursive(expr):
 
 def tagPair(expr):
     if isinstance(expr.sexpr1, sexprs.Symbol):
+        string = expr.sexpr1.string
         # Identify: Quoted Like Strings
-        if expr.sexpr1.string == "QUASIQUOTE":
-            res = expandQQ(expr.sexpr2)
-            return parserRecursive(res)
+        # if string == "QUASIQUOTE":
+        #     res = expandQQ(expr.sexpr2)
+        #     return parserRecursive(res)
 
-        if expr.sexpr1.string in QuotedLike_Strings:        # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
+        if string in QuotedLike_Strings:        # Pair(Symbol(QuoteLike), Pair(Sexpression, Nil) )
             if expr.sexpr2.sexpr1.__class__.__name__ in Constants_Strings:
                 return Constant(expr.sexpr2.sexpr1)         # This case handles the Sexpressions like boolean, int, ect.
             else:
                 return Constant(expr)                       # This case handles other symbols that are quoted
 
         # Identify: IF
-        elif expr.sexpr1.string == "IF":
+        elif string == "IF":
             return tagIf(expr.sexpr2)
 
         # Identify: COND
-        elif expr.sexpr1.string == "COND":
+        elif string == "COND":
             return tagCond(expr.sexpr2)
 
         # Identify: DEFINE
-        elif expr.sexpr1.string == "DEFINE":
+        elif string == "DEFINE":
             return tagDefine(expr.sexpr2)
 
         # Identify: LAMBDA
-        elif expr.sexpr1.string == "LAMBDA":
+        elif string == "LAMBDA":
             return tagLambda(expr.sexpr2)
 
-        elif expr.sexpr1.string == "LETREC":
+        elif string == "LETREC":
             return tagLetrec(expr.sexpr2)
 
         # Identify: LET
-        elif expr.sexpr1.string == "LET":
+        elif string == "LET":
             return tagLet(expr.sexpr2)
 
         # Identify: LET*
-        elif expr.sexpr1.string == "LET*":
+        elif string == "LET*":
             return tagLetStar(expr.sexpr2)
 
         # Identify: OR
-        elif expr.sexpr1.string == "OR":
+        elif string == "OR":
             return tagOr(expr.sexpr2)
 
         # Identify: AND
-        elif expr.sexpr1.string == "AND":
+        elif string == "AND":
             return tagAnd(expr.sexpr2)
 
         # Identify: APPLICATION
@@ -275,8 +276,8 @@ def tagCond(expr):
     try:
         if isinstance(expr, sexprs.Nil):
             # when there is no else-clause
-            return sexprs.Void()
-        elif isinstance(expr.sexpr1.sexpr1, sexprs.Symbol) and expr.sexpr1.sexpr1.string == 'ELSE':
+            return Constant(sexprs.Void())
+        elif isinstance(expr.sexpr1.sexpr1, sexprs.Symbol) and expr.sexpr1.sexpr1.string in {'ELSE','else'}:
             # when last clause is else# when last clause is else
             return parserRecursive(expr.sexpr1.sexpr2.sexpr1)
         else:
@@ -659,7 +660,8 @@ class AbstractSchemeExpr:
             elif className == "IfThenElse":
                 arguments = pairsToList(self.pair)
                 for arg in arguments:
-                    arg.debruijn_helper(bound,param)
+                    if not type(arg) is sexprs.Void:
+                        arg.debruijn_helper(bound,param)
             elif className == "Or":
                 arguments = pairsToList(self.arguments)
                 for arg in arguments:
@@ -1116,7 +1118,6 @@ class CodeGenVisitor(AbstractSchemeExpr):
             # Handle Symbol
             if type(value) is sexprs.Symbol:
                 # Constant(value.string).code_gen()
-                print(value.string)
                 # valuePtr = memoryTable.get(value.string)[0]
                 result += CodeGenVisitor.codeGenSymbol(value.string,value.string)
             # Handle List
@@ -1259,7 +1260,8 @@ class CodeGenVisitor(AbstractSchemeExpr):
         global memoryTable
         global mem0
         symbol = "'%s" %self.variable.string
-        name = self.variable.string.lower()
+        name = self.variable.string
+        nameAsLower = name.lower()
         # if freeVar was defined then R0<-closure
         if not memoryTable.get(symbol) is None:
             symbolPtr = memoryTable.get(symbol)[0]
@@ -1269,12 +1271,12 @@ class CodeGenVisitor(AbstractSchemeExpr):
 
         # if freeVar is a builtin procedure, create the closure and return result in R0
         # (happens only once for each builtin procedure, after that it is in the constant table)
-        elif name in reservedWordsSymbolTable:
-            label = reservedWordsSymbolTable.get(name)
+        elif nameAsLower in reservedWordsSymbolTable:
+            label = reservedWordsSymbolTable.get(nameAsLower)
             memoryTable.update( { "Closure_%s" %label : [ mem0 , ['T_CLOSURE', 0 , label] ] } )
             closurePtr = mem0
             mem0 += 3
-            code = CodeGenVisitor.codeGenSymbol(name.upper(),closurePtr)
+            code = CodeGenVisitor.codeGenSymbol(name,closurePtr)
             code += appendTabs() + "MOV(R0,INDD(R0,1));\n"
             code += appendTabs() + "MOV(R0,INDD(R0,2));\n"
 

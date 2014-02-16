@@ -6,7 +6,6 @@ L_STRING_TO_SYMBOL:
 	PUSH(FP);
 	MOV(FP,SP);
 
-
     PUSH(FPARG(2));
     PUSH(FPARG(2));
     CALL(MAKE_SOB_BUCKET);
@@ -14,10 +13,6 @@ L_STRING_TO_SYMBOL:
     
     PUSH(R0);
     CALL(MAKE_SOB_SYMBOL);
-    DROP(1);
-
-    PUSH(R0);
-    CALL(WRITE_SOB_SYMBOL);
     DROP(1);
     
 	POP(FP);
