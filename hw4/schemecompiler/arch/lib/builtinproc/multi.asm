@@ -13,8 +13,9 @@ L_Multi_Applic:
 	PUSH(R4);
 	PUSH(R5);
 	PUSH(R6);
+	PUSH(R7);
     
-	CMP(FPARG(1),1);
+	CMP(FPARG(1),IMM(1));
 	JUMP_LT(L_Multi_Applic_Zero_Arg);
 	JUMP_EQ(L_Multi_Applic_One_Arg);
 	
@@ -71,7 +72,7 @@ L_Multi_2nd_is_INT:
     JUMP_EQ(L_Multi_1nd_is_INT_INT);
     
     CMP(IND(R0), T_FRACTION);
-    JUMP_EQ(L_Multi_1nd_is_INT_FRACTION);
+    JUMP_EQ(L_Multi_1nd_is_FRACTION_INT);
 
 L_Multi_1nd_is_INT_INT:
     MOV(R0, INDD(R0,1));
@@ -97,6 +98,19 @@ L_Multi_1nd_is_INT_FRACTION:
     INCR(R1);
     JUMP(L_Multi_Applic_Loop);
 
+L_Multi_1nd_is_FRACTION_INT:
+    MOV(R4,INDD(R0,1));
+    MOV(R5,INDD(R2,1));
+    MUL(R4,R5);         /* R4 is now numerator  */
+    MOV(R5, INDD(R0,2));/* R5 is now denominator */
+    PUSH(R5);
+    PUSH(R4);
+    CALL(MAKE_SOB_FRACTION);
+    DROP(2);
+    /* in R0 pointer to FRACTION object */
+    INCR(R1);
+    JUMP(L_Multi_Applic_Loop);
+
 L_Multi_Applic_Zero_Arg:
 	PUSH(IMM(1));
 	CALL(MAKE_SOB_INTEGER);
@@ -108,6 +122,7 @@ L_Multi_Applic_One_Arg:
 	JUMP(L_Multi_Applic_Exit);
 	
 L_Multi_Applic_Exit:
+	POP(R7);
 	POP(R6);
 	POP(R5);
 	POP(R4);
